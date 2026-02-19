@@ -1,0 +1,17 @@
+// Copyright 2025 Wu Zhiwei. All Rights Reserved.
+
+#pragma once
+
+#include "ObjectElementNode.h"
+
+class FWidgetElementNode : public FObjectElementNode
+{
+public:
+	static TSharedRef<FElementNode> Create();
+
+protected:
+	//~Begin FElementNode interface
+	virtual FResult Begin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
+	virtual FResult OnAddChild(const TSharedRef<FElementNode>& Child) override { return FResult::Failure(); }
+	//~End FElementNode interface
+};
