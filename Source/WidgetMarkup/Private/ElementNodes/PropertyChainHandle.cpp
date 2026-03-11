@@ -117,6 +117,7 @@ bool FPropertyChainHandle::SetValue(const FStringView& ValueString) const
 	void* Data = TailProperty->AllocateAndInitializeValue();
 	if (!FConverterRegistry::Get().Convert(*TailProperty, Data, ValueString))
 	{
+		TailProperty->DestroyAndFreeValue(Data);
 		return false;
 	}
 	bool bOK = SetValue(Data);

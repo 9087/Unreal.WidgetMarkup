@@ -13,6 +13,7 @@
 #include "Blueprint/WidgetTree.h"
 #include "Components/ContentWidget.h"
 #include "Components/Image.h"
+#include "Components/SlateWrapperTypes.h"
 #include "Converters/BooleanConverter.h"
 #include "Converters/ColorConverter.h"
 #include "Converters/EnumConverter.h"
@@ -20,6 +21,7 @@
 #include "Converters/MarginConverter.h"
 #include "Converters/NameConverter.h"
 #include "Converters/NumericConverter.h"
+#include "Converters/SlateChildSizeConverter.h"
 #include "Converters/SlateColorConverter.h"
 #include "Converters/StringConverter.h"
 #include "Converters/TextConverter.h"
@@ -61,6 +63,7 @@ void FWidgetMarkupModule::StartupModule()
 	FConverterRegistry::Get().Register(NAME_Color, FConverterRegistry::FOnCreateConverter::CreateStatic(FColorConverter::Create));
 	FConverterRegistry::Get().Register(NAME_LinearColor, FConverterRegistry::FOnCreateConverter::CreateStatic(FLinearColorConverter::Create));
 	FConverterRegistry::Get().Register(FMargin::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FMarginConverter::Create));
+	FConverterRegistry::Get().Register(FSlateChildSize::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FSlateChildSizeConverter::Create));
 	FConverterRegistry::Get().Register(FSlateColor::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FSlateColorConverter::Create));
 	FConverterRegistry::Get().Register(NAME_Vector, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector::FReal, 3>::Create));
 	FConverterRegistry::Get().Register(NAME_Vector2D, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector2D::FReal, 2>::Create));
@@ -95,6 +98,7 @@ void FWidgetMarkupModule::ShutdownModule()
 	FConverterRegistry::Get().Unregister(NAME_Color);
 	FConverterRegistry::Get().Unregister(NAME_LinearColor);
 	FConverterRegistry::Get().Unregister(FMargin::StaticStruct()->GetFName());
+	FConverterRegistry::Get().Unregister(FSlateChildSize::StaticStruct()->GetFName());
 	FConverterRegistry::Get().Unregister(FSlateColor::StaticStruct()->GetFName());
 	FConverterRegistry::Get().Unregister(NAME_Vector);
 	FConverterRegistry::Get().Unregister(NAME_Vector2D);
