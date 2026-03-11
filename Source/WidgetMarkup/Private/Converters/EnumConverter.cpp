@@ -2,6 +2,8 @@
 
 #include "EnumConverter.h"
 
+#include "UObject/UnrealType.h"
+
 TSharedRef<FConverter> FEnumConverter::Create()
 {
 	return MakeShared<FEnumConverter>();
@@ -19,18 +21,30 @@ bool FEnumConverter::Convert(const FStringView& String, UEnum* Enum, int64& OutV
 
 bool FEnumConverter::Convert(const FProperty& Property, void* Data, const FStringView& String)
 {
-	check(Property.IsA<FEnumProperty>());
-	auto EnumProperty = CastField<FEnumProperty>(&Property);
-	if (!EnumProperty)
+	if (auto* EnumProperty = CastField<FEnumProperty>(&Property))
 	{
-		return false;
+		UEnum* Enum = EnumProperty->GetEnum();
+		int64 EnumValue = INDEX_NONE;
+		if (!Convert(String, Enum, EnumValue))
+		{
+			return false;
+		}
+		EnumProperty->GetUnderlyingProperty()->SetIntPropertyValue(Data, EnumValue);
+		return true;
 	}
-	auto Enum = EnumProperty->GetEnum();
-	int64 EnumValue = INDEX_NONE;
-	if (!Convert(String, Enum, EnumValue))
+	// FByteProperty may also be TEnumAsByte (with Enum)
+	if (auto* ByteProperty = CastField<FByteProperty>(&Property))
 	{
-		return false;
+		if (UEnum* Enum = ByteProperty->GetIntPropertyEnum())
+		{
+			int64 EnumValue = INDEX_NONE;
+			if (!Convert(String, Enum, EnumValue))
+			{
+				return false;
+			}
+			ByteProperty->SetIntPropertyValue(Data, static_cast<int64>(EnumValue));
+			return true;
+		}
 	}
-	EnumProperty->GetUnderlyingProperty()->SetIntPropertyValue(Data, EnumValue);
-	return true;
+	return false;
 }

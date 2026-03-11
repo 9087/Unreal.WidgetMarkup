@@ -3,6 +3,7 @@
 #include "ConverterRegistry.h"
 
 #include "Converter.h"
+#include "UObject/UnrealType.h"
 
 FConverterRegistry& FConverterRegistry::Get()
 {
@@ -28,7 +29,24 @@ TSharedPtr<FConverter> FConverterRegistry::Convert(const FProperty& Property, vo
 	{
 		return nullptr;
 	}
-	auto OnCreateConverterPtr = CreateConverterDelegateMap.Find(Property.IsA<FStructProperty>() ? CastField<FStructProperty>(&Property)->Struct->GetFName() : FieldClass->GetFName());
+	FName ConverterName;
+	if (Property.IsA<FStructProperty>())
+	{
+		ConverterName = CastField<FStructProperty>(&Property)->Struct->GetFName();
+	}
+	else if (Property.IsA<FEnumProperty>())
+	{
+		ConverterName = NAME_EnumProperty;
+	}
+	else if (const FByteProperty* ByteProperty = CastField<FByteProperty>(&Property))
+	{
+		ConverterName = ByteProperty->GetIntPropertyEnum() ? NAME_EnumProperty : FieldClass->GetFName();
+	}
+	else
+	{
+		ConverterName = FieldClass->GetFName();
+	}
+	auto OnCreateConverterPtr = CreateConverterDelegateMap.Find(ConverterName);
 	if (!OnCreateConverterPtr)
 	{
 		return nullptr;

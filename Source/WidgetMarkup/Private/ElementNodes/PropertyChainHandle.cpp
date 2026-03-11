@@ -3,6 +3,7 @@
 #include "PropertyChainHandle.h"
 
 #include "ConverterRegistry.h"
+#include "UObject/UnrealType.h"
 
 TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const TArray<FString>& PropertyNames)
 {
@@ -36,10 +37,11 @@ TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, c
 			Struct = StructProperty->Struct;
 			Ptr = StructProperty->ContainerPtrToValuePtr<void>(Ptr);
 		}
-		else if (auto ObjectProperty = CastField<FObjectProperty>(Property))
+		else if (auto ObjectPropertyBase = CastField<FObjectPropertyBase>(Property))
 		{
-			Ptr = ObjectProperty->GetObjectPropertyValue_InContainer(Ptr);
-			Struct = Ptr ? static_cast<UObject*>(Ptr)->GetClass() : ObjectProperty->PropertyClass.Get();
+			UObject* ObjectValue = ObjectPropertyBase->GetObjectPropertyValue_InContainer(Ptr);
+			Ptr = ObjectValue;
+			Struct = ObjectValue ? ObjectValue->GetClass() : ObjectPropertyBase->PropertyClass.Get();
 		}
 		else
 		{
@@ -87,9 +89,9 @@ void* FPropertyChainHandle::GetTailContainer() const
 		{
 			Container = StructProperty->ContainerPtrToValuePtr<void>(Container);
 		}
-		else if (auto ObjectProperty = CastField<FObjectProperty>(Node->GetValue()))
+		else if (auto ObjectPropertyBase = CastField<FObjectPropertyBase>(Node->GetValue()))
 		{
-			Container = ObjectProperty->GetObjectPropertyValue_InContainer(Container);
+			Container = ObjectPropertyBase->GetObjectPropertyValue_InContainer(Container);
 		}
 		else
 		{
@@ -152,7 +154,7 @@ TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::GetChildHandle(const FStr
 			return PropertyChainHandle;
 		}
 	}
-	else if (auto ObjectProperty = CastField<FObjectProperty>(TailProperty))
+	else if (auto ObjectPropertyBase = CastField<FObjectPropertyBase>(TailProperty))
 	{
 		if (auto TailContainer = GetTailContainer())
 		{
