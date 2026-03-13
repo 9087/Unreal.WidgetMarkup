@@ -50,6 +50,7 @@ public:
 	FOnObjectCompiled& GetOnObjectCompiled();
 
 private:
+	static FString ToAbsolutePath(const FString& SourceFilePath);
 	static bool ConvertFilePathToObjectPath(const FString& FilePath, FString& OutObjectPath);
 
 	TMap<FName, TObjectPtr<UObject>> Objects;

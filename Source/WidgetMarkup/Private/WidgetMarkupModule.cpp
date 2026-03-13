@@ -3,6 +3,7 @@
 #include "WidgetMarkupModule.h"
 
 #include "ConverterRegistry.h"
+#include "Misc/PackageName.h"
 #include "DirectoryWatcherModule.h"
 #include "ElementNodeFactory.h"
 #include "FastXml.h"
@@ -132,17 +133,37 @@ UObject* FWidgetMarkupModule::CompileFromSourceCode(FName Name, const FString& X
 	return Object;
 }
 
+FString FWidgetMarkupModule::ToAbsolutePath(const FString& SourceFilePath)
+{
+	// Single convention: path is relative to project content directory (no package/asset concept for .unrealwidgetmarkup)
+	const FString Path = SourceFilePath.TrimStartAndEnd();
+	if (Path.IsEmpty())
+	{
+		return FString();
+	}
+	if (FPaths::IsRelative(Path))
+	{
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectContentDir(), Path));
+	}
+	return FPaths::ConvertRelativePathToFull(Path);
+}
+
 UObject* FWidgetMarkupModule::CompileFromFile(const FString& SourceFilePath)
 {
 	UE_LOG(LogWidgetMarkup, Display, TEXT("Compile Source File '%s'."), *SourceFilePath);
+
+	const FString AbsolutePath = ToAbsolutePath(SourceFilePath);
+	if (AbsolutePath.IsEmpty())
+	{
+		return nullptr;
+	}
 	FString XML;
-	FFileHelper::LoadFileToString(XML, *SourceFilePath, FFileHelper::EHashOptions::None, FILEREAD_AllowWrite);
-	if (XML.IsEmpty())
+	if (!FFileHelper::LoadFileToString(XML, *AbsolutePath, FFileHelper::EHashOptions::None, FILEREAD_AllowWrite) || XML.IsEmpty())
 	{
 		return nullptr;
 	}
 	FString ObjectPath;
-	if (!ConvertFilePathToObjectPath(SourceFilePath, ObjectPath))
+	if (!ConvertFilePathToObjectPath(AbsolutePath, ObjectPath))
 	{
 		return nullptr;
 	}
@@ -157,8 +178,13 @@ UObject* FWidgetMarkupModule::GetObjectFromName(FName Name)
 
 UObject* FWidgetMarkupModule::GetObjectFromFile(const FString& SourceFilePath)
 {
+	const FString AbsolutePath = ToAbsolutePath(SourceFilePath);
+	if (AbsolutePath.IsEmpty())
+	{
+		return nullptr;
+	}
 	FString ObjectPath;
-	if (!ConvertFilePathToObjectPath(SourceFilePath, ObjectPath))
+	if (!ConvertFilePathToObjectPath(AbsolutePath, ObjectPath))
 	{
 		return nullptr;
 	}
@@ -200,7 +226,8 @@ bool FWidgetMarkupModule::ConvertFilePathToObjectPath(const FString& FilePath, F
 	{
 		return false;
 	}
-	auto ObjectPath = FilePath;
+	// Use full path for MakePathRelativeTo so both paths are absolute (FilePath may be relative)
+	FString ObjectPath = SourceFileFullPath;
 	if (!FPaths::MakePathRelativeTo(ObjectPath, *SourceFileDirectoryPath))
 	{
 		return false;
