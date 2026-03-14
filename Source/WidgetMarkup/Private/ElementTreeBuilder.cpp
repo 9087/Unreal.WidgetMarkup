@@ -23,6 +23,7 @@ bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* 
 	auto ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, ElementName, Struct);
 	if (!ElementNode.IsValid())
 	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("Unknown element '%s' at line %d."), ElementName, XmlFileLineNumber);
 		return false;
 	}
 	if (!ElementNode->Begin(Context, Outer, Struct).PrintOnFailure())
@@ -45,6 +46,7 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 	auto Current = GetCurrentElementNode();
 	if (!Current.IsValid())
 	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("Attribute '%s' has no open element."), AttributeName);
 		return false;
 	}
 	FStringView PropertyName(AttributeName);

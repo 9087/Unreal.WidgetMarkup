@@ -120,11 +120,13 @@ UObject* FWidgetMarkupModule::CompileFromSourceCode(FName Name, const FString& X
 	auto WidgetTreeBuilder = MakeShared<FElementTreeBuilder>(Package);
 	if (!FFastXml::ParseXmlFile(&WidgetTreeBuilder.Get(), nullptr, const_cast<TCHAR*>(*XML), GWarn, true, false, ErrorMessage, ErrorLineNumber))
 	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromSourceCode failed: XML parse error at line %d: %s"), ErrorLineNumber, *ErrorMessage.ToString());
 		return nullptr;
 	}
 	auto RootElementNode = WidgetTreeBuilder->GetRootElementNode();
 	if (!RootElementNode.IsValid())
 	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromSourceCode failed: no root element produced for '%s'."), *Name.ToString());
 		return nullptr;
 	}
 	auto Object = RootElementNode->GetObject();
@@ -155,16 +157,19 @@ UObject* FWidgetMarkupModule::CompileFromFile(const FString& SourceFilePath)
 	const FString AbsolutePath = ToAbsolutePath(SourceFilePath);
 	if (AbsolutePath.IsEmpty())
 	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromFile failed: source path is empty or invalid ('%s')."), *SourceFilePath);
 		return nullptr;
 	}
 	FString XML;
 	if (!FFileHelper::LoadFileToString(XML, *AbsolutePath, FFileHelper::EHashOptions::None, FILEREAD_AllowWrite) || XML.IsEmpty())
 	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromFile failed: could not read file or file is empty ('%s')."), *AbsolutePath);
 		return nullptr;
 	}
 	FString ObjectPath;
 	if (!ConvertFilePathToObjectPath(AbsolutePath, ObjectPath))
 	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromFile failed: path is not under configured source directory ('%s')."), *AbsolutePath);
 		return nullptr;
 	}
 	return CompileFromSourceCode(FName(ObjectPath), XML);

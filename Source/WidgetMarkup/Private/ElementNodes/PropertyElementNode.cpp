@@ -34,7 +34,7 @@ FElementNode::FResult FPropertyElementNode::End()
 
 FElementNode::FResult FPropertyElementNode::OnAddChild(const TSharedRef<FElementNode>& Child)
 {
-	return FResult::Failure();
+	return FResult::Failure().Error(FText::FromString(TEXT("PropertyElementNode: property elements do not support child elements.")));
 }
 
 bool FPropertyElementNode::HasProperty(const FStringView& AttributeName)

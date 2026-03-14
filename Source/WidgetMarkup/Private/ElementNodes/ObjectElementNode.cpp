@@ -20,7 +20,7 @@ FElementNode::FResult FObjectElementNode::Begin(const FContext& Context, UObject
 {
 	if (!ensure(Struct->IsA<UClass>()))
 	{
-		return FResult::Failure();
+		return FResult::Failure().Error(FText::FromString(TEXT("ObjectElementNode: struct type must be a UClass when creating an object.")));
 	}
 	auto Class = CastChecked<UClass>(Struct);
 	Object = NewObject<UObject>(Outer, Class);

@@ -16,7 +16,7 @@ FElementNode::FResult FContentWidgetElementNode::OnAddChild(const TSharedRef<FEl
 	auto ContentWidget = Cast<UContentWidget>(Object);
 	if (!ensure(ContentWidget))
 	{
-		return FResult::Failure();
+		return FResult::Failure().Error(FText::FromString(TEXT("ContentWidgetElementNode: underlying object is not a valid UContentWidget instance.")));
 	}
 	if (ContentWidget->GetContent() != nullptr)
 	{

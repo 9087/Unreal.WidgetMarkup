@@ -17,3 +17,8 @@ FElementNode::FResult FWidgetElementNode::Begin(const FContext& Context, UObject
 	}
 	return FObjectElementNode::Begin(Context, Outer, Struct);
 }
+
+FElementNode::FResult FWidgetElementNode::OnAddChild(const TSharedRef<FElementNode>& Child)
+{
+	return FResult::Failure().Error(FText::Format(FText::FromString(TEXT("{0} does not support child elements.")), Object->GetClass()->GetDisplayNameText()));
+}

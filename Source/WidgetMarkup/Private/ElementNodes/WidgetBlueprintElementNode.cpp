@@ -16,7 +16,7 @@ FElementNode::FResult FWidgetBlueprintElementNode::Begin(const FContext& Context
 	auto Package = Cast<UPackage>(Outer);
 	if (!Package)
 	{
-		return FResult::Failure();
+		return FResult::Failure().Error(FText::FromString(TEXT("WidgetBlueprintElementNode: outer object must be a UPackage when creating a Widget Blueprint.")));
 	}
 	auto WidgetBlueprintName = FName(FPaths::GetBaseFilename(Package->GetName(), true));
 	auto Blueprint = FindObject<UBlueprint>(Package, *WidgetBlueprintName.ToString());
@@ -41,7 +41,7 @@ FElementNode::FResult FWidgetBlueprintElementNode::End()
 	auto Blueprint = Cast<UWidgetBlueprint>(Object);
 	if (!Blueprint)
 	{
-		return FResult::Failure();
+		return FResult::Failure().Error(FText::FromString(TEXT("WidgetBlueprintElementNode: failed to cast stored object to UWidgetBlueprint before compile.")));
 	}
 	EBlueprintCompileOptions CompileOptions = EBlueprintCompileOptions::None;
 	CompileOptions |= EBlueprintCompileOptions::IncludeCDOInReferenceReplacement;
@@ -54,12 +54,12 @@ FElementNode::FResult FWidgetBlueprintElementNode::OnAddChild(const TSharedRef<F
 	auto Blueprint = Cast<UWidgetBlueprint>(Object);
 	if (!Blueprint)
 	{
-		return FResult::Failure();
+		return FResult::Failure().Error(FText::FromString(TEXT("WidgetBlueprintElementNode: stored object is not a valid UWidgetBlueprint instance.")));
 	}
 	if (auto WidgetTree = Cast<UWidgetTree>(Child->GetObject()))
 	{
 		Blueprint->WidgetTree = WidgetTree;
 		return FResult::Success();
 	}
-	return FResult::Failure();
+	return FResult::Failure().Error(FText::FromString(TEXT("WidgetBlueprintElementNode: child element must resolve to a UWidgetTree instance.")));
 }

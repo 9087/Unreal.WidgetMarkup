@@ -25,7 +25,7 @@ FElementNode::FResult FWidgetTreeElementNode::OnAddChild(const TSharedRef<FEleme
 	auto Widget = Cast<UWidget>(Child->GetObject());
 	if (!Widget)
 	{
-		return FResult::Failure();
+		return FResult::Failure().Error(FText::FromString(TEXT("WidgetTreeElementNode: child element must resolve to a UWidget instance.")));
 	}
 	auto WidgetTree = Cast<UWidgetTree>(Object);
 	if (!WidgetTree)
