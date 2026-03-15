@@ -106,6 +106,80 @@ void FWidgetMarkupModule::ShutdownModule()
 
 	FCoreDelegates::OnPostEngineInit.RemoveAll(this);
 	StopSourceFileWatching();
+	CustomAttributes.Empty();
+}
+
+bool FWidgetMarkupModule::RegisterCustomAttribute(UStruct* Struct, FName AttributeName, FName TypeName, FOnApplyCustomAttribute InOnApplyCustomAttribute)
+{
+	if (!Struct || !InOnApplyCustomAttribute.IsBound())
+	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("RegisterCustomAttribute failed: Struct is null or delegate is not bound (Struct='%s', AttributeName='%s')."),
+			Struct ? *Struct->GetName() : TEXT("nullptr"), *AttributeName.ToString());
+		return false;
+	}
+	TMap<FName, FCustomAttributeDescriptor>& InnerMap = CustomAttributes.FindOrAdd(Struct);
+	if (InnerMap.Contains(AttributeName))
+	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("RegisterCustomAttribute: overwriting existing (Struct='%s', AttributeName='%s')."), *Struct->GetName(), *AttributeName.ToString());
+	}
+	FCustomAttributeDescriptor& Descriptor = InnerMap.FindOrAdd(AttributeName);
+	Descriptor.TypeName = TypeName;
+	Descriptor.ApplyDelegate = InOnApplyCustomAttribute;
+	return true;
+}
+
+void FWidgetMarkupModule::UnregisterCustomAttribute(UStruct* Struct, FName AttributeName)
+{
+	if (!Struct)
+	{
+		return;
+	}
+	TMap<FName, FCustomAttributeDescriptor>* InnerMap = CustomAttributes.Find(Struct);
+	if (InnerMap)
+	{
+		InnerMap->Remove(AttributeName);
+		if (InnerMap->Num() == 0)
+		{
+			CustomAttributes.Remove(Struct);
+		}
+	}
+}
+
+bool FWidgetMarkupModule::FindCustomAttributeDescriptor(UStruct* Struct, FName AttributeName, FCustomAttributeDescriptor& OutDescriptor) const
+{
+	if (!Struct)
+	{
+		return false;
+	}
+	UStruct* Best = nullptr;
+	const TMap<FName, FCustomAttributeDescriptor>* BestInnerMap = nullptr;
+	for (const auto& KeyValuePair : CustomAttributes)
+	{
+		UStruct* RegisteredStruct = KeyValuePair.Key.Get();
+		if (!RegisteredStruct)
+		{
+			continue;
+		}
+		if (Struct->IsChildOf(RegisteredStruct))
+		{
+			if (!Best || RegisteredStruct->IsChildOf(Best))
+			{
+				Best = RegisteredStruct;
+				BestInnerMap = &KeyValuePair.Value;
+			}
+		}
+	}
+	if (!BestInnerMap)
+	{
+		return false;
+	}
+	const FCustomAttributeDescriptor* Descriptor = BestInnerMap->Find(AttributeName);
+	if (!Descriptor)
+	{
+		return false;
+	}
+	OutDescriptor = *Descriptor;
+	return true;
 }
 
 UObject* FWidgetMarkupModule::CompileFromSourceCode(FName Name, const FString& XML)

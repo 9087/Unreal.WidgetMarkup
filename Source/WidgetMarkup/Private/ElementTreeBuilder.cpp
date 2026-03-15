@@ -6,9 +6,11 @@
 #include "ElementNodeFactory.h"
 #include "WidgetMarkupModule.h"
 #include "ElementNodes/PropertyElementNode.h"
+#include "Modules/ModuleManager.h"
 
 FElementTreeBuilder::FElementTreeBuilder(UObject* InOuter)
 	: Outer(InOuter)
+	, WidgetMarkupModule(&FModuleManager::GetModuleChecked<FWidgetMarkupModule>("WidgetMarkup"))
 {
 }
 
@@ -51,6 +53,19 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 	}
 	FStringView PropertyName(AttributeName);
 	FStringView PropertyValue(AttributeValue);
+	UObject* Object = Current->GetObject();
+	if (Object && WidgetMarkupModule)
+	{
+		FCustomAttributeDescriptor Descriptor;
+		if (WidgetMarkupModule->FindCustomAttributeDescriptor(Object->GetClass(), FName(PropertyName), Descriptor))
+		{
+			if (!Descriptor.ApplyDelegate.Execute(Object, Descriptor.TypeName, PropertyValue).PrintOnFailure())
+			{
+				return false;
+			}
+			return true;
+		}
+	}
 	if (!Current->HasProperty(PropertyName))
 	{
 		UE_LOG(LogWidgetMarkup, Error, TEXT("Failed to recognize the property name '%s'."), PropertyName.GetData());

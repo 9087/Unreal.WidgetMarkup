@@ -5,6 +5,7 @@
 #include "ElementNode.h"
 #include "FastXml.h"
 
+class FWidgetMarkupModule;
 class UWidgetTree;
 
 class FElementTreeBuilder : public IFastXmlCallback, public FGCObject
@@ -33,4 +34,5 @@ protected:
 	TObjectPtr<UObject> Outer;
 	FElementNode::FContext Context;
 	TSharedPtr<FElementNode> RootElementNode;
+	FWidgetMarkupModule* WidgetMarkupModule = nullptr;
 };

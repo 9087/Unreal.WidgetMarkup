@@ -10,7 +10,6 @@ class FElementNode : public TSharedFromThis<FElementNode>
 public:
 	virtual UObject* GetObject() const { return nullptr; }
 
-protected:
 	enum class EMessageType
 	{
 		Log,
@@ -48,6 +47,8 @@ protected:
 		bool bOK = false;
 		TArray<TSharedRef<FMessage>> Messages;
 	};
+
+protected:
 
 	class FContext
 	{

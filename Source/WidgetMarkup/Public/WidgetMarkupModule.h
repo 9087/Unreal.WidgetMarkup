@@ -5,8 +5,19 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
+#include "ElementNode.h"
 
 WIDGETMARKUP_API DECLARE_LOG_CATEGORY_EXTERN(LogWidgetMarkup, Log, All);
+
+/** Delegate for applying a custom attribute: (TargetObject, TypeName, AttributeValue) -> FResult. */
+DECLARE_DELEGATE_RetVal_ThreeParams(FElementNode::FResult, FOnApplyCustomAttribute, UObject* /* TargetObject */, FName /* TypeName */, const FStringView& /* AttributeValue */);
+
+/** Descriptor for a custom attribute: type name (FConverterRegistry key) and apply delegate. */
+struct FCustomAttributeDescriptor
+{
+	FName TypeName;
+	FOnApplyCustomAttribute ApplyDelegate;
+};
 
 class FWidgetMarkupModule : public IModuleInterface, public FGCObject
 {
@@ -49,12 +60,49 @@ public:
 	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnObjectCompiled, FName, UObject*)
 	FOnObjectCompiled& GetOnObjectCompiled();
 
+	/** Register a custom attribute for the given Struct (UClass* or UStruct*). Overwrites and logs warning if (Struct, AttributeName) already exists. */
+	bool RegisterCustomAttribute(UStruct* Struct, FName AttributeName, FName TypeName, FOnApplyCustomAttribute InOnApplyCustomAttribute);
+	/** Unregister a custom attribute. */
+	void UnregisterCustomAttribute(UStruct* Struct, FName AttributeName);
+
+	template <typename T>
+	bool RegisterCustomAttribute(FName AttributeName, FName TypeName, FOnApplyCustomAttribute InOnApplyCustomAttribute)
+	{
+		if constexpr (TIsDerivedFrom<T, UObject>::Value)
+		{
+			return RegisterCustomAttribute(T::StaticClass(), AttributeName, TypeName, InOnApplyCustomAttribute);
+		}
+		else
+		{
+			return RegisterCustomAttribute(T::StaticStruct(), AttributeName, TypeName, InOnApplyCustomAttribute);
+		}
+	}
+
+	template <typename T>
+	void UnregisterCustomAttribute(FName AttributeName)
+	{
+		if constexpr (TIsDerivedFrom<T, UObject>::Value)
+		{
+			UnregisterCustomAttribute(T::StaticClass(), AttributeName);
+		}
+		else
+		{
+			UnregisterCustomAttribute(T::StaticStruct(), AttributeName);
+		}
+	}
+
+	/** Find custom attribute descriptor for the given Struct and attribute name (best-match by Struct). Returns true if found. */
+	bool FindCustomAttributeDescriptor(UStruct* Struct, FName AttributeName, FCustomAttributeDescriptor& OutDescriptor) const;
+
 private:
 	static FString ToAbsolutePath(const FString& SourceFilePath);
 	static bool ConvertFilePathToObjectPath(const FString& FilePath, FString& OutObjectPath);
 
 	TMap<FName, TObjectPtr<UObject>> Objects;
 	FOnObjectCompiled OnObjectCompiled;
+
+	/** Custom attributes: keyed by UStruct* (element type), then FName (attribute name). */
+	TMap<TWeakObjectPtr<UStruct>, TMap<FName, FCustomAttributeDescriptor>> CustomAttributes;
 
 public:
 	void OnPostEngineInit();
