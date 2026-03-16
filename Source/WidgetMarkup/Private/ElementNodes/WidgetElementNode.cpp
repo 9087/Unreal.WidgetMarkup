@@ -2,6 +2,7 @@
 
 #include "WidgetElementNode.h"
 
+#include "ElementNodes/PropertyElementNode.h"
 #include "Blueprint/WidgetTree.h"
 
 TSharedRef<FElementNode> FWidgetElementNode::Create()
@@ -20,5 +21,10 @@ FElementNode::FResult FWidgetElementNode::Begin(const FContext& Context, UObject
 
 FElementNode::FResult FWidgetElementNode::OnAddChild(const TSharedRef<FElementNode>& Child)
 {
+	// Allow property elements (e.g. <Slot>, <Padding>) as logical children; they apply to this widget.
+	if (dynamic_cast<const FPropertyElementNode*>(&*Child))
+	{
+		return FResult::Success();
+	}
 	return FResult::Failure().Error(FText::Format(FText::FromString(TEXT("{0} does not support child elements.")), Object->GetClass()->GetDisplayNameText()));
 }

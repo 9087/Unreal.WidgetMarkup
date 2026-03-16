@@ -9,7 +9,10 @@ class FPropertyChainHandle;
 class FPropertyElementNode : public FElementNode
 {
 public:
+	/** Attribute form: (name, value). Element form: (element name, ElementData). */
 	FPropertyElementNode(const FStringView& InPropertyName, const FStringView& InPropertyValue);
+
+	const FString& GetPropertyPath() const { return PropertyPath; }
 
 protected:
 	//~Begin FElementNode interface
@@ -19,9 +22,15 @@ protected:
 	virtual bool HasProperty(const FStringView& AttributeName) override;
 	//~End FElementNode interface
 
-	TSharedPtr<FElementNode> Container;
-	const FStringView& PropertyName;
-	const FStringView& PropertyValue;
+	/** Name/path passed at construction (segment or dotted path). Caller must ensure it outlives this node. */
+	FStringView PropertyName;
+	/** Full dotted path from nearest object; computed in Begin(). */
+	FString PropertyPath;
+	/** Value passed at construction (attribute value or ElementData). Caller must ensure it outlives this node. */
+	FStringView PropertyValue;
 
 	TSharedPtr<FPropertyChainHandle> PropertyChain;
+
+	/** Child element nodes. SetValue in End() only when Num() == 0. */
+	TArray<TSharedRef<FElementNode>> ElementChildren;
 };

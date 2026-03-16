@@ -22,12 +22,20 @@ bool FElementTreeBuilder::ProcessXmlDeclaration(const TCHAR* ElementData, int32 
 bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* ElementData, int32 XmlFileLineNumber)
 {
 	UStruct* Struct = nullptr;
-	auto ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, ElementName, Struct);
+	TSharedPtr<FElementNode> ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, ElementName, Struct);
+
 	if (!ElementNode.IsValid())
 	{
-		UE_LOG(LogWidgetMarkup, Warning, TEXT("Unknown element '%s' at line %d."), ElementName, XmlFileLineNumber);
-		return false;
+		// Fallback: try to create as PropertyElementNode (element form). Full path is computed in Begin() from context.
+		TSharedPtr<FElementNode> ObjectNode = Context.GetLastObjectNode();
+		if (!ObjectNode.IsValid())
+		{
+			UE_LOG(LogWidgetMarkup, Warning, TEXT("Unknown element '%s' at line %d."), ElementName, XmlFileLineNumber);
+			return false;
+		}
+		ElementNode = MakeShared<FPropertyElementNode>(FStringView(ElementName), FStringView(ElementData ? ElementData : TEXT("")));
 	}
+
 	if (!ElementNode->Begin(Context, Outer, Struct).PrintOnFailure())
 	{
 		return false;

@@ -88,6 +88,19 @@ TSharedPtr<FElementNode> FElementNode::FContext::GetLastNode() const
 	return Nodes.Last();
 }
 
+TSharedPtr<FElementNode> FElementNode::FContext::GetLastObjectNode() const
+{
+	for (int32 Index = Nodes.Num() - 1; Index >= 0; --Index)
+	{
+		TSharedPtr<FElementNode> Node = Nodes[Index];
+		if (Node.IsValid() && Node->GetObject() != nullptr)
+		{
+			return Node;
+		}
+	}
+	return nullptr;
+}
+
 UObject* FElementNode::FContext::FindObject(UClass* Class) const
 {
 	for (int Index = Nodes.Num() - 1; Index >= 0; Index--)

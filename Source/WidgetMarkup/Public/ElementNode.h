@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "Templates/Casts.h"
+
 class FElementNode : public TSharedFromThis<FElementNode>
 {
 	friend class FElementNodeFactory;
@@ -58,6 +60,9 @@ protected:
 		bool IsEmpty() const;
 
 		TSharedPtr<FElementNode> GetLastNode() const;
+
+		/** Returns the first node (from top of stack) whose GetObject() is non-null. */
+		TSharedPtr<FElementNode> GetLastObjectNode() const;
 
 		const auto& GetNodes() const { return Nodes; }
 		auto& GetNodes() { return Nodes; }
