@@ -6,6 +6,8 @@
 
 class FContentWidgetElementNode : public FPanelWidgetElementNode
 {
+	DECLARE_ELEMENT_NODE(FContentWidgetElementNode, FPanelWidgetElementNode)
+
 public:
 	static TSharedRef<FElementNode> Create();
 

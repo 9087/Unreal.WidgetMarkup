@@ -6,6 +6,8 @@
 
 class FObjectElementNode : public FElementNode
 {
+	DECLARE_ELEMENT_NODE(FObjectElementNode, FElementNode)
+
 protected:
 	//~Begin FElementNode interface
 	virtual UObject* GetObject() const override;

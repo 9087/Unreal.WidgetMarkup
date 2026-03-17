@@ -6,6 +6,8 @@
 
 class FWidgetElementNode : public FObjectElementNode
 {
+	DECLARE_ELEMENT_NODE(FWidgetElementNode, FObjectElementNode)
+
 public:
 	static TSharedRef<FElementNode> Create();
 

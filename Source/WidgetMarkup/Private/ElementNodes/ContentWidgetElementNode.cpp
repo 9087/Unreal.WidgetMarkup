@@ -6,6 +6,8 @@
 
 #define LOCTEXT_NAMESPACE "WidgetMarkup"
 
+IMPLEMENT_ELEMENT_NODE(FContentWidgetElementNode, FPanelWidgetElementNode)
+
 TSharedRef<FElementNode> FContentWidgetElementNode::Create()
 {
 	return MakeShared<FContentWidgetElementNode>();

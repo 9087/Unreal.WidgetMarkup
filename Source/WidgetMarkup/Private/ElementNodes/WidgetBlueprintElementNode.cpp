@@ -6,6 +6,8 @@
 #include "Blueprint/WidgetTree.h"
 #include "Kismet2/KismetEditorUtilities.h"
 
+IMPLEMENT_ELEMENT_NODE(FWidgetBlueprintElementNode, FObjectElementNode)
+
 TSharedRef<FElementNode> FWidgetBlueprintElementNode::Create()
 {
 	return MakeShared<FWidgetBlueprintElementNode>();

@@ -5,6 +5,8 @@
 #include "PropertyChainHandle.h"
 #include "PropertyElementNode.h"
 
+IMPLEMENT_ELEMENT_NODE(FObjectElementNode, FElementNode)
+
 UObject* FObjectElementNode::GetObject() const
 {
 	return Object;

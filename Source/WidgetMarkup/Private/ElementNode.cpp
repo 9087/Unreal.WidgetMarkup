@@ -4,6 +4,12 @@
 
 #include "WidgetMarkupModule.h"
 
+const FElementNodeClass* FElementNode::StaticClass()
+{
+	static const FElementNodeClass Instance(nullptr);
+	return &Instance;
+}
+
 FElementNode::FMessage::FMessage(const FText& InText, EMessageType InType)
 	: Text(InText)
 	, Type(InType)

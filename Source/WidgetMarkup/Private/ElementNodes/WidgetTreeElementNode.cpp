@@ -6,6 +6,8 @@
 #include "Blueprint/WidgetTree.h"
 #include "Components/Widget.h"
 
+IMPLEMENT_ELEMENT_NODE(FWidgetTreeElementNode, FObjectElementNode)
+
 TSharedRef<FElementNode> FWidgetTreeElementNode::Create()
 {
 	return MakeShared<FWidgetTreeElementNode>();

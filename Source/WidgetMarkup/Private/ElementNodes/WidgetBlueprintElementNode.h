@@ -6,6 +6,8 @@
 
 class FWidgetBlueprintElementNode : public FObjectElementNode
 {
+	DECLARE_ELEMENT_NODE(FWidgetBlueprintElementNode, FObjectElementNode)
+
 public:
 	static TSharedRef<FElementNode> Create();
 

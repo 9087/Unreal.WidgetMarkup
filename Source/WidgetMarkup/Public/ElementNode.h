@@ -3,6 +3,32 @@
 #pragma once
 
 #include "Templates/Casts.h"
+#include "Templates/SharedPointer.h"
+
+#include <type_traits>
+
+/** Lightweight type descriptor for FElementNode hierarchy. Used for IsA/Cast without RTTI. */
+struct FElementNodeClass
+{
+	const FElementNodeClass* SuperClass;
+
+	explicit FElementNodeClass(const FElementNodeClass* InSuperClass)
+		: SuperClass(InSuperClass)
+	{
+	}
+
+	bool IsChildOf(const FElementNodeClass* Other) const
+	{
+		for (const FElementNodeClass* Current = this; Current; Current = Current->SuperClass)
+		{
+			if (Current == Other)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+};
 
 class FElementNode : public TSharedFromThis<FElementNode>
 {
@@ -10,6 +36,18 @@ class FElementNode : public TSharedFromThis<FElementNode>
 	friend class FElementTreeBuilder;
 
 public:
+	/** Returns this instance's type descriptor for IsA/Cast. */
+	virtual const FElementNodeClass* GetClass() const = 0;
+
+	static const FElementNodeClass* StaticClass();
+
+	template <typename T>
+	bool IsA() const
+	{
+		static_assert(std::is_base_of_v<FElementNode, T>, "T must be FElementNode or a derived class");
+		return GetClass()->IsChildOf(T::StaticClass());
+	}
+
 	virtual UObject* GetObject() const { return nullptr; }
 
 	enum class EMessageType
@@ -88,3 +126,43 @@ protected:
 	virtual FResult OnAddChild(const TSharedRef<FElementNode>& Child) = 0;
 	virtual bool HasProperty(const FStringView& AttributeName) = 0;
 };
+
+/** Injects StaticClass() and GetClass() for safe Cast/IsA. */
+#define DECLARE_ELEMENT_NODE(TClass, TSuperClass) \
+public: \
+	using Super = TSuperClass; \
+	static const FElementNodeClass* StaticClass(); \
+	virtual const FElementNodeClass* GetClass() const override { return StaticClass(); }
+
+/** Implements StaticClass() for a derived ElementNode. Place in the .cpp for TClass. */
+#define IMPLEMENT_ELEMENT_NODE(TClass, TSuperClass) \
+	const FElementNodeClass* TClass::StaticClass() \
+	{ \
+		static const FElementNodeClass Instance(TSuperClass::StaticClass()); \
+		return &Instance; \
+	}
+
+template <typename T>
+inline T* CastElementNode(FElementNode* Node)
+{
+	static_assert(std::is_base_of_v<FElementNode, T>, "T must be FElementNode or a derived class");
+	return Node && Node->IsA<T>() ? static_cast<T*>(Node) : nullptr;
+}
+
+template <typename T>
+inline const T* CastElementNode(const FElementNode* Node)
+{
+	static_assert(std::is_base_of_v<FElementNode, T>, "T must be FElementNode or a derived class");
+	return Node && Node->IsA<T>() ? static_cast<const T*>(Node) : nullptr;
+}
+
+template <typename T>
+inline TSharedPtr<T> CastElementNode(const TSharedPtr<FElementNode>& Node)
+{
+	static_assert(std::is_base_of_v<FElementNode, T>, "T must be FElementNode or a derived class");
+	if (T* Ptr = CastElementNode<T>(Node.Get()))
+	{
+		return TSharedPtr<T>(Node, Ptr);
+	}
+	return TSharedPtr<T>();
+}

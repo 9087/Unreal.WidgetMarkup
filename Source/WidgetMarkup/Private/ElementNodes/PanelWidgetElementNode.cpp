@@ -4,6 +4,8 @@
 
 #include "Components/PanelWidget.h"
 
+IMPLEMENT_ELEMENT_NODE(FPanelWidgetElementNode, FWidgetElementNode)
+
 TSharedRef<FElementNode> FPanelWidgetElementNode::Create()
 {
 	return MakeShared<FPanelWidgetElementNode>();

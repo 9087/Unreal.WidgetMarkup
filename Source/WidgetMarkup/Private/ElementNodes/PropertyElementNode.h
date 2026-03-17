@@ -8,6 +8,8 @@ class FPropertyChainHandle;
 
 class FPropertyElementNode : public FElementNode
 {
+	DECLARE_ELEMENT_NODE(FPropertyElementNode, FElementNode)
+
 public:
 	/** Attribute form: (name, value). Element form: (element name, ElementData). */
 	FPropertyElementNode(const FStringView& InPropertyName, const FStringView& InPropertyValue);

@@ -4,6 +4,8 @@
 
 #include "PropertyChainHandle.h"
 
+IMPLEMENT_ELEMENT_NODE(FPropertyElementNode, FElementNode)
+
 FPropertyElementNode::FPropertyElementNode(const FStringView& InPropertyName, const FStringView& InPropertyValue)
 	: PropertyName(InPropertyName)
 	, PropertyValue(InPropertyValue)
