@@ -6,6 +6,7 @@
 #include "Templates/SharedPointer.h"
 
 #include <type_traits>
+#include <utility>
 
 /** Lightweight type descriptor for FElementNode hierarchy. Used for IsA/Cast without RTTI. */
 struct FElementNodeClass
@@ -88,11 +89,48 @@ public:
 		TArray<TSharedRef<FMessage>> Messages;
 	};
 
-protected:
-
 	class FContext
 	{
 	public:
+		class FMetaData
+		{
+		public:
+			template<typename TMetaDataType>
+			bool IsOfType() const
+			{
+				return TypeId == GetTypeId<TMetaDataType>();
+			}
+
+			virtual ~FMetaData() = default;
+
+		protected:
+			template<typename TMetaDataType>
+			explicit FMetaData(TMetaDataType*)
+				: TypeId(GetTypeId<TMetaDataType>())
+			{
+			}
+
+		private:
+			template<typename TMetaDataType>
+			static const void* GetTypeId()
+			{
+				static int32 TypeKey = 0;
+				return &TypeKey;
+			}
+
+			const void* TypeId = nullptr;
+		};
+
+		template<typename TMetaDataType>
+		class TMetaData : public FMetaData
+		{
+		public:
+			TMetaData()
+				: FMetaData(static_cast<TMetaDataType*>(nullptr))
+			{
+			}
+		};
+
 		void Push(const TSharedRef<FElementNode>& ElementNode);
 		TSharedRef<FElementNode> Pop();
 		bool IsEmpty() const;
@@ -113,9 +151,75 @@ protected:
 			return Cast<T>(FindObject(T::StaticClass()));
 		}
 
+		template <typename TMetaData>
+		TSharedPtr<TMetaData> GetMetaData() const
+		{
+			static_assert(std::is_base_of_v<FMetaData, TMetaData>, "TMetaData must derive from FContext::FMetaData");
+			for (const auto& MetaDataEntry : MetaData)
+			{
+				if (MetaDataEntry->IsOfType<TMetaData>())
+				{
+					return StaticCastSharedRef<TMetaData>(MetaDataEntry).ToSharedPtr();
+				}
+			}
+			return TSharedPtr<TMetaData>();
+		}
+
+		template <typename TMetaDataType>
+		bool HasMetaData() const
+		{
+			static_assert(std::is_base_of_v<FMetaData, TMetaDataType>, "TMetaDataType must derive from FContext::FMetaData");
+			for (const auto& MetaDataEntry : MetaData)
+			{
+				if (MetaDataEntry->IsOfType<TMetaDataType>())
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		template <typename TMetaDataType, typename... TArgs>
+		TSharedRef<TMetaDataType> AddMetaData(TArgs&&... Args)
+		{
+			static_assert(std::is_base_of_v<FMetaData, TMetaDataType>, "TMetaDataType must derive from FContext::FMetaData");
+			TSharedRef<TMetaDataType> NewMetaData = MakeShared<TMetaDataType>(std::forward<TArgs>(Args)...);
+			MetaData.Add(NewMetaData);
+			return NewMetaData;
+		}
+
+		template <typename TMetaDataType, typename... TArgs>
+		TSharedRef<TMetaDataType> GetOrAddMetaData(TArgs&&... Args)
+		{
+			static_assert(std::is_base_of_v<FMetaData, TMetaDataType>, "TMetaDataType must derive from FContext::FMetaData");
+			if (TSharedPtr<TMetaDataType> ExistingMetaData = GetMetaData<TMetaDataType>())
+			{
+				return ExistingMetaData.ToSharedRef();
+			}
+			return AddMetaData<TMetaDataType>(std::forward<TArgs>(Args)...);
+		}
+
+		template <typename TMetaDataType>
+		void RemoveMetaData()
+		{
+			static_assert(std::is_base_of_v<FMetaData, TMetaDataType>, "TMetaDataType must derive from FContext::FMetaData");
+			for (int32 Index = MetaData.Num() - 1; Index >= 0; --Index)
+			{
+				const auto& MetaDataEntry = MetaData[Index];
+				if (MetaDataEntry->IsOfType<TMetaDataType>())
+				{
+					MetaData.RemoveAtSwap(Index);
+				}
+			}
+		}
+
 	private:
+
 		TArray<TSharedRef<FElementNode>> Nodes;
+		TArray<TSharedRef<FMetaData>> MetaData;
 	};
+
+protected:
 
 	FElementNode();
 	virtual ~FElementNode();

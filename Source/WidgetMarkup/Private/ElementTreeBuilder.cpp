@@ -67,7 +67,7 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 		FCustomAttributeDescriptor Descriptor;
 		if (WidgetMarkupModule->FindCustomAttributeDescriptor(Object->GetClass(), FName(PropertyName), Descriptor))
 		{
-			if (!Descriptor.ApplyDelegate.Execute(Object, Descriptor.TypeName, PropertyValue).PrintOnFailure())
+			if (!Descriptor.ApplyDelegate.Execute(Context, Object, Descriptor.TypeName, PropertyValue).PrintOnFailure())
 			{
 				return false;
 			}

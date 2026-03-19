@@ -14,6 +14,7 @@
 #include "Blueprint/WidgetTree.h"
 #include "Components/ContentWidget.h"
 #include "Components/Image.h"
+#include "Components/Widget.h"
 #include "Components/SlateWrapperTypes.h"
 #include "Converters/BooleanConverter.h"
 #include "Converters/ColorConverter.h"
@@ -37,6 +38,76 @@
 
 DEFINE_LOG_CATEGORY(LogWidgetMarkup);
 
+// ---------------------------------------------------------------------------
+// Name custom attribute handler
+// ---------------------------------------------------------------------------
+
+struct FNameAttributeMetaData : public FElementNode::FContext::TMetaData<FNameAttributeMetaData>
+{
+	TMap<FString, FString> UsedNames;
+};
+
+static FElementNode::FResult ApplyNameAttribute(FElementNode::FContext& Context, UObject* Object, FName /*TypeName*/, const FStringView& Value)
+{
+	if (!Object)
+	{
+		return FElementNode::FResult::Failure().Error(FText::FromString(TEXT("Name attribute target object is null.")));
+	}
+
+	// 1. Trim whitespace
+	FString Name = FString(Value).TrimStartAndEnd();
+
+	// 2. Non-empty check
+	if (Name.IsEmpty())
+	{
+		return FElementNode::FResult::Failure().Error(
+			FText::Format(
+				FText::FromString(TEXT("Name attribute on '{0}' must not be empty.")),
+				FText::FromString(Object->GetClass()->GetName())));
+	}
+
+	// 3. Reject '.' — it breaks FindObject path parsing; reject internal spaces for Blueprint variable validity
+	if (Name.Contains(TEXT(".")) || Name.Contains(TEXT(" ")))
+	{
+		return FElementNode::FResult::Failure().Error(
+			FText::Format(
+				FText::FromString(TEXT("Name attribute '{0}' contains invalid characters (no '.' or spaces allowed).")),
+				FText::FromString(Name)));
+	}
+
+	// 4. Uniqueness check (case-insensitive) via typed parse-session metadata
+	TSharedRef<FNameAttributeMetaData> NameMetaData = Context.GetOrAddMetaData<FNameAttributeMetaData>();
+	const FString NormalizedName = Name.ToLower();
+	if (const FString* ExistingDesc = NameMetaData->UsedNames.Find(NormalizedName))
+	{
+		return FElementNode::FResult::Failure().Error(
+			FText::Format(
+				FText::FromString(TEXT("Duplicate Name '{0}': already used by {1} in this blueprint.")),
+				FText::FromString(Name),
+				FText::FromString(*ExistingDesc)));
+	}
+
+	// 5. Record in context before rename (store pre-rename name for diagnostic clarity)
+	NameMetaData->UsedNames.Add(NormalizedName, FString::Printf(TEXT("%s (%s)"), *Object->GetClass()->GetName(), *Object->GetName()));
+
+	// 6. Rename the UObject to the desired name
+	if (!Object->Rename(*Name, nullptr, REN_DontCreateRedirectors | REN_NonTransactional))
+	{
+		return FElementNode::FResult::Failure().Error(
+			FText::Format(
+				FText::FromString(TEXT("Failed to rename object to '{0}' — name may already be in use in this scope.")),
+				FText::FromString(Name)));
+	}
+
+	// 7. Mark as Blueprint variable so UMG compiler generates a same-named property (Widget only)
+	if (UWidget* Widget = Cast<UWidget>(Object))
+	{
+		Widget->bIsVariable = true;
+	}
+
+	return FElementNode::FResult::Success();
+}
+
 void FWidgetMarkupModule::StartupModule()
 {
 	FElementNodeFactory::Get().Register<UWidgetTree>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetTreeElementNode::Create));
@@ -44,6 +115,8 @@ void FWidgetMarkupModule::StartupModule()
 	FElementNodeFactory::Get().Register<UPanelWidget>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FPanelWidgetElementNode::Create));
 	FElementNodeFactory::Get().Register<UContentWidget>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FContentWidgetElementNode::Create));
 	FElementNodeFactory::Get().Register<UWidgetBlueprint>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetBlueprintElementNode::Create));
+
+	RegisterCustomAttribute<UObject>(FName("Name"), NAME_StrProperty, FOnApplyCustomAttribute::CreateStatic(&ApplyNameAttribute));
 
 	FConverterRegistry::Get().Register(NAME_ByteProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<uint8>::Create));
 	FConverterRegistry::Get().Register(NAME_IntProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<int>::Create));
@@ -79,6 +152,8 @@ void FWidgetMarkupModule::ShutdownModule()
 	FElementNodeFactory::Get().Unregister<UPanelWidget>();
 	FElementNodeFactory::Get().Unregister<UContentWidget>();
 	FElementNodeFactory::Get().Unregister<UWidgetBlueprint>();
+
+	UnregisterCustomAttribute<UObject>(FName("Name"));
 
 	FConverterRegistry::Get().Unregister(NAME_ByteProperty);
 	FConverterRegistry::Get().Unregister(NAME_IntProperty);

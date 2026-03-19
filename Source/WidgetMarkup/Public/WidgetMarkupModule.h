@@ -9,8 +9,8 @@
 
 WIDGETMARKUP_API DECLARE_LOG_CATEGORY_EXTERN(LogWidgetMarkup, Log, All);
 
-/** Delegate for applying a custom attribute: (TargetObject, TypeName, AttributeValue) -> FResult. */
-DECLARE_DELEGATE_RetVal_ThreeParams(FElementNode::FResult, FOnApplyCustomAttribute, UObject* /* TargetObject */, FName /* TypeName */, const FStringView& /* AttributeValue */);
+/** Delegate for applying a custom attribute: (Context, TargetObject, TypeName, AttributeValue) -> FResult. */
+DECLARE_DELEGATE_RetVal_FourParams(FElementNode::FResult, FOnApplyCustomAttribute, FElementNode::FContext& /* Context */, UObject* /* TargetObject */, FName /* TypeName */, const FStringView& /* AttributeValue */);
 
 /** Descriptor for a custom attribute: type name (FConverterRegistry key) and apply delegate. */
 struct FCustomAttributeDescriptor
