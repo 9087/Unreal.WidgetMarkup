@@ -3,7 +3,6 @@
 #include "WidgetMarkupModule.h"
 
 #include "ConverterRegistry.h"
-#include "Misc/PackageName.h"
 #include "DirectoryWatcherModule.h"
 #include "ElementNodeFactory.h"
 #include "FastXml.h"
@@ -257,9 +256,68 @@ bool FWidgetMarkupModule::FindCustomAttributeDescriptor(UStruct* Struct, FName A
 	return true;
 }
 
+// ---------------------------------------------------------------------------
+// Path helpers: PackagePath (/Game/.../AssetName) <-> absolute disk file path
+// ---------------------------------------------------------------------------
+
+// /Game/WidgetMarkup/ListViewExample  ->  <ProjectDir>/Content/WidgetMarkup/ListViewExample.unrealwidgetmarkup
+// Anchors to GetProjectFilePath() (set from the absolute command-line arg) to avoid
+// BaseDir-relative resolution errors in non-standard editor binary locations.
+static bool TryConvertPackagePathToAbsoluteSourceFilePath(const FString& PackagePath, FStringView Extension, FString& OutAbsoluteFilePath)
+{
+	static const FString GamePrefix = TEXT("/Game/");
+	if (!PackagePath.StartsWith(GamePrefix))
+	{
+		return false;
+	}
+	const FString RelativePath = PackagePath.Mid(GamePrefix.Len());
+	const FString ProjectDir = FPaths::GetPath(FPaths::GetProjectFilePath());
+	OutAbsoluteFilePath = FPaths::Combine(ProjectDir, TEXT("Content"), RelativePath);
+	OutAbsoluteFilePath += FString(Extension);
+	FPaths::NormalizeFilename(OutAbsoluteFilePath);
+	return true;
+}
+
+// <ProjectDir>/Content/WidgetMarkup/ListViewExample.unrealwidgetmarkup  ->  /Game/WidgetMarkup/ListViewExample
+static bool TryConvertAbsoluteSourceFilePathToPackagePath(const FString& AbsoluteFilePath, FStringView Extension, FString& OutPackagePath)
+{
+	if (FPaths::IsRelative(AbsoluteFilePath))
+	{
+		return false;
+	}
+
+	const FString ProjectDir = FPaths::GetPath(FPaths::GetProjectFilePath());
+	FString ContentDir = ProjectDir / TEXT("Content");
+	FPaths::NormalizeFilename(ContentDir);
+	if (!ContentDir.EndsWith(TEXT("/")))
+	{
+		ContentDir += TEXT("/");
+	}
+	FString NormalizedFilePath = AbsoluteFilePath;
+	FPaths::NormalizeFilename(NormalizedFilePath);
+	FPaths::CollapseRelativeDirectories(NormalizedFilePath);
+	if (!NormalizedFilePath.StartsWith(ContentDir))
+	{
+		return false;
+	}
+	FString RelativePath = NormalizedFilePath.Mid(ContentDir.Len());
+	const FString ExtensionString(Extension);
+	if (RelativePath.EndsWith(ExtensionString))
+	{
+		RelativePath = RelativePath.LeftChop(ExtensionString.Len());
+	}
+	OutPackagePath = TEXT("/Game/") + RelativePath;
+	return true;
+}
+
+// ---------------------------------------------------------------------------
+
 UObject* FWidgetMarkupModule::CompileFromSourceCode(FName Name, const FString& XML)
 {
-	auto PackageName = FString::Printf(TEXT("/WidgetMarkup/%s"), *Name.ToString());
+	// If Name already follows UE package naming (starts with /), use it directly as the package path.
+	// Otherwise apply the /WidgetMarkup/ prefix for names supplied by the Compile console command.
+	const FString NameStr = Name.ToString();
+	const FString PackageName = NameStr.StartsWith(TEXT("/")) ? NameStr : FString::Printf(TEXT("/WidgetMarkup/%s"), *NameStr);
 	auto Package = CreatePackage(*PackageName);
 	Package->SetFlags(RF_Transient | RF_Public);
 	Package->SetPackageFlags(PKG_InMemoryOnly);
@@ -284,44 +342,23 @@ UObject* FWidgetMarkupModule::CompileFromSourceCode(FName Name, const FString& X
 	return Object;
 }
 
-FString FWidgetMarkupModule::ToAbsolutePath(const FString& SourceFilePath)
+UObject* FWidgetMarkupModule::CompileFromPackagePath(const FString& PackagePath)
 {
-	// Single convention: path is relative to project content directory (no package/asset concept for .unrealwidgetmarkup)
-	const FString Path = SourceFilePath.TrimStartAndEnd();
-	if (Path.IsEmpty())
-	{
-		return FString();
-	}
-	if (FPaths::IsRelative(Path))
-	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectContentDir(), Path));
-	}
-	return FPaths::ConvertRelativePathToFull(Path);
-}
+	UE_LOG(LogWidgetMarkup, Display, TEXT("Compile Package Path '%s'."), *PackagePath);
 
-UObject* FWidgetMarkupModule::CompileFromFile(const FString& SourceFilePath)
-{
-	UE_LOG(LogWidgetMarkup, Display, TEXT("Compile Source File '%s'."), *SourceFilePath);
-
-	const FString AbsolutePath = ToAbsolutePath(SourceFilePath);
-	if (AbsolutePath.IsEmpty())
+	FString AbsoluteFilePath;
+	if (!TryConvertPackagePathToAbsoluteSourceFilePath(PackagePath, TEXT(".unrealwidgetmarkup"), AbsoluteFilePath))
 	{
-		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromFile failed: source path is empty or invalid ('%s')."), *SourceFilePath);
+		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromPackagePath failed: invalid package path '%s' (expected /Game/... format)."), *PackagePath);
 		return nullptr;
 	}
 	FString XML;
-	if (!FFileHelper::LoadFileToString(XML, *AbsolutePath, FFileHelper::EHashOptions::None, FILEREAD_AllowWrite) || XML.IsEmpty())
+	if (!FFileHelper::LoadFileToString(XML, *AbsoluteFilePath, FFileHelper::EHashOptions::None, FILEREAD_AllowWrite) || XML.IsEmpty())
 	{
-		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromFile failed: could not read file or file is empty ('%s')."), *AbsolutePath);
+		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromPackagePath failed: could not read file or file is empty ('%s')."), *AbsoluteFilePath);
 		return nullptr;
 	}
-	FString ObjectPath;
-	if (!ConvertFilePathToObjectPath(AbsolutePath, ObjectPath))
-	{
-		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromFile failed: path is not under configured source directory ('%s')."), *AbsolutePath);
-		return nullptr;
-	}
-	return CompileFromSourceCode(FName(ObjectPath), XML);
+	return CompileFromSourceCode(FName(PackagePath), XML);
 }
 
 UObject* FWidgetMarkupModule::GetObjectFromName(FName Name)
@@ -330,19 +367,9 @@ UObject* FWidgetMarkupModule::GetObjectFromName(FName Name)
 	return Object ? *Object : nullptr;
 }
 
-UObject* FWidgetMarkupModule::GetObjectFromFile(const FString& SourceFilePath)
+UObject* FWidgetMarkupModule::GetObjectFromPackagePath(const FString& PackagePath)
 {
-	const FString AbsolutePath = ToAbsolutePath(SourceFilePath);
-	if (AbsolutePath.IsEmpty())
-	{
-		return nullptr;
-	}
-	FString ObjectPath;
-	if (!ConvertFilePathToObjectPath(AbsolutePath, ObjectPath))
-	{
-		return nullptr;
-	}
-	return GetObjectFromName(FName(ObjectPath));
+	return GetObjectFromName(FName(PackagePath));
 }
 
 void FWidgetMarkupModule::AddReferencedObjects(FReferenceCollector& Collector)
@@ -363,33 +390,6 @@ FWidgetMarkupModule::FOnObjectCompiled& FWidgetMarkupModule::GetOnObjectCompiled
 	return OnObjectCompiled;
 }
 
-bool FWidgetMarkupModule::ConvertFilePathToObjectPath(const FString& FilePath, FString& OutObjectPath)
-{
-	auto SourceFileFullPath = FPaths::ConvertRelativePathToFull(FilePath);
-	FString SourceFileDirectoryPath;
-	if (!FPackageName::TryConvertLongPackageNameToFilename(GetDefault<UWidgetMarkupSettings>()->SourceFileDirectoryPath.Path, SourceFileDirectoryPath))
-	{
-		return false;
-	}
-	SourceFileDirectoryPath = FPaths::ConvertRelativePathToFull(SourceFileDirectoryPath);
-	if (!FPaths::DirectoryExists(SourceFileDirectoryPath))
-	{
-		return false;
-	}
-	if (!SourceFileFullPath.StartsWith(SourceFileDirectoryPath))
-	{
-		return false;
-	}
-	// Use full path for MakePathRelativeTo so both paths are absolute (FilePath may be relative)
-	FString ObjectPath = SourceFileFullPath;
-	if (!FPaths::MakePathRelativeTo(ObjectPath, *SourceFileDirectoryPath))
-	{
-		return false;
-	}
-	OutObjectPath = FPaths::GetBaseFilename(ObjectPath, false);
-	return true;
-}
-
 void FWidgetMarkupModule::OnPostEngineInit()
 {
 	StartSourceFileWatching(UWidgetMarkupSettings::Get().SourceFileDirectoryPath);
@@ -405,12 +405,19 @@ void FWidgetMarkupModule::StartSourceFileWatching(const FDirectoryPath& InDirect
 	{
 		return;
 	}
-	FString DirectoryPath;
-	if (!FPackageName::TryConvertLongPackageNameToFilename(InDirectoryPath.Path, DirectoryPath))
+	// Convert the /Game/... package directory path to an absolute disk path.
+	// Uses GetProjectFilePath() as anchor to avoid BaseDir-relative resolution errors
+	// when the editor binary is not at the standard engine directory.
+	static const FString GamePrefix = TEXT("/Game/");
+	if (!InDirectoryPath.Path.StartsWith(GamePrefix))
 	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("StartSourceFileWatching: SourceFileDirectoryPath '%s' is not a /Game/... package path, skipping."), *InDirectoryPath.Path);
 		return;
 	}
-	DirectoryPath = FPaths::ConvertRelativePathToFull(DirectoryPath);
+	const FString RelativeDir = InDirectoryPath.Path.Mid(GamePrefix.Len());
+	const FString ProjectDir = FPaths::GetPath(FPaths::GetProjectFilePath());
+	FString DirectoryPath = FPaths::Combine(ProjectDir, TEXT("Content"), RelativeDir);
+	FPaths::NormalizeFilename(DirectoryPath);
 	if (!FPaths::DirectoryExists(DirectoryPath))
 	{
 		return;
@@ -460,14 +467,30 @@ void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct
 {
 	for (const auto& FileChangeData : FileChanges)
 	{
-		UE_LOG(LogWidgetMarkup, Display, TEXT("Source File Directory Changed: %d, '%s'."), FileChangeData.Action , *SourceFileWatchingDirectoryPath);
 		switch (FileChangeData.Action)
 		{
 		case FFileChangeData::FCA_Added:
 		case FFileChangeData::FCA_Modified:
 		case FFileChangeData::FCA_RescanRequired:
-			CompileFromFile(FileChangeData.Filename);
+		{
+			FString AbsoluteFilePath = FileChangeData.Filename;
+			if (FPaths::IsRelative(AbsoluteFilePath))
+			{
+				AbsoluteFilePath = FPaths::Combine(SourceFileWatchingDirectoryPath, AbsoluteFilePath);
+			}
+			FPaths::NormalizeFilename(AbsoluteFilePath);
+			FPaths::CollapseRelativeDirectories(AbsoluteFilePath);
+
+			FString PackagePath;
+			if (!TryConvertAbsoluteSourceFilePathToPackagePath(AbsoluteFilePath, TEXT(".unrealwidgetmarkup"), PackagePath))
+			{
+				UE_LOG(LogWidgetMarkup, Warning, TEXT("Source File Changed: could not convert to package path ('%s')."), *AbsoluteFilePath);
+				break;
+			}
+			UE_LOG(LogWidgetMarkup, Display, TEXT("Source File Changed: '%s' -> '%s'."), *AbsoluteFilePath, *PackagePath);
+			CompileFromPackagePath(PackagePath);
 			break;
+		}
 		case FFileChangeData::FCA_Removed:
 			break;
 		case FFileChangeData::FCA_Unknown:

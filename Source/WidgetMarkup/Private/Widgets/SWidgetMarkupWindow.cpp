@@ -30,13 +30,13 @@ SWidgetMarkupWindow::~SWidgetMarkupWindow()
 	}
 }
 
-void SWidgetMarkupWindow::Construct(const FArguments& InArgs, const FString& InSourceFilePath)
+void SWidgetMarkupWindow::Construct(const FArguments& InArgs, const FString& InPackagePath)
 {
 	Super::Construct(
 		SWindow::FArguments()
 		.ClientSize(FVector2D(800, 600))
 	);
-	SourceFilePath = InSourceFilePath;
+	PackagePath = InPackagePath;
 	RefreshContent();
 	auto& WidgetMarkupModule = FModuleManager::Get().LoadModuleChecked<FWidgetMarkupModule>(TEXT("WidgetMarkup"));
 	WidgetMarkupModule.GetOnObjectCompiled().AddSP(this, &SWidgetMarkupWindow::HandleOnObjectCompiled);
@@ -61,10 +61,10 @@ FString SWidgetMarkupWindow::GetReferencerName() const
 void SWidgetMarkupWindow::RefreshContent()
 {
 	auto& WidgetMarkupModule = FModuleManager::Get().LoadModuleChecked<FWidgetMarkupModule>(TEXT("WidgetMarkup"));
-	auto Object = WidgetMarkupModule.GetObjectFromFile(SourceFilePath);
+	auto Object = WidgetMarkupModule.GetObjectFromPackagePath(PackagePath);
 	if (!Object)
 	{
-		Object = WidgetMarkupModule.CompileFromFile(SourceFilePath);
+		Object = WidgetMarkupModule.CompileFromPackagePath(PackagePath);
 	}
 	if (Object)
 	{
@@ -93,14 +93,19 @@ void SWidgetMarkupWindow::RefreshContent()
 static FAutoConsoleCommand GWidgetMarkupShow
 (
 	TEXT("WidgetMarkup.Show"),
-	TEXT("Show the Widget Markup Content in a Window."),
+	TEXT("Show the Widget Markup Content in a Window. Expects a package path like /Game/WidgetMarkup/MyWidget (no file extension)."),
 	FConsoleCommandWithArgsDelegate::CreateLambda([](const TArray<FString>& Args)
 	{
 		if (Args.Num() < 1)
 		{
 			return;
 		}
-		const auto& SourceFilePath = Args[0];
-		FSlateApplication::Get().AddWindow(SNew(SWidgetMarkupWindow, SourceFilePath));
+		const FString& PackagePath = Args[0];
+		if (!PackagePath.StartsWith(TEXT("/Game/")))
+		{
+			UE_LOG(LogWidgetMarkup, Error, TEXT("WidgetMarkup.Show: expected a package path like /Game/WidgetMarkup/MyWidget, got '%s'."), *PackagePath);
+			return;
+		}
+		FSlateApplication::Get().AddWindow(SNew(SWidgetMarkupWindow, PackagePath));
 	})
 );

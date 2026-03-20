@@ -17,7 +17,7 @@ public:
 	SWidgetMarkupWindow();
 	virtual ~SWidgetMarkupWindow() override;
 
-	void Construct(const FArguments& InArgs, const FString& InSourceFilePath);
+	void Construct(const FArguments& InArgs, const FString& InPackagePath);
 
 protected:
 	void HandleOnObjectCompiled(FName Name, UObject* Object);
@@ -25,7 +25,7 @@ protected:
 	virtual FString GetReferencerName() const override;
 	void RefreshContent();
 
-	FString SourceFilePath;
+	FString PackagePath;
 	FPreviewScene PreviewScene;
 	TObjectPtr<UWidget> Widget;
 };

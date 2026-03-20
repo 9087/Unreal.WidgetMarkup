@@ -26,9 +26,9 @@ public:
 	virtual void ShutdownModule() override;
 
 	UObject* CompileFromSourceCode(FName Name, const FString& XML);
-	UObject* CompileFromFile(const FString& SourceFilePath);
+	UObject* CompileFromPackagePath(const FString& PackagePath);
 	UObject* GetObjectFromName(FName Name);
-	UObject* GetObjectFromFile(const FString& SourceFilePath);
+	UObject* GetObjectFromPackagePath(const FString& PackagePath);
 
 	template <typename T>
 	T* CompileFromSourceCode(FName Name, const FString& XML)
@@ -37,9 +37,9 @@ public:
 	}
 
 	template <typename T>
-	T* CompileFromFile(const FString& SourceFilePath)
+	T* CompileFromPackagePath(const FString& PackagePath)
 	{
-		return Cast<T>(CompileFromFile(SourceFilePath));
+		return Cast<T>(CompileFromPackagePath(PackagePath));
 	}
 
 	template <typename T>
@@ -49,9 +49,9 @@ public:
 	}
 
 	template <typename T>
-	T* GetObjectFromFile(const FString& SourceFilePath)
+	T* GetObjectFromPackagePath(const FString& PackagePath)
 	{
-		return Cast<T>(GetObjectFromFile(SourceFilePath));
+		return Cast<T>(GetObjectFromPackagePath(PackagePath));
 	}
 
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
@@ -95,9 +95,6 @@ public:
 	bool FindCustomAttributeDescriptor(UStruct* Struct, FName AttributeName, FCustomAttributeDescriptor& OutDescriptor) const;
 
 private:
-	static FString ToAbsolutePath(const FString& SourceFilePath);
-	static bool ConvertFilePathToObjectPath(const FString& FilePath, FString& OutObjectPath);
-
 	TMap<FName, TObjectPtr<UObject>> Objects;
 	FOnObjectCompiled OnObjectCompiled;
 
