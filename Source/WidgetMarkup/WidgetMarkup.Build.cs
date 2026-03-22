@@ -24,6 +24,7 @@ public class WidgetMarkup : ModuleRules
 			"UMGEditor",
 			"BlueprintGraph",
 			"UnrealEd",
+			"PropertyEditor",
 			"XmlParser",
 			"DirectoryWatcher",
 			"DeveloperSettings",

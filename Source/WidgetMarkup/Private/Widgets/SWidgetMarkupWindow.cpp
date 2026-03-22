@@ -2,8 +2,12 @@
 
 #include "SWidgetMarkupWindow.h"
 
+#include "IDetailsView.h"
+#include "Misc/PackageName.h"
+#include "PropertyEditorModule.h"
 #include "WidgetBlueprint.h"
 #include "WidgetMarkupModule.h"
+#include "Engine/Blueprint.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetTree.h"
 
@@ -32,11 +36,14 @@ SWidgetMarkupWindow::~SWidgetMarkupWindow()
 
 void SWidgetMarkupWindow::Construct(const FArguments& InArgs, const FString& InPackagePath)
 {
+	PackagePath = InPackagePath;
+
+	FString AssetName = FPackageName::GetShortName(InPackagePath);
 	Super::Construct(
 		SWindow::FArguments()
+		.Title(FText::FromString(AssetName))
 		.ClientSize(FVector2D(800, 600))
 	);
-	PackagePath = InPackagePath;
 	RefreshContent();
 	auto& WidgetMarkupModule = FModuleManager::Get().LoadModuleChecked<FWidgetMarkupModule>(TEXT("WidgetMarkup"));
 	WidgetMarkupModule.GetOnObjectCompiled().AddSP(this, &SWidgetMarkupWindow::HandleOnObjectCompiled);
@@ -58,36 +65,109 @@ FString SWidgetMarkupWindow::GetReferencerName() const
 	return TEXT("SWidgetMarkupWindow");
 }
 
+bool SWidgetMarkupWindow::TryBuildWidgetPreview(UObject* Object)
+{
+	if (auto WidgetBlueprint = Cast<UWidgetBlueprint>(Object))
+	{
+		if (auto WidgetClass = Cast<UWidgetBlueprintGeneratedClass>(WidgetBlueprint->GeneratedClass))
+		{
+			Widget = CreateWidget(PreviewScene.GetWorld(), WidgetClass);
+			if (Widget)
+			{
+				return true;
+			}
+		}
+	}
+	else if (auto WidgetTreeTemplate = Cast<UWidgetTree>(Object))
+	{
+		if (auto WidgetTree = NewObject<UWidgetTree>(GetTransientPackage(), WidgetTreeTemplate->GetClass(), NAME_None, RF_NoFlags, WidgetTreeTemplate))
+		{
+			Widget = WidgetTree->RootWidget;
+			if (Widget)
+			{
+				return true;
+			}
+		}
+	}
+	else if (auto WidgetTemplate = Cast<UWidget>(Object))
+	{
+		Widget = NewObject<UWidget>(GetTransientPackage(), WidgetTemplate->GetClass(), NAME_None, RF_NoFlags, WidgetTemplate);
+		if (Widget)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool SWidgetMarkupWindow::TryBuildDetailsView(UObject* Object)
+{
+	auto Blueprint = Cast<UBlueprint>(Object);
+	if (!Blueprint || !Blueprint->GeneratedClass)
+	{
+		return false;
+	}
+
+	UObject* DetailsObject = Blueprint->GeneratedClass->GetDefaultObject();
+	if (!DetailsObject)
+	{
+		return false;
+	}
+
+	if (!BlueprintDetailsView.IsValid())
+	{
+		FDetailsViewArgs DetailsViewArgs;
+		DetailsViewArgs.bUpdatesFromSelection = false;
+		DetailsViewArgs.bLockable = false;
+		DetailsViewArgs.bAllowSearch = true;
+		DetailsViewArgs.bShowScrollBar = true;
+		DetailsViewArgs.bShowOptions = false;
+		DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
+		DetailsViewArgs.bHideSelectionTip = true;
+
+		auto& PropertyEditorModule = FModuleManager::Get().LoadModuleChecked<FPropertyEditorModule>(TEXT("PropertyEditor"));
+		BlueprintDetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
+		BlueprintDetailsView->SetIsPropertyReadOnlyDelegate(FIsPropertyReadOnly::CreateLambda([](const FPropertyAndParent&)
+		{
+			return true;
+		}));
+	}
+
+	BlueprintDetailsView->SetObject(DetailsObject);
+	this->SetContent(BlueprintDetailsView.ToSharedRef());
+	return true;
+}
+
 void SWidgetMarkupWindow::RefreshContent()
 {
+	Widget = nullptr;
+
 	auto& WidgetMarkupModule = FModuleManager::Get().LoadModuleChecked<FWidgetMarkupModule>(TEXT("WidgetMarkup"));
 	auto Object = WidgetMarkupModule.GetObjectFromPackagePath(PackagePath);
 	if (!Object)
 	{
 		Object = WidgetMarkupModule.CompileFromPackagePath(PackagePath);
 	}
-	if (Object)
+
+	if (!Object)
 	{
-		if (auto WidgetBlueprint = Cast<UWidgetBlueprint>(Object))
-		{
-			Widget = CreateWidget(PreviewScene.GetWorld(), Cast<UWidgetBlueprintGeneratedClass>(WidgetBlueprint->GeneratedClass));
-		}
-		else if (auto WidgetTreeTemplate = Cast<UWidgetTree>(Object))
-		{
-			if (auto WidgetTree = NewObject<UWidgetTree>(GetTransientPackage(), WidgetTreeTemplate->GetClass(), NAME_None, RF_NoFlags, WidgetTreeTemplate))
-			{
-				Widget = WidgetTree->RootWidget;
-			}
-		}
-		else if (auto WidgetTemplate = Cast<UWidget>(Object))
-		{
-			Widget = NewObject<UWidget>(GetTransientPackage(), WidgetTemplate->GetClass(), NAME_None, RF_NoFlags, WidgetTemplate);
-		}
+		this->SetContent(SNullWidget::NullWidget);
+		return;
 	}
-	if (Widget)
+
+	if (TryBuildWidgetPreview(Object))
 	{
 		this->SetContent(Widget->TakeWidget());
+		return;
 	}
+
+	if (TryBuildDetailsView(Object))
+	{
+		return;
+	}
+
+	this->SetContent(SNullWidget::NullWidget);
 }
 
 static FAutoConsoleCommand GWidgetMarkupShow

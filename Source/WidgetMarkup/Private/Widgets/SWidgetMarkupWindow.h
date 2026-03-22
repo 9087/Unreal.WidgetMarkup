@@ -3,7 +3,9 @@
 #pragma once
 
 class UWidget;
+class UBlueprint;
 class UWidgetBlueprintGeneratedClass;
+class IDetailsView;
 
 class SWidgetMarkupWindow : public SWindow
 {
@@ -24,8 +26,11 @@ protected:
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
 	virtual FString GetReferencerName() const override;
 	void RefreshContent();
+	bool TryBuildWidgetPreview(UObject* Object);
+	bool TryBuildDetailsView(UObject* Object);
 
 	FString PackagePath;
 	FPreviewScene PreviewScene;
 	TObjectPtr<UWidget> Widget;
+	TSharedPtr<IDetailsView> BlueprintDetailsView;
 };
