@@ -5,6 +5,7 @@
 #include "ElementNode.h"
 #include "ElementNodeFactory.h"
 #include "WidgetMarkupModule.h"
+#include "ElementNodes/BlueprintVariableElementNode.h"
 #include "ElementNodes/PropertyElementNode.h"
 #include "Modules/ModuleManager.h"
 
@@ -22,11 +23,20 @@ bool FElementTreeBuilder::ProcessXmlDeclaration(const TCHAR* ElementData, int32 
 bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* ElementData, int32 XmlFileLineNumber)
 {
 	UStruct* Struct = nullptr;
-	TSharedPtr<FElementNode> ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, ElementName, Struct);
+	TSharedPtr<FElementNode> ElementNode;
+
+	const FString ElementNameString(ElementName);
+	if (ElementNameString.Equals(TEXT("Variable"), ESearchCase::IgnoreCase))
+	{
+		ElementNode = FBlueprintVariableElementNode::Create();
+	}
+	else
+	{
+		ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, ElementName, Struct);
+	}
 
 	if (!ElementNode.IsValid())
 	{
-		// Fallback: try to create as PropertyElementNode (element form). Full path is computed in Begin() from context.
 		TSharedPtr<FElementNode> ObjectNode = Context.GetLastObjectNode();
 		if (!ObjectNode.IsValid())
 		{
@@ -59,8 +69,19 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 		UE_LOG(LogWidgetMarkup, Warning, TEXT("Attribute '%s' has no open element."), AttributeName);
 		return false;
 	}
+
 	FStringView PropertyName(AttributeName);
 	FStringView PropertyValue(AttributeValue);
+
+	if (FBlueprintVariableElementNode* VariableElementNode = CastElementNode<FBlueprintVariableElementNode>(Current.Get()))
+	{
+		if (!VariableElementNode->ApplyVariableAttribute(PropertyName, PropertyValue).PrintOnFailure())
+		{
+			return false;
+		}
+		return true;
+	}
+
 	UObject* Object = Current->GetObject();
 	if (Object && WidgetMarkupModule)
 	{

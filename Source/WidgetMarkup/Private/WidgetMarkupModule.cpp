@@ -11,6 +11,7 @@
 #include "IDirectoryWatcher.h"
 #include "WidgetMarkupSettings.h"
 #include "Blueprint/WidgetTree.h"
+#include "Engine/Blueprint.h"
 #include "Components/ContentWidget.h"
 #include "Components/Image.h"
 #include "Components/Widget.h"
@@ -27,11 +28,14 @@
 #include "Converters/StringConverter.h"
 #include "Converters/TextConverter.h"
 #include "Converters/VectorConverter.h"
+#include "ElementNodes/BlueprintElementNode.h"
+#include "Utilities/TypeParser.h"
 #include "ElementNodes/ContentWidgetElementNode.h"
 #include "ElementNodes/PanelWidgetElementNode.h"
 #include "ElementNodes/WidgetBlueprintElementNode.h"
 #include "ElementNodes/WidgetElementNode.h"
 #include "ElementNodes/WidgetTreeElementNode.h"
+#include "Kismet2/KismetEditorUtilities.h"
 
 #define LOCTEXT_NAMESPACE "WidgetMarkup"
 
@@ -107,15 +111,51 @@ static FElementNode::FResult ApplyNameAttribute(FElementNode::FContext& Context,
 	return FElementNode::FResult::Success();
 }
 
+static FElementNode::FResult ApplyBlueprintSuperAttribute(FElementNode::FContext& Context, UObject* Object, FName /*TypeName*/, const FStringView& Value)
+{
+	UBlueprint* Blueprint = Cast<UBlueprint>(Object);
+	if (!Blueprint)
+	{
+		return FElementNode::FResult::Failure().Error(FText::FromString(TEXT("Super attribute target is not a Blueprint.")));
+	}
+
+	const FString SuperText = FString(Value).TrimStartAndEnd();
+	if (SuperText.IsEmpty())
+	{
+		Blueprint->ParentClass = UObject::StaticClass();
+		return FElementNode::FResult::Success();
+	}
+
+	UClass* ResolvedClass = FTypeParser::ResolveClass(SuperText);
+	if (!ResolvedClass)
+	{
+		return FElementNode::FResult::Failure().Error(FText::Format(
+			FText::FromString(TEXT("Super attribute '{0}' cannot be resolved to a valid UClass.")),
+			FText::FromString(SuperText)));
+	}
+
+	if (!FKismetEditorUtilities::CanCreateBlueprintOfClass(ResolvedClass))
+	{
+		return FElementNode::FResult::Failure().Error(FText::Format(
+			FText::FromString(TEXT("Super class '{0}' cannot be used to create a Blueprint.")),
+			FText::FromString(ResolvedClass->GetName())));
+	}
+
+	Blueprint->ParentClass = ResolvedClass;
+	return FElementNode::FResult::Success();
+}
+
 void FWidgetMarkupModule::StartupModule()
 {
 	FElementNodeFactory::Get().Register<UWidgetTree>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetTreeElementNode::Create));
 	FElementNodeFactory::Get().Register<UWidget>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetElementNode::Create));
 	FElementNodeFactory::Get().Register<UPanelWidget>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FPanelWidgetElementNode::Create));
 	FElementNodeFactory::Get().Register<UContentWidget>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FContentWidgetElementNode::Create));
+	FElementNodeFactory::Get().Register<UBlueprint>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FBlueprintElementNode::Create));
 	FElementNodeFactory::Get().Register<UWidgetBlueprint>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetBlueprintElementNode::Create));
 
 	RegisterCustomAttribute<UObject>(FName("Name"), NAME_StrProperty, FOnApplyCustomAttribute::CreateStatic(&ApplyNameAttribute));
+	RegisterCustomAttribute<UBlueprint>(FName("Super"), NAME_ObjectProperty, FOnApplyCustomAttribute::CreateStatic(&ApplyBlueprintSuperAttribute));
 
 	FConverterRegistry::Get().Register(NAME_ByteProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<uint8>::Create));
 	FConverterRegistry::Get().Register(NAME_IntProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<int>::Create));
@@ -151,7 +191,9 @@ void FWidgetMarkupModule::ShutdownModule()
 	FElementNodeFactory::Get().Unregister<UPanelWidget>();
 	FElementNodeFactory::Get().Unregister<UContentWidget>();
 	FElementNodeFactory::Get().Unregister<UWidgetBlueprint>();
+	FElementNodeFactory::Get().Unregister<UBlueprint>();
 
+	UnregisterCustomAttribute<UBlueprint>(FName("Super"));
 	UnregisterCustomAttribute<UObject>(FName("Name"));
 
 	FConverterRegistry::Get().Unregister(NAME_ByteProperty);

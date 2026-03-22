@@ -22,6 +22,7 @@ public class WidgetMarkup : ModuleRules
 			"SlateCore",
 			"UMG",
 			"UMGEditor",
+			"BlueprintGraph",
 			"UnrealEd",
 			"XmlParser",
 			"DirectoryWatcher",

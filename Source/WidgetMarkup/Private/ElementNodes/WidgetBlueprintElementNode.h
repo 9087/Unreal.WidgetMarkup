@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "ObjectElementNode.h"
+#include "BlueprintElementNode.h"
 
-class FWidgetBlueprintElementNode : public FObjectElementNode
+class FWidgetBlueprintElementNode : public FBlueprintElementNode
 {
-	DECLARE_ELEMENT_NODE(FWidgetBlueprintElementNode, FObjectElementNode)
+	DECLARE_ELEMENT_NODE(FWidgetBlueprintElementNode, FBlueprintElementNode)
 
 public:
 	static TSharedRef<FElementNode> Create();
@@ -17,4 +17,7 @@ protected:
 	virtual FResult End() override;
 	virtual FResult OnAddChild(const TSharedRef<FElementNode>& Child);
 	//~End FElementNode interface
+
+private:
+	bool bHasWidgetTree = false;
 };
