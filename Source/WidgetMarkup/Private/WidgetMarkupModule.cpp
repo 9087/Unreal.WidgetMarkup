@@ -17,6 +17,7 @@
 #include "Components/Widget.h"
 #include "Components/SlateWrapperTypes.h"
 #include "Converters/BooleanConverter.h"
+#include "Converters/ClassConverter.h"
 #include "Converters/ColorConverter.h"
 #include "Converters/EnumConverter.h"
 #include "Converters/LinearColorConverter.h"
@@ -173,6 +174,8 @@ void FWidgetMarkupModule::StartupModule()
 	FConverterRegistry::Get().Register(NAME_UInt32Property, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<uint32>::Create));
 	FConverterRegistry::Get().Register(NAME_UInt16Property, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<uint16>::Create));
 	FConverterRegistry::Get().Register(NAME_EnumProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(FEnumConverter::Create));
+	FConverterRegistry::Get().Register(FClassProperty::StaticClass()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FClassConverter::Create));
+	FConverterRegistry::Get().Register(FSoftClassProperty::StaticClass()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FClassConverter::Create));
 	FConverterRegistry::Get().Register(NAME_Color, FConverterRegistry::FOnCreateConverter::CreateStatic(FColorConverter::Create));
 	FConverterRegistry::Get().Register(NAME_LinearColor, FConverterRegistry::FOnCreateConverter::CreateStatic(FLinearColorConverter::Create));
 	FConverterRegistry::Get().Register(FMargin::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FMarginConverter::Create));
@@ -212,6 +215,8 @@ void FWidgetMarkupModule::ShutdownModule()
 	FConverterRegistry::Get().Unregister(NAME_UInt32Property);
 	FConverterRegistry::Get().Unregister(NAME_UInt16Property);
 	FConverterRegistry::Get().Unregister(NAME_EnumProperty);
+	FConverterRegistry::Get().Unregister(FClassProperty::StaticClass()->GetFName());
+	FConverterRegistry::Get().Unregister(FSoftClassProperty::StaticClass()->GetFName());
 	FConverterRegistry::Get().Unregister(NAME_Color);
 	FConverterRegistry::Get().Unregister(NAME_LinearColor);
 	FConverterRegistry::Get().Unregister(FMargin::StaticStruct()->GetFName());
