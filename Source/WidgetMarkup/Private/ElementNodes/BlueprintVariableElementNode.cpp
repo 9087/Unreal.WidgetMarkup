@@ -41,19 +41,20 @@ FElementNode::FResult FBlueprintVariableElementNode::ApplyVariableAttribute(cons
 		FText::FromString(AttributeName)));
 }
 
-FElementNode::FResult FBlueprintVariableElementNode::Begin(const FContext& Context, UObject* Outer, UStruct* Struct)
+FElementNode::FResult FBlueprintVariableElementNode::OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct)
 {
 	ParentBlueprint = Context.FindObject<UBlueprint>();
-	if (!ParentBlueprint)
+	if (!ParentBlueprint.IsValid())
 	{
 		return FResult::Failure().Error(FText::FromString(TEXT("Variable element must be nested under a Blueprint or WidgetBlueprint element.")));
 	}
 	return FResult::Success();
 }
 
-FElementNode::FResult FBlueprintVariableElementNode::End()
+FElementNode::FResult FBlueprintVariableElementNode::OnEnd()
 {
-	if (!ParentBlueprint)
+	UBlueprint* ParentBlueprintObject = ParentBlueprint.Get();
+	if (!ParentBlueprintObject)
 	{
 		return FResult::Failure().Error(FText::FromString(TEXT("Variable element has no owning Blueprint.")));
 	}
@@ -77,12 +78,12 @@ FElementNode::FResult FBlueprintVariableElementNode::End()
 			FText::FromString(ParseError)));
 	}
 
-	if (!FBlueprintEditorUtils::AddMemberVariable(ParentBlueprint, FName(VariableName), PinType, VariableDefaultValue))
+	if (!FBlueprintEditorUtils::AddMemberVariable(ParentBlueprintObject, FName(VariableName), PinType, VariableDefaultValue))
 	{
 		return FResult::Failure().Error(FText::Format(
 			FText::FromString(TEXT("Failed to add variable '{0}' to Blueprint '{1}'. Variable name may conflict with existing member or parent class.")),
 			FText::FromString(VariableName),
-			FText::FromString(ParentBlueprint->GetName())));
+			FText::FromString(ParentBlueprintObject->GetName())));
 	}
 
 	return FResult::Success();

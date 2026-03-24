@@ -4,16 +4,20 @@
 
 #include "ElementNode.h"
 
-class FObjectElementNode : public FElementNode
+class FObjectElementNode : public FElementNode, public FGCObject
 {
 	DECLARE_ELEMENT_NODE(FObjectElementNode, FElementNode)
 
-protected:
 	//~Begin FElementNode interface
+public:
 	virtual UObject* GetObject() const override;
+
+protected:
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
-	virtual FResult Begin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
-	virtual FResult End() override;
+	virtual FString GetReferencerName() const override;
+	virtual FResult OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
+	virtual FResult OnEnd() override;
+	virtual FResult OnAddChild(const TSharedRef<FElementNode>& Child) override;
 	virtual bool HasProperty(const FStringView& AttributeName) override;
 	//~End FElementNode interface
 

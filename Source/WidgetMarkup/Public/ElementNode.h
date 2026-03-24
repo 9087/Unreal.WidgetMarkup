@@ -35,6 +35,7 @@ class FElementNode : public TSharedFromThis<FElementNode>
 {
 	friend class FElementNodeFactory;
 	friend class FElementTreeBuilder;
+	friend class FPropertyRun;
 
 public:
 	/** Returns this instance's type descriptor for IsA/Cast. */
@@ -219,14 +220,17 @@ public:
 		TArray<TSharedRef<FMetaData>> MetaData;
 	};
 
+public:
+	FResult Begin(const FContext& Context, UObject* Outer, UStruct* Struct);
+	FResult End();
+
 protected:
 
 	FElementNode();
 	virtual ~FElementNode();
 
-	virtual void AddReferencedObjects(FReferenceCollector& Collector) {}
-	virtual FResult Begin(const FContext& Context, UObject* Outer, UStruct* Struct) = 0;
-	virtual FResult End() = 0;
+	virtual FResult OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct) = 0;
+	virtual FResult OnEnd() = 0;
 	virtual FResult OnAddChild(const TSharedRef<FElementNode>& Child) = 0;
 	virtual bool HasProperty(const FStringView& AttributeName) = 0;
 };

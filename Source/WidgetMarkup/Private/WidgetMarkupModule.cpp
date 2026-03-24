@@ -14,6 +14,7 @@
 #include "Engine/Blueprint.h"
 #include "Components/ContentWidget.h"
 #include "Components/Image.h"
+#include "Components/ListView.h"
 #include "Components/Widget.h"
 #include "Components/SlateWrapperTypes.h"
 #include "Converters/BooleanConverter.h"
@@ -30,121 +31,20 @@
 #include "Converters/TextConverter.h"
 #include "Converters/VectorConverter.h"
 #include "ElementNodes/BlueprintElementNode.h"
-#include "Utilities/TypeParser.h"
+#include "PropertyRuns/BlueprintSuperPropertyRun.h"
+#include "PropertyRuns/ListViewListItemsPropertyRun.h"
+#include "PropertyRuns/ObjectNamePropertyRun.h"
+#include "Utilities/PropertyPath.h"
 #include "ElementNodes/ContentWidgetElementNode.h"
 #include "ElementNodes/PanelWidgetElementNode.h"
 #include "ElementNodes/WidgetBlueprintElementNode.h"
 #include "ElementNodes/WidgetElementNode.h"
 #include "ElementNodes/WidgetTreeElementNode.h"
-#include "Kismet2/KismetEditorUtilities.h"
+#include "Misc/PackageName.h"
 
 #define LOCTEXT_NAMESPACE "WidgetMarkup"
 
 DEFINE_LOG_CATEGORY(LogWidgetMarkup);
-
-// ---------------------------------------------------------------------------
-// Name custom attribute handler
-// ---------------------------------------------------------------------------
-
-struct FNameAttributeMetaData : public FElementNode::FContext::TMetaData<FNameAttributeMetaData>
-{
-	TMap<FString, FString> UsedNames;
-};
-
-static FElementNode::FResult ApplyNameAttribute(FElementNode::FContext& Context, UObject* Object, FName /*TypeName*/, const FStringView& Value)
-{
-	if (!Object)
-	{
-		return FElementNode::FResult::Failure().Error(FText::FromString(TEXT("Name attribute target object is null.")));
-	}
-
-	// 1. Trim whitespace
-	FString Name = FString(Value).TrimStartAndEnd();
-
-	// 2. Non-empty check
-	if (Name.IsEmpty())
-	{
-		return FElementNode::FResult::Failure().Error(
-			FText::Format(
-				FText::FromString(TEXT("Name attribute on '{0}' must not be empty.")),
-				FText::FromString(Object->GetClass()->GetName())));
-	}
-
-	// 3. Reject '.' — it breaks FindObject path parsing; reject internal spaces for Blueprint variable validity
-	if (Name.Contains(TEXT(".")) || Name.Contains(TEXT(" ")))
-	{
-		return FElementNode::FResult::Failure().Error(
-			FText::Format(
-				FText::FromString(TEXT("Name attribute '{0}' contains invalid characters (no '.' or spaces allowed).")),
-				FText::FromString(Name)));
-	}
-
-	// 4. Uniqueness check (case-insensitive) via typed parse-session metadata
-	TSharedRef<FNameAttributeMetaData> NameMetaData = Context.GetOrAddMetaData<FNameAttributeMetaData>();
-	const FString NormalizedName = Name.ToLower();
-	if (const FString* ExistingDesc = NameMetaData->UsedNames.Find(NormalizedName))
-	{
-		return FElementNode::FResult::Failure().Error(
-			FText::Format(
-				FText::FromString(TEXT("Duplicate Name '{0}': already used by {1} in this blueprint.")),
-				FText::FromString(Name),
-				FText::FromString(*ExistingDesc)));
-	}
-
-	// 5. Record in context before rename (store pre-rename name for diagnostic clarity)
-	NameMetaData->UsedNames.Add(NormalizedName, FString::Printf(TEXT("%s (%s)"), *Object->GetClass()->GetName(), *Object->GetName()));
-
-	// 6. Rename the UObject to the desired name
-	if (!Object->Rename(*Name, nullptr, REN_DontCreateRedirectors | REN_NonTransactional))
-	{
-		return FElementNode::FResult::Failure().Error(
-			FText::Format(
-				FText::FromString(TEXT("Failed to rename object to '{0}' — name may already be in use in this scope.")),
-				FText::FromString(Name)));
-	}
-
-	// 7. Mark as Blueprint variable so UMG compiler generates a same-named property (Widget only)
-	if (UWidget* Widget = Cast<UWidget>(Object))
-	{
-		Widget->bIsVariable = true;
-	}
-
-	return FElementNode::FResult::Success();
-}
-
-static FElementNode::FResult ApplyBlueprintSuperAttribute(FElementNode::FContext& Context, UObject* Object, FName /*TypeName*/, const FStringView& Value)
-{
-	UBlueprint* Blueprint = Cast<UBlueprint>(Object);
-	if (!Blueprint)
-	{
-		return FElementNode::FResult::Failure().Error(FText::FromString(TEXT("Super attribute target is not a Blueprint.")));
-	}
-
-	const FString SuperText = FString(Value).TrimStartAndEnd();
-	if (SuperText.IsEmpty())
-	{
-		Blueprint->ParentClass = UObject::StaticClass();
-		return FElementNode::FResult::Success();
-	}
-
-	UClass* ResolvedClass = FTypeParser::ResolveClass(SuperText);
-	if (!ResolvedClass)
-	{
-		return FElementNode::FResult::Failure().Error(FText::Format(
-			FText::FromString(TEXT("Super attribute '{0}' cannot be resolved to a valid UClass.")),
-			FText::FromString(SuperText)));
-	}
-
-	if (!FKismetEditorUtilities::CanCreateBlueprintOfClass(ResolvedClass))
-	{
-		return FElementNode::FResult::Failure().Error(FText::Format(
-			FText::FromString(TEXT("Super class '{0}' cannot be used to create a Blueprint.")),
-			FText::FromString(ResolvedClass->GetName())));
-	}
-
-	Blueprint->ParentClass = ResolvedClass;
-	return FElementNode::FResult::Success();
-}
 
 void FWidgetMarkupModule::StartupModule()
 {
@@ -154,9 +54,6 @@ void FWidgetMarkupModule::StartupModule()
 	FElementNodeFactory::Get().Register<UContentWidget>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FContentWidgetElementNode::Create));
 	FElementNodeFactory::Get().Register<UBlueprint>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FBlueprintElementNode::Create));
 	FElementNodeFactory::Get().Register<UWidgetBlueprint>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetBlueprintElementNode::Create));
-
-	RegisterCustomAttribute<UObject>(FName("Name"), NAME_StrProperty, FOnApplyCustomAttribute::CreateStatic(&ApplyNameAttribute));
-	RegisterCustomAttribute<UBlueprint>(FName("Super"), NAME_ObjectProperty, FOnApplyCustomAttribute::CreateStatic(&ApplyBlueprintSuperAttribute));
 
 	FConverterRegistry::Get().Register(NAME_ByteProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<uint8>::Create));
 	FConverterRegistry::Get().Register(NAME_IntProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<int>::Create));
@@ -183,6 +80,9 @@ void FWidgetMarkupModule::StartupModule()
 	FConverterRegistry::Get().Register(FSlateColor::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FSlateColorConverter::Create));
 	FConverterRegistry::Get().Register(NAME_Vector, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector::FReal, 3>::Create));
 	FConverterRegistry::Get().Register(NAME_Vector2D, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector2D::FReal, 2>::Create));
+	RegisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"), FOnCreatePropertyRun::CreateStatic(&FObjectNamePropertyRun::Create));
+	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"), FOnCreatePropertyRun::CreateStatic(&FBlueprintSuperPropertyRun::Create));
+	RegisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertyRun::CreateStatic(&FListViewListItemsPropertyRun::Create));
 	
 	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FWidgetMarkupModule::OnPostEngineInit);
 }
@@ -195,9 +95,6 @@ void FWidgetMarkupModule::ShutdownModule()
 	FElementNodeFactory::Get().Unregister<UContentWidget>();
 	FElementNodeFactory::Get().Unregister<UWidgetBlueprint>();
 	FElementNodeFactory::Get().Unregister<UBlueprint>();
-
-	UnregisterCustomAttribute<UBlueprint>(FName("Super"));
-	UnregisterCustomAttribute<UObject>(FName("Name"));
 
 	FConverterRegistry::Get().Unregister(NAME_ByteProperty);
 	FConverterRegistry::Get().Unregister(NAME_IntProperty);
@@ -224,108 +121,30 @@ void FWidgetMarkupModule::ShutdownModule()
 	FConverterRegistry::Get().Unregister(FSlateColor::StaticStruct()->GetFName());
 	FConverterRegistry::Get().Unregister(NAME_Vector);
 	FConverterRegistry::Get().Unregister(NAME_Vector2D);
+	UnregisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"));
+	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"));
+	UnregisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"));
 
 	FCoreDelegates::OnPostEngineInit.RemoveAll(this);
 	StopSourceFileWatching();
-	CustomAttributes.Empty();
-}
-
-bool FWidgetMarkupModule::RegisterCustomAttribute(UStruct* Struct, FName AttributeName, FName TypeName, FOnApplyCustomAttribute InOnApplyCustomAttribute)
-{
-	if (!Struct || !InOnApplyCustomAttribute.IsBound())
-	{
-		UE_LOG(LogWidgetMarkup, Warning, TEXT("RegisterCustomAttribute failed: Struct is null or delegate is not bound (Struct='%s', AttributeName='%s')."),
-			Struct ? *Struct->GetName() : TEXT("nullptr"), *AttributeName.ToString());
-		return false;
-	}
-	TMap<FName, FCustomAttributeDescriptor>& InnerMap = CustomAttributes.FindOrAdd(Struct);
-	if (InnerMap.Contains(AttributeName))
-	{
-		UE_LOG(LogWidgetMarkup, Warning, TEXT("RegisterCustomAttribute: overwriting existing (Struct='%s', AttributeName='%s')."), *Struct->GetName(), *AttributeName.ToString());
-	}
-	FCustomAttributeDescriptor& Descriptor = InnerMap.FindOrAdd(AttributeName);
-	Descriptor.TypeName = TypeName;
-	Descriptor.ApplyDelegate = InOnApplyCustomAttribute;
-	return true;
-}
-
-void FWidgetMarkupModule::UnregisterCustomAttribute(UStruct* Struct, FName AttributeName)
-{
-	if (!Struct)
-	{
-		return;
-	}
-	TMap<FName, FCustomAttributeDescriptor>* InnerMap = CustomAttributes.Find(Struct);
-	if (InnerMap)
-	{
-		InnerMap->Remove(AttributeName);
-		if (InnerMap->Num() == 0)
-		{
-			CustomAttributes.Remove(Struct);
-		}
-	}
-}
-
-bool FWidgetMarkupModule::FindCustomAttributeDescriptor(UStruct* Struct, FName AttributeName, FCustomAttributeDescriptor& OutDescriptor) const
-{
-	if (!Struct)
-	{
-		return false;
-	}
-	UStruct* Best = nullptr;
-	const TMap<FName, FCustomAttributeDescriptor>* BestInnerMap = nullptr;
-	for (const auto& KeyValuePair : CustomAttributes)
-	{
-		UStruct* RegisteredStruct = KeyValuePair.Key.Get();
-		if (!RegisteredStruct)
-		{
-			continue;
-		}
-		if (Struct->IsChildOf(RegisteredStruct))
-		{
-			if (!Best || RegisteredStruct->IsChildOf(Best))
-			{
-				Best = RegisteredStruct;
-				BestInnerMap = &KeyValuePair.Value;
-			}
-		}
-	}
-	if (!BestInnerMap)
-	{
-		return false;
-	}
-	const FCustomAttributeDescriptor* Descriptor = BestInnerMap->Find(AttributeName);
-	if (!Descriptor)
-	{
-		return false;
-	}
-	OutDescriptor = *Descriptor;
-	return true;
+	PropertyRunCreateDelegates.Empty();
 }
 
 // ---------------------------------------------------------------------------
 // Path helpers: PackagePath (/Game/.../AssetName) <-> absolute disk file path
 // ---------------------------------------------------------------------------
 
-// /Game/WidgetMarkup/ListViewExample  ->  <ProjectDir>/Content/WidgetMarkup/ListViewExample.unrealwidgetmarkup
-// Anchors to GetProjectFilePath() (set from the absolute command-line arg) to avoid
-// BaseDir-relative resolution errors in non-standard editor binary locations.
+// /Game/WidgetMarkup/Foo  ->  <ContentDir>/WidgetMarkup/Foo.unrealwidgetmarkup
+// /PluginName/Foo         ->  <PluginContentDir>/Foo.unrealwidgetmarkup
+// Uses FPackageName to support all mounted content roots (project + plugins).
 static bool TryConvertPackagePathToAbsoluteSourceFilePath(const FString& PackagePath, FStringView Extension, FString& OutAbsoluteFilePath)
 {
-	static const FString GamePrefix = TEXT("/Game/");
-	if (!PackagePath.StartsWith(GamePrefix))
-	{
-		return false;
-	}
-	const FString RelativePath = PackagePath.Mid(GamePrefix.Len());
-	const FString ProjectDir = FPaths::GetPath(FPaths::GetProjectFilePath());
-	OutAbsoluteFilePath = FPaths::Combine(ProjectDir, TEXT("Content"), RelativePath);
-	OutAbsoluteFilePath += FString(Extension);
-	FPaths::NormalizeFilename(OutAbsoluteFilePath);
-	return true;
+	return FPackageName::TryConvertLongPackageNameToFilename(PackagePath, OutAbsoluteFilePath, FString(Extension));
 }
 
-// <ProjectDir>/Content/WidgetMarkup/ListViewExample.unrealwidgetmarkup  ->  /Game/WidgetMarkup/ListViewExample
+// <ContentDir>/WidgetMarkup/Foo.unrealwidgetmarkup    ->  /Game/WidgetMarkup/Foo
+// <PluginContentDir>/Foo.unrealwidgetmarkup           ->  /PluginName/Foo
+// Uses FPackageName to support all mounted content roots (project + plugins).
 static bool TryConvertAbsoluteSourceFilePathToPackagePath(const FString& AbsoluteFilePath, FStringView Extension, FString& OutPackagePath)
 {
 	if (FPaths::IsRelative(AbsoluteFilePath))
@@ -333,39 +152,72 @@ static bool TryConvertAbsoluteSourceFilePathToPackagePath(const FString& Absolut
 		return false;
 	}
 
-	const FString ProjectDir = FPaths::GetPath(FPaths::GetProjectFilePath());
-	FString ContentDir = ProjectDir / TEXT("Content");
-	FPaths::NormalizeFilename(ContentDir);
-	if (!ContentDir.EndsWith(TEXT("/")))
-	{
-		ContentDir += TEXT("/");
-	}
-	FString NormalizedFilePath = AbsoluteFilePath;
-	FPaths::NormalizeFilename(NormalizedFilePath);
-	FPaths::CollapseRelativeDirectories(NormalizedFilePath);
-	if (!NormalizedFilePath.StartsWith(ContentDir))
-	{
-		return false;
-	}
-	FString RelativePath = NormalizedFilePath.Mid(ContentDir.Len());
+	// Strip custom extension before passing to FPackageName (it only knows .uasset/.umap etc.)
+	FString FilePathWithoutExt = AbsoluteFilePath;
 	const FString ExtensionString(Extension);
-	if (RelativePath.EndsWith(ExtensionString))
+	if (FilePathWithoutExt.EndsWith(ExtensionString))
 	{
-		RelativePath = RelativePath.LeftChop(ExtensionString.Len());
+		FilePathWithoutExt = FilePathWithoutExt.LeftChop(ExtensionString.Len());
 	}
-	OutPackagePath = TEXT("/Game/") + RelativePath;
-	return true;
+	return FPackageName::TryConvertFilenameToLongPackageName(FilePathWithoutExt, OutPackagePath);
 }
 
 // ---------------------------------------------------------------------------
 
-UObject* FWidgetMarkupModule::CompileFromSourceCode(FName Name, const FString& XML)
+TSharedPtr<IPropertyRun> FWidgetMarkupModule::CreateCustomPropertyRun(UStruct* InStruct, FName InPropertyPath) const
 {
-	// If Name already follows UE package naming (starts with /), use it directly as the package path.
-	// Otherwise apply the /WidgetMarkup/ prefix for names supplied by the Compile console command.
-	const FString NameStr = Name.ToString();
-	const FString PackageName = NameStr.StartsWith(TEXT("/")) ? NameStr : FString::Printf(TEXT("/WidgetMarkup/%s"), *NameStr);
-	auto Package = CreatePackage(*PackageName);
+	const FString PropertyPathString = InPropertyPath.ToString();
+
+	if (!InStruct)
+	{
+		return nullptr;
+	}
+
+	UStruct* BestStruct = nullptr;
+	const TMap<FPropertyPath, FOnCreatePropertyRun>* BestRegistry = nullptr;
+	for (const auto& KeyValuePair : PropertyRunCreateDelegates)
+	{
+		UStruct* Struct = KeyValuePair.Key.Get();
+		if (!Struct)
+		{
+			continue;
+		}
+		if (InStruct->IsChildOf(Struct))
+		{
+			if (!BestStruct || Struct->IsChildOf(BestStruct))
+			{
+				BestStruct = Struct;
+				BestRegistry = &KeyValuePair.Value;
+			}
+		}
+	}
+	if (!BestRegistry)
+	{
+		return nullptr;
+	}
+
+	FPropertyPath PropertyPath;
+	FString ParseError;
+	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
+	{
+		return nullptr;
+	}
+
+	auto Found = BestRegistry->Find(PropertyPath);
+	if (!Found || !Found->IsBound())
+	{
+		return nullptr;
+	}
+	return Found->Execute();
+}
+
+UObject* FWidgetMarkupModule::CompileFromSourceCode(FName PackagePath, const FString& XML)
+{
+	// Normalize to long package path so object map keys are always long names.
+	const FString PackagePathString = PackagePath.ToString();
+	const FString LongPackagePath = PackagePathString.StartsWith(TEXT("/")) ? PackagePathString : FString::Printf(TEXT("/WidgetMarkup/%s"), *PackagePathString);
+	const FName LongPackagePathName(*LongPackagePath);
+	auto Package = CreatePackage(*LongPackagePath);
 	Package->SetFlags(RF_Transient | RF_Public);
 	Package->SetPackageFlags(PKG_InMemoryOnly);
 
@@ -380,12 +232,12 @@ UObject* FWidgetMarkupModule::CompileFromSourceCode(FName Name, const FString& X
 	auto RootElementNode = WidgetTreeBuilder->GetRootElementNode();
 	if (!RootElementNode.IsValid())
 	{
-		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromSourceCode failed: no root element produced for '%s'."), *Name.ToString());
+		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromSourceCode failed: no root element produced for '%s'."), *LongPackagePath);
 		return nullptr;
 	}
 	auto Object = RootElementNode->GetObject();
-	Objects.FindOrAdd(Name) = Object;
-	GetOnObjectCompiled().Broadcast(Name, Object);
+	Objects.FindOrAdd(LongPackagePathName) = Object;
+	GetOnObjectCompiled().Broadcast(LongPackagePathName, Object);
 	return Object;
 }
 
@@ -408,15 +260,19 @@ UObject* FWidgetMarkupModule::CompileFromPackagePath(const FString& PackagePath)
 	return CompileFromSourceCode(FName(PackagePath), XML);
 }
 
-UObject* FWidgetMarkupModule::GetObjectFromName(FName Name)
+UObject* FWidgetMarkupModule::GetObjectFromPackagePath(const FString& PackagePath)
 {
-	auto Object = Objects.Find(Name);
+	auto Object = Objects.Find(FName(PackagePath));
 	return Object ? *Object : nullptr;
 }
 
-UObject* FWidgetMarkupModule::GetObjectFromPackagePath(const FString& PackagePath)
+UObject* FWidgetMarkupModule::GetObjectOrCompileFromPackage(const FString& PackagePath)
 {
-	return GetObjectFromName(FName(PackagePath));
+	if (UObject* Object = GetObjectFromPackagePath(PackagePath))
+	{
+		return Object;
+	}
+	return CompileFromPackagePath(PackagePath);
 }
 
 void FWidgetMarkupModule::AddReferencedObjects(FReferenceCollector& Collector)
@@ -437,61 +293,106 @@ FWidgetMarkupModule::FOnObjectCompiled& FWidgetMarkupModule::GetOnObjectCompiled
 	return OnObjectCompiled;
 }
 
+bool FWidgetMarkupModule::RegisterCustomPropertyRun(UStruct* InStruct, FName InPropertyPath, FOnCreatePropertyRun InOnCreatePropertyRun)
+{
+	const FString PropertyPathString = InPropertyPath.ToString();
+
+	FPropertyPath PropertyPath;
+	FString ParseError;
+	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
+	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("RegisterCustomProperty failed: invalid PropertyPath '%s' for Struct '%s': %s"), *PropertyPathString, *InStruct->GetName(), *ParseError);
+		return false;
+	}
+	auto& Registry = PropertyRunCreateDelegates.FindOrAdd(InStruct);
+	if (Registry.Contains(PropertyPath))
+	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("RegisterCustomProperty: overwriting existing entry (Struct='%s', PropertyPath='%s')."), *InStruct->GetName(), *PropertyPath.ToString());
+	}
+	Registry.Add(PropertyPath, InOnCreatePropertyRun);
+	return true;
+}
+
+void FWidgetMarkupModule::UnregisterCustomPropertyRun(UStruct* InStruct, FName InPropertyPath)
+{
+	const FString PropertyPathString = InPropertyPath.ToString();
+
+	if (!InStruct)
+	{
+		return;
+	}
+
+	FPropertyPath PropertyPath;
+	FString ParseError;
+	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
+	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("UnregisterCustomProperty ignored invalid PropertyPath '%s' for Struct '%s': %s"), *PropertyPathString, *InStruct->GetName(), *ParseError);
+		return;
+	}
+	auto* Registry = PropertyRunCreateDelegates.Find(InStruct);
+	if (Registry)
+	{
+		Registry->Remove(PropertyPath);
+		if (Registry->IsEmpty())
+		{
+			PropertyRunCreateDelegates.Remove(InStruct);
+		}
+	}
+}
+
 void FWidgetMarkupModule::OnPostEngineInit()
 {
-	StartSourceFileWatching(UWidgetMarkupSettings::Get().SourceFileDirectoryPath);
+	for (const FDirectoryPath& DirectoryPath : UWidgetMarkupSettings::Get().SourceFileDirectoryPaths)
+	{
+		StartSourceFileWatching(DirectoryPath);
+	}
 }
 
 void FWidgetMarkupModule::StartSourceFileWatching(const FDirectoryPath& InDirectoryPath)
 {
-	if (!ensure(!bSourceFileWatchingStarted))
-	{
-		return;
-	}
 	if (InDirectoryPath.Path.IsEmpty())
 	{
 		return;
 	}
-	// Convert the /Game/... package directory path to an absolute disk path.
-	// Uses GetProjectFilePath() as anchor to avoid BaseDir-relative resolution errors
-	// when the editor binary is not at the standard engine directory.
-	static const FString GamePrefix = TEXT("/Game/");
-	if (!InDirectoryPath.Path.StartsWith(GamePrefix))
+	// Convert the package directory path to an absolute disk path.
+	// FPackageName supports all mounted content roots (/Game/, /PluginName/, etc.).
+	FString DirectoryPath;
+	if (!FPackageName::TryConvertLongPackageNameToFilename(InDirectoryPath.Path + TEXT("/"), DirectoryPath))
 	{
-		UE_LOG(LogWidgetMarkup, Warning, TEXT("StartSourceFileWatching: SourceFileDirectoryPath '%s' is not a /Game/... package path, skipping."), *InDirectoryPath.Path);
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("StartSourceFileWatching: could not convert '%s' to a disk path, skipping."), *InDirectoryPath.Path);
 		return;
 	}
-	const FString RelativeDir = InDirectoryPath.Path.Mid(GamePrefix.Len());
-	const FString ProjectDir = FPaths::GetPath(FPaths::GetProjectFilePath());
-	FString DirectoryPath = FPaths::Combine(ProjectDir, TEXT("Content"), RelativeDir);
-	FPaths::NormalizeFilename(DirectoryPath);
+	FPaths::NormalizeDirectoryName(DirectoryPath);
 	if (!FPaths::DirectoryExists(DirectoryPath))
+	{
+		return;
+	}
+	if (WatchedDirectories.Contains(DirectoryPath))
 	{
 		return;
 	}
 	auto& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(FName("DirectoryWatcher"));
 	if (auto DirectoryWatcher = DirectoryWatcherModule.Get())
 	{
+		FDelegateHandle Handle;
 		if (DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
 			DirectoryPath,
-			IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged),
-			SourceFileWatchingDelegateHandle
+			IDirectoryWatcher::FDirectoryChanged::CreateLambda([this, DirectoryPath](const TArray<FFileChangeData>& FileChanges)
+			{
+				HandleOnSourceFileDirectoryChanged(FileChanges, DirectoryPath);
+			}),
+			Handle
 		))
 		{
-			SourceFileWatchingDirectoryPath = DirectoryPath;
-			bSourceFileWatchingStarted = true;
-			UE_LOG(LogWidgetMarkup, Display, TEXT("Start Source File Watching for '%s'."), *SourceFileWatchingDirectoryPath);
+			WatchedDirectories.Add(DirectoryPath, Handle);
+			UE_LOG(LogWidgetMarkup, Display, TEXT("Start Source File Watching for '%s'."), *DirectoryPath);
 		}
 	}
 }
 
 void FWidgetMarkupModule::StopSourceFileWatching()
 {
-	if (!bSourceFileWatchingStarted)
-	{
-		return;
-	}
-	if (SourceFileWatchingDirectoryPath.IsEmpty())
+	if (WatchedDirectories.IsEmpty())
 	{
 		return;
 	}
@@ -499,18 +400,17 @@ void FWidgetMarkupModule::StopSourceFileWatching()
 	{
 		if (auto DirectoryWatcher = DirectoryWatcherModule->Get())
 		{
-			DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(
-				SourceFileWatchingDirectoryPath,
-				SourceFileWatchingDelegateHandle
-			);
+			for (auto& Pair : WatchedDirectories)
+			{
+				DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(Pair.Key, Pair.Value);
+				UE_LOG(LogWidgetMarkup, Display, TEXT("Stop Source File Watching for '%s'."), *Pair.Key);
+			}
 		}
 	}
-	UE_LOG(LogWidgetMarkup, Display, TEXT("Stop Source File Watching for '%s'."), *SourceFileWatchingDirectoryPath);
-	SourceFileWatchingDirectoryPath.Empty();
-	bSourceFileWatchingStarted = false;
+	WatchedDirectories.Empty();
 }
 
-void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct FFileChangeData>& FileChanges)
+void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct FFileChangeData>& FileChanges, const FString& WatchedDirectory)
 {
 	for (const auto& FileChangeData : FileChanges)
 	{
@@ -520,13 +420,15 @@ void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct
 		case FFileChangeData::FCA_Modified:
 		case FFileChangeData::FCA_RescanRequired:
 		{
+			// FileChangeData.Filename may be relative to the watched directory
 			FString AbsoluteFilePath = FileChangeData.Filename;
 			if (FPaths::IsRelative(AbsoluteFilePath))
 			{
-				AbsoluteFilePath = FPaths::Combine(SourceFileWatchingDirectoryPath, AbsoluteFilePath);
+				AbsoluteFilePath = FPaths::Combine(WatchedDirectory, AbsoluteFilePath);
 			}
+			// Convert to fully qualified absolute path, resolving all .. segments
+			AbsoluteFilePath = FPaths::ConvertRelativePathToFull(AbsoluteFilePath);
 			FPaths::NormalizeFilename(AbsoluteFilePath);
-			FPaths::CollapseRelativeDirectories(AbsoluteFilePath);
 
 			FString PackagePath;
 			if (!TryConvertAbsoluteSourceFilePathToPackagePath(AbsoluteFilePath, TEXT(".unrealwidgetmarkup"), PackagePath))
@@ -549,21 +451,6 @@ void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct
 }
 
 IMPLEMENT_MODULE(FWidgetMarkupModule, WidgetMarkup)
-
-static FAutoConsoleCommand GWidgetMarkupCompile
-(
-	TEXT("WidgetMarkup.Compile"),
-	TEXT("Compile for Widget Markup Blueprint Generated Class."),
-	FConsoleCommandWithArgsDelegate::CreateLambda([](const TArray<FString>& Args)
-	{
-		if (Args.Num() < 2)
-		{
-			return;
-		}
-		FWidgetMarkupModule& WidgetMarkupModule = FModuleManager::GetModuleChecked<FWidgetMarkupModule>("WidgetMarkup");
-		WidgetMarkupModule.CompileFromSourceCode(*Args[0], *Args[1]);
-	})
-);
 
 enum class ESlotCapacityPolicy
 {

@@ -2,112 +2,116 @@
 
 #include "PropertyChainHandle.h"
 
+#include "PropertyBuffer.h"
 #include "ConverterRegistry.h"
+#include "Utilities/PropertyPathResolver.h"
 #include "UObject/UnrealType.h"
 
-TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const TArray<FString>& PropertyNames)
+TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FPropertyPath& PropertyPath)
 {
-	if (!Object || PropertyNames.IsEmpty())
+	return Create(Object, PropertyPath, FBufferedPropertyContext());
+}
+
+TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FPropertyPath& PropertyPath,
+	const FBufferedPropertyContext& InBufferedPropertyContext)
+{
+	if (!Object || PropertyPath.IsEmpty())
 	{
 		return nullptr;
 	}
+
 	TSharedPtr<FPropertyChainHandle> PropertyChainHandle = MakeShareable(new FPropertyChainHandle());
 	PropertyChainHandle->Object = Object;
-	auto PropertyChain = MakeShared<FEditPropertyChain>();
-	PropertyChainHandle->PropertyChain = PropertyChain;
-	UStruct* Struct = Object->GetClass();
-	void* Ptr = Object;
-	for (int Index = 0; Index < PropertyNames.Num(); Index++)
+	PropertyChainHandle->BufferedPropertyContext = InBufferedPropertyContext;
+	PropertyChainHandle->PropertyPath = PropertyPath;
+
+	FProperty* TailProperty = nullptr;
+	void* TailContainer = nullptr;
+	void* TailValueAddress = nullptr;
+	if (!PropertyChainHandle->Resolve(TailProperty, TailContainer, TailValueAddress))
 	{
-		auto Property = Struct->FindPropertyByName(FName(*PropertyNames[Index]));
-		if (!Property)
-		{
-			return nullptr;
-		}
-		if (PropertyChain->IsEmpty())
-		{
-			PropertyChain->AddHead(Property);
-		}
-		else
-		{
-			PropertyChain->AddTail(Property);
-		}
-		if (auto StructProperty = CastField<FStructProperty>(Property))
-		{
-			Struct = StructProperty->Struct;
-			Ptr = StructProperty->ContainerPtrToValuePtr<void>(Ptr);
-		}
-		else if (auto ObjectPropertyBase = CastField<FObjectPropertyBase>(Property))
-		{
-			UObject* ObjectValue = ObjectPropertyBase->GetObjectPropertyValue_InContainer(Ptr);
-			Ptr = ObjectValue;
-			Struct = ObjectValue ? ObjectValue->GetClass() : ObjectPropertyBase->PropertyClass.Get();
-		}
-		else
-		{
-			if (Index != PropertyNames.Num() - 1)
-			{
-				return nullptr;
-			}
-		}
+		return nullptr;
 	}
+
 	return PropertyChainHandle;
 }
 
-TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FStringView& PropertyPath)
+TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FStringView& PropertyPathString)
 {
-	TArray<FString> PropertyNames;
-	FString(PropertyPath).ParseIntoArray(PropertyNames, TEXT("."));
-	return Create(Object, PropertyNames);
+	if (!Object)
+	{
+		return nullptr;
+	}
+
+	FPropertyPath PropertyPath;
+	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath))
+	{
+		return nullptr;
+	}
+
+	return Create(Object, PropertyPath);
+}
+
+TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FStringView& PropertyPathString,
+	const FBufferedPropertyContext& InBufferedPropertyContext)
+{
+	if (!Object)
+	{
+		return nullptr;
+	}
+
+	FPropertyPath PropertyPath;
+	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath))
+	{
+		return nullptr;
+	}
+
+	return Create(Object, PropertyPath, InBufferedPropertyContext);
 }
 
 FProperty* FPropertyChainHandle::GetTailProperty() const
 {
-	auto Tail = PropertyChain->GetTail();
-	if (!Tail)
-	{
-		return nullptr;
-	}
-	return Tail->GetValue();
+	FProperty* TailProperty = nullptr;
+	void* TailContainer = nullptr;
+	void* TailValueAddress = nullptr;
+	return Resolve(TailProperty, TailContainer, TailValueAddress) ? TailProperty : nullptr;
 }
 
 void* FPropertyChainHandle::GetTailContainer() const
 {
-	void* Container = Object.Get();
-	if (!Container)
-	{
-		return nullptr;
-	}
-	auto Node = PropertyChain->GetHead();
-	if (!Node)
-	{
-		return nullptr;
-	}
-	for (; Node->GetNextNode(); Node = Node->GetNextNode())
-	{
-		if (auto StructProperty = CastField<FStructProperty>(Node->GetValue()))
-		{
-			Container = StructProperty->ContainerPtrToValuePtr<void>(Container);
-		}
-		else if (auto ObjectPropertyBase = CastField<FObjectPropertyBase>(Node->GetValue()))
-		{
-			Container = ObjectPropertyBase->GetObjectPropertyValue_InContainer(Container);
-		}
-		else
-		{
-			ensure(false);
-		}
-	}
-	return Container;
+	FProperty* TailProperty = nullptr;
+	void* TailContainer = nullptr;
+	void* TailValueAddress = nullptr;
+	return Resolve(TailProperty, TailContainer, TailValueAddress) ? TailContainer : nullptr;
+}
+
+void* FPropertyChainHandle::GetTailValueAddress() const
+{
+	FProperty* TailProperty = nullptr;
+	void* TailContainer = nullptr;
+	void* TailValueAddress = nullptr;
+	return Resolve(TailProperty, TailContainer, TailValueAddress) ? TailValueAddress : nullptr;
+}
+
+bool FPropertyChainHandle::IsArrayProperty() const
+{
+	FProperty* TailProperty = GetTailProperty();
+	return TailProperty && CastField<FArrayProperty>(TailProperty) != nullptr;
 }
 
 bool FPropertyChainHandle::SetValue(const void* Data) const
 {
-	auto TailContainer = GetTailContainer();
-	auto TailProperty = GetTailProperty();
-	if (TailContainer && TailProperty)
+	FProperty* TailProperty = nullptr;
+	void* TailContainer = nullptr;
+	void* TailValueAddress = nullptr;
+	if (!Resolve(TailProperty, TailContainer, TailValueAddress))
 	{
-		TailProperty->SetValue_InContainer(TailContainer, Data);
+		return false;
+	}
+
+	if (TailValueAddress && TailProperty)
+	{
+		TailProperty->CopyCompleteValue(TailValueAddress, Data);
 		return true;
 	}
 	return false;
@@ -116,6 +120,11 @@ bool FPropertyChainHandle::SetValue(const void* Data) const
 bool FPropertyChainHandle::SetValue(const FStringView& ValueString) const
 {
 	auto TailProperty = GetTailProperty();
+	if (!TailProperty)
+	{
+		return false;
+	}
+
 	void* Data = TailProperty->AllocateAndInitializeValue();
 	if (!FConverterRegistry::Get().Convert(*TailProperty, Data, ValueString))
 	{
@@ -130,38 +139,115 @@ bool FPropertyChainHandle::SetValue(const FStringView& ValueString) const
 
 TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::GetChildHandle(const FStringView& ChildName) const
 {
-	TSharedPtr<FPropertyChainHandle> PropertyChainHandle = MakeShareable(new FPropertyChainHandle());
-	auto NewPropertyChain = MakeShared<FEditPropertyChain>();
-	PropertyChainHandle->Object = Object;
-	PropertyChainHandle->PropertyChain = NewPropertyChain;
-	for (auto Node = PropertyChain->GetHead(); Node; Node = Node->GetNextNode())
+	if (ChildName.IsEmpty() || !Object.IsValid())
 	{
-		if (NewPropertyChain->IsEmpty())
-		{
-			NewPropertyChain->AddHead(Node->GetValue());
-		}
-		else
-		{
-			NewPropertyChain->AddTail(Node->GetValue());
-		}
+		return nullptr;
 	}
-	auto TailProperty = GetTailProperty();
-	if (auto StructProperty = CastField<FStructProperty>(TailProperty))
+	const FPropertyPath ChildPath = PropertyPath.WithAppendedProperty(ChildName);
+	return Create(Object.Get(), ChildPath, BufferedPropertyContext);
+}
+
+TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::GetDirectHandle() const
+{
+	if (!Object.IsValid())
 	{
-		if (auto Struct = StructProperty->Struct)
-		{
-			NewPropertyChain->AddTail(Struct->FindPropertyByName(FName(ChildName)));
-			return PropertyChainHandle;
-		}
+		return nullptr;
 	}
-	else if (auto ObjectPropertyBase = CastField<FObjectPropertyBase>(TailProperty))
+
+	return Create(Object.Get(), PropertyPath);
+}
+
+bool FPropertyChainHandle::Resolve(FProperty*& OutTailProperty, void*& OutTailContainer, void*& OutTailValueAddress) const
+{
+	OutTailProperty = nullptr;
+	OutTailContainer = nullptr;
+	OutTailValueAddress = nullptr;
+
+	if (ResolveAgainstBufferedRoot(OutTailProperty, OutTailContainer, OutTailValueAddress))
 	{
-		if (auto TailContainer = GetTailContainer())
-		{
-			auto Class = static_cast<UObject*>(TailContainer)->GetClass();
-			NewPropertyChain->AddTail(Class->FindPropertyByName(FName(ChildName)));
-			return PropertyChainHandle;
-		}
+		return true;
 	}
-	return nullptr;
+	if (ResolveAgainstObjectRoot(OutTailProperty, OutTailContainer, OutTailValueAddress))
+	{
+		return true;
+	}
+	return false;
+}
+
+bool FPropertyChainHandle::ResolveAgainstObjectRoot(FProperty*& OutTailProperty, void*& OutTailContainer, void*& OutTailValueAddress) const
+{
+	UObject* RootObject = Object.Get();
+	if (!RootObject)
+	{
+		return false;
+	}
+
+	const auto InitialState = FPropertyPathResolver::FInitialState(RootObject, RootObject->GetClass());
+	const auto ResolutionResult = FPropertyPathResolver::TryResolvePath(
+		InitialState,
+		PropertyPath);
+	if (!ResolutionResult.IsValid())
+	{
+		return false;
+	}
+
+	OutTailProperty = ResolutionResult->Property;
+	OutTailContainer = ResolutionResult->Container;
+	OutTailValueAddress = ResolutionResult->ValueAddress;
+	return true;
+}
+
+bool FPropertyChainHandle::ResolveAgainstBufferedRoot(FProperty*& OutTailProperty, void*& OutTailContainer, void*& OutTailValueAddress) const
+{
+	if (BufferedPropertyContext.InValid())
+	{
+		return false;
+	}
+
+	const TSharedPtr<const FPropertyBuffer> PropertyBuffer = BufferedPropertyContext.GetPropertyBuffer();
+	if (!ensureMsgf(PropertyBuffer.IsValid(), TEXT("BufferedPropertyContext is valid but PropertyBuffer is invalid.")))
+	{
+		return false;
+	}
+
+	if (!ensureMsgf(!BufferedPropertyContext.GetRootPropertyPath().IsEmpty(), TEXT("BufferedPropertyContext is valid but RootPropertyPath is empty.")))
+	{
+		return false;
+	}
+
+	if (!ensureMsgf(PropertyBuffer->HasRootValue(), TEXT("BufferedPropertyContext is valid but PropertyBuffer has no root value.")))
+	{
+		return false;
+	}
+
+	FPropertyPath RelativePath;
+	if (!PropertyPath.TryMakeRelativeTo(BufferedPropertyContext.GetRootPropertyPath(), RelativePath))
+	{
+		return false;
+	}
+
+	if (RelativePath.IsEmpty())
+	{
+		OutTailProperty = PropertyBuffer->GetRootProperty();
+		OutTailContainer = PropertyBuffer->GetRootValueData();
+		OutTailValueAddress = PropertyBuffer->GetRootValueData();
+		return OutTailProperty != nullptr && OutTailValueAddress != nullptr;
+	}
+
+	const auto InitialState = FPropertyPathResolver::FInitialState(
+		PropertyBuffer->GetRootValueData(),
+		PropertyBuffer->GetRootStruct(),
+		PropertyBuffer->GetRootProperty());
+	const auto ResolutionResult = FPropertyPathResolver::TryResolvePath(
+		InitialState,
+		RelativePath);
+	if (!ResolutionResult.IsValid())
+	{
+		return false;
+	}
+
+	OutTailProperty = ResolutionResult->Property;
+	OutTailContainer = ResolutionResult->Container;
+	OutTailValueAddress = ResolutionResult->ValueAddress;
+	return true;
 }

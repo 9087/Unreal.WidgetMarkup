@@ -13,8 +13,8 @@ public:
 
 protected:
 	//~Begin FElementNode interface
-	virtual FResult Begin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
-	virtual FResult End() override;
+	virtual FResult OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
+	virtual FResult OnEnd() override;
 	virtual FResult OnAddChild(const TSharedRef<FElementNode>& Child);
 	//~End FElementNode interface
 

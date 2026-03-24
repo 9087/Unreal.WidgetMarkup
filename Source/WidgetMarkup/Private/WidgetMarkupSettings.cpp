@@ -15,12 +15,15 @@ void UWidgetMarkupSettings::PostEditChangeChainProperty(struct FPropertyChangedC
 {
 	Super::PostEditChangeChainProperty(PropertyChangedEvent);
 	auto Property = PropertyChangedEvent.PropertyChain.GetHead();
-	if (Property && Property->GetValue() && Property->GetValue()->GetName() == GET_MEMBER_NAME_CHECKED(UWidgetMarkupSettings, SourceFileDirectoryPath))
+	if (Property && Property->GetValue() && Property->GetValue()->GetName() == GET_MEMBER_NAME_CHECKED(UWidgetMarkupSettings, SourceFileDirectoryPaths))
 	{
 		if (auto WidgetMarkupModule = FModuleManager::Get().GetModulePtr<FWidgetMarkupModule>("WidgetMarkup"))
 		{
 			WidgetMarkupModule->StopSourceFileWatching();
-			WidgetMarkupModule->StartSourceFileWatching(this->SourceFileDirectoryPath);
+			for (const FDirectoryPath& DirectoryPath : this->SourceFileDirectoryPaths)
+			{
+				WidgetMarkupModule->StartSourceFileWatching(DirectoryPath);
+			}
 		}
 	}
 }

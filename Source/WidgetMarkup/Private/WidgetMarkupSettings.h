@@ -15,7 +15,7 @@ public:
 	static const UWidgetMarkupSettings& Get();
 
 	UPROPERTY(Config, EditAnywhere, Category = "Common", meta = (RelativeToGameContentDir, LongPackageName))
-	FDirectoryPath SourceFileDirectoryPath;
+	TArray<FDirectoryPath> SourceFileDirectoryPaths;
 
 #if WITH_EDITOR
 protected:

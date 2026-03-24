@@ -14,11 +14,15 @@ UObject* FObjectElementNode::GetObject() const
 
 void FObjectElementNode::AddReferencedObjects(FReferenceCollector& Collector)
 {
-	FElementNode::AddReferencedObjects(Collector);
 	Collector.AddReferencedObject(Object);
 }
 
-FElementNode::FResult FObjectElementNode::Begin(const FContext& Context, UObject* Outer, UStruct* Struct)
+FString FObjectElementNode::GetReferencerName() const
+{
+	return TEXT("ObjectElementNode");
+}
+
+FElementNode::FResult FObjectElementNode::OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct)
 {
 	if (!ensure(Struct->IsA<UClass>()))
 	{
@@ -29,7 +33,12 @@ FElementNode::FResult FObjectElementNode::Begin(const FContext& Context, UObject
 	return FResult::Success();
 }
 
-FElementNode::FResult FObjectElementNode::End()
+FElementNode::FResult FObjectElementNode::OnEnd()
+{
+	return FResult::Success();
+}
+
+FElementNode::FResult FObjectElementNode::OnAddChild(const TSharedRef<FElementNode>& Child)
 {
 	return FResult::Success();
 }

@@ -13,13 +13,13 @@ TSharedRef<FElementNode> FWidgetTreeElementNode::Create()
 	return MakeShared<FWidgetTreeElementNode>();
 }
 
-FElementNode::FResult FWidgetTreeElementNode::Begin(const FContext& Context, UObject* Outer, UStruct* Struct)
+FElementNode::FResult FWidgetTreeElementNode::OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct)
 {
 	if (auto WidgetBlueprint = Context.FindObject<UWidgetBlueprint>())
 	{
 		Outer = WidgetBlueprint;
 	}
-	return FObjectElementNode::Begin(Context, Outer, Struct);
+	return FObjectElementNode::OnBegin(Context, Outer, Struct);
 }
 
 FElementNode::FResult FWidgetTreeElementNode::OnAddChild(const TSharedRef<FElementNode>& Child)

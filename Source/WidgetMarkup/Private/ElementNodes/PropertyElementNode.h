@@ -2,37 +2,61 @@
 
 #pragma once
 
+#include "BufferedPropertyContext.h"
+
 #include "ElementNode.h"
 
+class IPropertyRun;
 class FPropertyChainHandle;
+class FProperty;
+class FPropertyBuffer;
 
 class FPropertyElementNode : public FElementNode
 {
 	DECLARE_ELEMENT_NODE(FPropertyElementNode, FElementNode)
 
-public:
-	/** Attribute form: (name, value). Element form: (element name, ElementData). */
-	FPropertyElementNode(const FStringView& InPropertyName, const FStringView& InPropertyValue);
+	friend class FElementTreeBuilder;
+	friend class FPropertyRun;
 
-	const FString& GetPropertyPath() const { return PropertyPath; }
+public:
+	static TSharedRef<FElementNode> Create(const FStringView& InPropertyName, const FStringView& InPropertyValue);
+
+	/** Attribute form: (name, value). Element form: (element name, ElementData). */
+	FPropertyElementNode(const FStringView& InPropertyName, const FStringView& InPropertyValue, bool bInUseBufferedWrite = false);
+
+	virtual ~FPropertyElementNode() override;
+
+	FString GetPropertyPath() const { return PropertyPath.ToString(); }
+	const FString& GetPropertyName() const { return PropertyName; }
+	const FString& GetPropertyValue() const { return PropertyValue; }
+	TSharedPtr<const FPropertyBuffer> GetPropertyBuffer() const { return BufferedPropertyContext.GetPropertyBuffer(); }
+	void SetPropertyRun(TSharedPtr<IPropertyRun> InPropertyRun);
 
 protected:
 	//~Begin FElementNode interface
-	virtual FResult Begin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
-	virtual FResult End() override;
+	virtual FResult OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
+	virtual FResult OnEnd() override;
 	virtual FResult OnAddChild(const TSharedRef<FElementNode>& Child) override;
 	virtual bool HasProperty(const FStringView& AttributeName) override;
 	//~End FElementNode interface
 
-	/** Name/path passed at construction (segment or dotted path). Caller must ensure it outlives this node. */
-	FStringView PropertyName;
-	/** Full dotted path from nearest object; computed in Begin(). */
-	FString PropertyPath;
-	/** Value passed at construction (attribute value or ElementData). Caller must ensure it outlives this node. */
-	FStringView PropertyValue;
+	TSharedPtr<IPropertyRun> GetPropertyRunInternal() const { return PropertyRun; }
+
+	/** Name/path passed at construction (segment or canonical property path). */
+	FString PropertyName;
+	/** Full canonical property path from nearest object; computed in Begin(). */
+	FPropertyPath PropertyPath;
+	/** Buffered write context shared by nested property nodes. */
+	FBufferedPropertyContext BufferedPropertyContext;
+	/** Value passed at construction (attribute value or ElementData). */
+	FString PropertyValue;
+	/** When true, writes go to temporary property memory and commit in End(). */
+	bool bUseBufferedWrite = false;
 
 	TSharedPtr<FPropertyChainHandle> PropertyChain;
 
 	/** Child element nodes. SetValue in End() only when Num() == 0. */
 	TArray<TSharedRef<FElementNode>> ElementChildren;
+
+	TSharedPtr<IPropertyRun> PropertyRun;
 };

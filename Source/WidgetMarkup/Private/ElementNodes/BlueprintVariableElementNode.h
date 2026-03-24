@@ -15,13 +15,13 @@ public:
 	FResult ApplyVariableAttribute(const FStringView& InAttributeName, const FStringView& InAttributeValue);
 
 protected:
-	virtual FResult Begin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
-	virtual FResult End() override;
+	virtual FResult OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
+	virtual FResult OnEnd() override;
 	virtual FResult OnAddChild(const TSharedRef<FElementNode>& Child) override;
 	virtual bool HasProperty(const FStringView& AttributeName) override;
 
 private:
-	TObjectPtr<UBlueprint> ParentBlueprint = nullptr;
+	TWeakObjectPtr<UBlueprint> ParentBlueprint;
 	FString VariableName;
 	FString VariableType;
 	FString VariableDefaultValue;

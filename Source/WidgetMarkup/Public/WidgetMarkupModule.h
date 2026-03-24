@@ -6,18 +6,10 @@
 #include "Modules/ModuleManager.h"
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
 #include "ElementNode.h"
+#include "PropertyRun.h"
+#include "Utilities/PropertyPath.h"
 
 WIDGETMARKUP_API DECLARE_LOG_CATEGORY_EXTERN(LogWidgetMarkup, Log, All);
-
-/** Delegate for applying a custom attribute: (Context, TargetObject, TypeName, AttributeValue) -> FResult. */
-DECLARE_DELEGATE_RetVal_FourParams(FElementNode::FResult, FOnApplyCustomAttribute, FElementNode::FContext& /* Context */, UObject* /* TargetObject */, FName /* TypeName */, const FStringView& /* AttributeValue */);
-
-/** Descriptor for a custom attribute: type name (FConverterRegistry key) and apply delegate. */
-struct FCustomAttributeDescriptor
-{
-	FName TypeName;
-	FOnApplyCustomAttribute ApplyDelegate;
-};
 
 class FWidgetMarkupModule : public IModuleInterface, public FGCObject
 {
@@ -25,16 +17,9 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-	UObject* CompileFromSourceCode(FName Name, const FString& XML);
 	UObject* CompileFromPackagePath(const FString& PackagePath);
-	UObject* GetObjectFromName(FName Name);
 	UObject* GetObjectFromPackagePath(const FString& PackagePath);
-
-	template <typename T>
-	T* CompileFromSourceCode(FName Name, const FString& XML)
-	{
-		return Cast<T>(CompileFromSourceCode(Name, XML));
-	}
+	UObject* GetObjectOrCompileFromPackage(const FString& PackagePath);
 
 	template <typename T>
 	T* CompileFromPackagePath(const FString& PackagePath)
@@ -43,15 +28,15 @@ public:
 	}
 
 	template <typename T>
-	T* GetObjectFromName(FName Name)
-	{
-		return Cast<T>(GetObjectFromName(Name));
-	}
-
-	template <typename T>
 	T* GetObjectFromPackagePath(const FString& PackagePath)
 	{
 		return Cast<T>(GetObjectFromPackagePath(PackagePath));
+	}
+
+	template <typename T>
+	T* GetObjectOrCompileFromPackage(const FString& PackagePath)
+	{
+		return Cast<T>(GetObjectOrCompileFromPackage(PackagePath));
 	}
 
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
@@ -60,46 +45,46 @@ public:
 	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnObjectCompiled, FName, UObject*)
 	FOnObjectCompiled& GetOnObjectCompiled();
 
-	/** Register a custom attribute for the given Struct (UClass* or UStruct*). Overwrites and logs warning if (Struct, AttributeName) already exists. */
-	bool RegisterCustomAttribute(UStruct* Struct, FName AttributeName, FName TypeName, FOnApplyCustomAttribute InOnApplyCustomAttribute);
-	/** Unregister a custom attribute. */
-	void UnregisterCustomAttribute(UStruct* Struct, FName AttributeName);
+	DECLARE_DELEGATE_RetVal(TSharedRef<IPropertyRun>, FOnCreatePropertyRun);
+	bool RegisterCustomPropertyRun(UStruct* InStruct, FName InPropertyPath, FOnCreatePropertyRun InOnCreatePropertyRun);
+	void UnregisterCustomPropertyRun(UStruct* InStruct, FName InPropertyPath);
 
 	template <typename T>
-	bool RegisterCustomAttribute(FName AttributeName, FName TypeName, FOnApplyCustomAttribute InOnApplyCustomAttribute)
+	bool RegisterCustomPropertyRun(FName InPropertyPath, FOnCreatePropertyRun InOnCreatePropertyRun)
 	{
 		if constexpr (TIsDerivedFrom<T, UObject>::Value)
 		{
-			return RegisterCustomAttribute(T::StaticClass(), AttributeName, TypeName, InOnApplyCustomAttribute);
+			return RegisterCustomProperty(T::StaticClass(), InPropertyPath, InOnCreatePropertyRun);
 		}
 		else
 		{
-			return RegisterCustomAttribute(T::StaticStruct(), AttributeName, TypeName, InOnApplyCustomAttribute);
+			return RegisterCustomProperty(T::StaticStruct(), InPropertyPath, InOnCreatePropertyRun);
 		}
 	}
 
 	template <typename T>
-	void UnregisterCustomAttribute(FName AttributeName)
+	void UnregisterCustomPropertyRun(FName InPropertyPath)
 	{
 		if constexpr (TIsDerivedFrom<T, UObject>::Value)
 		{
-			UnregisterCustomAttribute(T::StaticClass(), AttributeName);
+			UnregisterCustomProperty(T::StaticClass(), InPropertyPath);
 		}
 		else
 		{
-			UnregisterCustomAttribute(T::StaticStruct(), AttributeName);
+			UnregisterCustomProperty(T::StaticStruct(), InPropertyPath);
 		}
 	}
 
-	/** Find custom attribute descriptor for the given Struct and attribute name (best-match by Struct). Returns true if found. */
-	bool FindCustomAttributeDescriptor(UStruct* Struct, FName AttributeName, FCustomAttributeDescriptor& OutDescriptor) const;
+	TSharedPtr<IPropertyRun> CreateCustomPropertyRun(UStruct* InStruct, FName InPropertyPath) const;
 
 private:
+	UObject* CompileFromSourceCode(FName PackagePath, const FString& XML);
+
 	TMap<FName, TObjectPtr<UObject>> Objects;
 	FOnObjectCompiled OnObjectCompiled;
 
-	/** Custom attributes: keyed by UStruct* (element type), then FName (attribute name). */
-	TMap<TWeakObjectPtr<UStruct>, TMap<FName, FCustomAttributeDescriptor>> CustomAttributes;
+	/** Custom properties: keyed by UStruct* (element type), then exact canonical property path to descriptor. */
+	TMap<TWeakObjectPtr<UStruct>, TMap<FPropertyPath, FOnCreatePropertyRun>> PropertyRunCreateDelegates;
 
 public:
 	void OnPostEngineInit();
@@ -107,10 +92,9 @@ public:
 	void StopSourceFileWatching();
 
 private:
-	void HandleOnSourceFileDirectoryChanged(const TArray<struct FFileChangeData>& FileChanges);
+	void HandleOnSourceFileDirectoryChanged(const TArray<struct FFileChangeData>& FileChanges, const FString& WatchedDirectory);
 
 	TMap<FString, FName> SourceFileToName;
-	bool bSourceFileWatchingStarted = false;
-	FString SourceFileWatchingDirectoryPath;
-	FDelegateHandle SourceFileWatchingDelegateHandle;
+	/** Maps absolute watched directory path -> delegate handle. Supports multiple watched directories. */
+	TMap<FString, FDelegateHandle> WatchedDirectories;
 };

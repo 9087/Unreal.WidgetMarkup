@@ -6,7 +6,9 @@
 #include "ElementNodeFactory.h"
 #include "WidgetMarkupModule.h"
 #include "ElementNodes/BlueprintVariableElementNode.h"
+#include "ElementNodes/ObjectElementNode.h"
 #include "ElementNodes/PropertyElementNode.h"
+#include "Utilities/TypeResolver.h"
 #include "Modules/ModuleManager.h"
 
 FElementTreeBuilder::FElementTreeBuilder(UObject* InOuter)
@@ -43,12 +45,49 @@ bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* 
 			UE_LOG(LogWidgetMarkup, Warning, TEXT("Unknown element '%s' at line %d."), ElementName, XmlFileLineNumber);
 			return false;
 		}
-		ElementNode = MakeShared<FPropertyElementNode>(FStringView(ElementName), FStringView(ElementData ? ElementData : TEXT("")));
+
+		UObject* Object = ObjectNode->GetObject();
+		TSharedPtr<IPropertyRun> PropertyRun = nullptr;
+		if (Object && WidgetMarkupModule)
+		{
+			PropertyRun = WidgetMarkupModule->CreateCustomPropertyRun(Object->GetClass(), FName(ElementName));
+		}
+		FStringView PropertyName(ElementName);
+		FStringView PropertyValue(ElementData ? ElementData : TEXT(""));
+		if (!PropertyRun)
+		{
+			PropertyRun = MakeShared<FPropertyRun>();
+		}
+		if (PropertyRun->OnBegin(Context, Object, PropertyName, PropertyValue))
+		{
+			return true;
+		}
 	}
 
-	if (!ElementNode->Begin(Context, Outer, Struct).PrintOnFailure())
+	if (ElementNode)
 	{
-		return false;
+		FElementNode::FResult Result = ElementNode->Begin(Context, Outer, Struct);
+		if (!Result)
+		{
+			ElementNode = nullptr;
+		}
+	}
+	if (!ElementNode)
+	{
+		auto FallbackClass = TTypeResolver<UClass>::Resolve(FStringView(ElementName));
+		if (!FallbackClass)
+		{
+			return false;
+		}
+		TSharedPtr<FElementNode> FallbackObjectNode = MakeShared<FObjectElementNode>();
+		auto FallbackResult = FallbackObjectNode->Begin(Context, Outer, FallbackClass);
+		if (!FallbackResult)
+		{
+			FallbackResult.PrintOnFailure();
+			return false;
+		}
+		ElementNode = FallbackObjectNode;
+		Struct = FallbackClass;
 	}
 	if (auto Current = GetCurrentElementNode())
 	{
@@ -83,38 +122,38 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 	}
 
 	UObject* Object = Current->GetObject();
+	TSharedPtr<IPropertyRun> PropertyRun = nullptr;
 	if (Object && WidgetMarkupModule)
 	{
-		FCustomAttributeDescriptor Descriptor;
-		if (WidgetMarkupModule->FindCustomAttributeDescriptor(Object->GetClass(), FName(PropertyName), Descriptor))
-		{
-			if (!Descriptor.ApplyDelegate.Execute(Context, Object, Descriptor.TypeName, PropertyValue).PrintOnFailure())
-			{
-				return false;
-			}
-			return true;
-		}
+		PropertyRun = WidgetMarkupModule->CreateCustomPropertyRun(Object->GetClass(), FName(PropertyName));
 	}
-	if (!Current->HasProperty(PropertyName))
+	if (!PropertyRun)
 	{
-		UE_LOG(LogWidgetMarkup, Error, TEXT("Failed to recognize the property name '%s'."), PropertyName.GetData());
-		return false;
+		PropertyRun = MakeShared<FPropertyRun>();
 	}
-	TSharedRef<FElementNode> PropertyElementNode = MakeShared<FPropertyElementNode>(PropertyName, PropertyValue);
-	if (!PropertyElementNode->Begin(Context, Outer, nullptr).PrintOnFailure())
+	auto Result = PropertyRun->OnBegin(Context, Object, PropertyName, PropertyValue);
+	if (Result)
 	{
-		return false;
+		Result = PropertyRun->OnEnd(Context);
 	}
-	if (!PropertyElementNode->End().PrintOnFailure())
-	{
-		return false;
-	}
-	return true;
+	return !!Result;
 }
 
 bool FElementTreeBuilder::ProcessClose(const TCHAR* Element)
 {
-	auto Current = Context.Pop();
+	auto Current = GetCurrentElementNode();
+	if (!Current.IsValid())
+	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("Close element '%s' has no open element."), Element);
+		return false;
+	}
+
+	if (FPropertyElementNode* PropertyElementNode = CastElementNode<FPropertyElementNode>(Current.Get()))
+	{
+		return PropertyElementNode->GetPropertyRunInternal()->OnEnd(Context) ? true : false;
+	}
+
+	Current = Context.Pop();
 	if (!Current->End().PrintOnFailure())
 	{
 		return false;
@@ -133,15 +172,7 @@ bool FElementTreeBuilder::ProcessComment(const TCHAR* Comment)
 
 void FElementTreeBuilder::AddReferencedObjects(FReferenceCollector& Collector)
 {
-	if (RootElementNode.IsValid())
-	{
-		RootElementNode->AddReferencedObjects(Collector);
-	}
 	Collector.AddReferencedObject(Outer);
-	for (auto& ElementNode : Context.GetNodes())
-	{
-		ElementNode->AddReferencedObjects(Collector);
-	}
 }
 
 FString FElementTreeBuilder::GetReferencerName() const

@@ -129,6 +129,16 @@ FElementNode::FElementNode()
 {
 }
 
+FElementNode::FResult FElementNode::Begin(const FContext& Context, UObject* Outer, UStruct* Struct)
+{
+	return OnBegin(Context, Outer, Struct);
+}
+
+FElementNode::FResult FElementNode::End()
+{
+	return OnEnd();
+}
+
 FElementNode::~FElementNode()
 {
 }

@@ -1,70 +1,8 @@
-// Copyright 2025 Wu Zhiwei. All Rights Reserved.
-
 #include "ClassConverter.h"
 
 #include "WidgetMarkupModule.h"
-#include "Misc/PackageName.h"
-#include "UObject/UObjectIterator.h"
+#include "Utilities/TypeResolver.h"
 #include "UObject/UnrealType.h"
-
-namespace
-{
-	static FString ToBlueprintClassPath(const FString& Token)
-	{
-		const FString AssetPath = TEXT("/") + Token.Replace(TEXT("."), TEXT("/"));
-		const FString AssetName = FPackageName::GetShortName(AssetPath);
-		if (AssetName.IsEmpty())
-		{
-			return FString();
-		}
-		return FString::Printf(TEXT("%s.%s_C"), *AssetPath, *AssetName);
-	}
-
-	static bool IsLongBlueprintToken(const FString& Token)
-	{
-		return Token.Contains(TEXT(".")) && !Token.Contains(TEXT("/"));
-	}
-
-	static UClass* ResolveClassByShortName(const FString& Token)
-	{
-		if (Token.IsEmpty())
-		{
-			return nullptr;
-		}
-		if (UClass* Class = UClass::TryFindTypeSlow<UClass>(Token, EFindFirstObjectOptions::None))
-		{
-			return Class;
-		}
-		for (TObjectIterator<UClass> It; It; ++It)
-		{
-			UClass* Class = *It;
-			if (Class && Class->GetName().Equals(Token, ESearchCase::CaseSensitive))
-			{
-				return Class;
-			}
-		}
-		return nullptr;
-	}
-
-	static UClass* ResolveClass(const FStringView& TokenView)
-	{
-		const FString Token = FString(TokenView).TrimStartAndEnd();
-		if (Token.IsEmpty())
-		{
-			return nullptr;
-		}
-		if (IsLongBlueprintToken(Token))
-		{
-			const FString ClassPath = ToBlueprintClassPath(Token);
-			if (ClassPath.IsEmpty())
-			{
-				return nullptr;
-			}
-			return LoadObject<UClass>(nullptr, *ClassPath);
-		}
-		return ResolveClassByShortName(Token);
-	}
-}
 
 TSharedRef<FConverter> FClassConverter::Create()
 {
@@ -74,7 +12,7 @@ TSharedRef<FConverter> FClassConverter::Create()
 bool FClassConverter::Convert(const FProperty& Property, void* Data, const FStringView& String)
 {
 	const FString SourceToken(String);
-	UClass* Class = ResolveClass(String);
+	UClass* Class = TTypeResolver<UClass>::Resolve(String);
 	if (!Class)
 	{
 		UE_LOG(LogWidgetMarkup, Warning, TEXT("ClassConverter failed: cannot resolve class token '%s'."), *SourceToken);

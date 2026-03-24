@@ -144,11 +144,7 @@ void SWidgetMarkupWindow::RefreshContent()
 	Widget = nullptr;
 
 	auto& WidgetMarkupModule = FModuleManager::Get().LoadModuleChecked<FWidgetMarkupModule>(TEXT("WidgetMarkup"));
-	auto Object = WidgetMarkupModule.GetObjectFromPackagePath(PackagePath);
-	if (!Object)
-	{
-		Object = WidgetMarkupModule.CompileFromPackagePath(PackagePath);
-	}
+	auto Object = WidgetMarkupModule.GetObjectOrCompileFromPackage(PackagePath);
 
 	if (!Object)
 	{

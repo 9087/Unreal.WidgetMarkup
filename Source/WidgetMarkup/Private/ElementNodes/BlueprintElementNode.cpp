@@ -14,7 +14,7 @@ TSharedRef<FElementNode> FBlueprintElementNode::Create()
 	return MakeShared<FBlueprintElementNode>();
 }
 
-FElementNode::FResult FBlueprintElementNode::Begin(const FContext& Context, UObject* Outer, UStruct* Struct)
+FElementNode::FResult FBlueprintElementNode::OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct)
 {
 	UPackage* Package = Cast<UPackage>(Outer);
 	if (!Package)
@@ -59,7 +59,7 @@ FElementNode::FResult FBlueprintElementNode::CreateOrReuseBlueprint(UPackage* Pa
 	return FResult::Success();
 }
 
-FElementNode::FResult FBlueprintElementNode::End()
+FElementNode::FResult FBlueprintElementNode::OnEnd()
 {
 	UBlueprint* Blueprint = Cast<UBlueprint>(Object);
 	if (!Blueprint)

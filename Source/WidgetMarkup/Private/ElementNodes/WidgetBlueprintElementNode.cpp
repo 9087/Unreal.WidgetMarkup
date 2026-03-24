@@ -13,7 +13,7 @@ TSharedRef<FElementNode> FWidgetBlueprintElementNode::Create()
 	return MakeShared<FWidgetBlueprintElementNode>();
 }
 
-FElementNode::FResult FWidgetBlueprintElementNode::Begin(const FContext& Context, UObject* Outer, UStruct* Struct)
+FElementNode::FResult FWidgetBlueprintElementNode::OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct)
 {
 	auto Package = Cast<UPackage>(Outer);
 	if (!Package)
@@ -24,10 +24,10 @@ FElementNode::FResult FWidgetBlueprintElementNode::Begin(const FContext& Context
 	return CreateOrReuseBlueprint(Package, UUserWidget::StaticClass(), UWidgetBlueprint::StaticClass(), UWidgetBlueprintGeneratedClass::StaticClass());
 }
 
-FElementNode::FResult FWidgetBlueprintElementNode::End()
+FElementNode::FResult FWidgetBlueprintElementNode::OnEnd()
 {
 	// Delegate to parent Blueprint compilation (same logic for compiling)
-	return FBlueprintElementNode::End();
+	return FBlueprintElementNode::OnEnd();
 }
 
 FElementNode::FResult FWidgetBlueprintElementNode::OnAddChild(const TSharedRef<FElementNode>& Child)
