@@ -9,9 +9,9 @@
 class IPropertyRun;
 class FPropertyChainHandle;
 class FProperty;
-class FPropertyBuffer;
+struct FPropertyBuffer;
 
-class FPropertyElementNode : public FElementNode
+class FPropertyElementNode : public FElementNode, public FGCObject
 {
 	DECLARE_ELEMENT_NODE(FPropertyElementNode, FElementNode)
 
@@ -33,6 +33,11 @@ public:
 	void SetPropertyRun(TSharedPtr<IPropertyRun> InPropertyRun);
 
 protected:
+	//~Begin FGCObject interface
+	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
+	virtual FString GetReferencerName() const override;
+	//~End FGCObject interface
+
 	//~Begin FElementNode interface
 	virtual FResult OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct) override;
 	virtual FResult OnEnd() override;

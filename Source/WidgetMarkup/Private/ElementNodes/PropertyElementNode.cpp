@@ -32,12 +32,20 @@ FPropertyElementNode::~FPropertyElementNode()
 		{
 			return;
 		}
-
-		if (PropertyBuffer.IsValid())
-		{
-			PropertyBuffer->Uninitialize();
-		}
 	}
+}
+
+void FPropertyElementNode::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	if (const TSharedPtr<FPropertyBuffer> PropertyBuffer = BufferedPropertyContext.GetPropertyBuffer(); PropertyBuffer.IsValid())
+	{
+		PropertyBuffer->AddStructReferencedObjects(Collector);
+	}
+}
+
+FString FPropertyElementNode::GetReferencerName() const
+{
+	return TEXT("PropertyElementNode");
 }
 
 FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct)
@@ -115,7 +123,7 @@ FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UOb
 		}
 
 		const TSharedPtr<FPropertyBuffer> PropertyBuffer = MakeShared<FPropertyBuffer>(TailProperty);
-		if (!PropertyBuffer->Initialize())
+		if (!PropertyBuffer->HasValue())
 		{
 			return FResult::Failure().Error(FText::Format(
 				FText::FromString(TEXT("Failed to initialize buffered root value for property path '{0}'.")),
@@ -164,15 +172,7 @@ FElementNode::FResult FPropertyElementNode::OnEnd()
 	if (const bool bMatchesPropertyBufferPath = BufferedPropertyContext.MatchesPath(PropertyPath))
 	{
 		const TSharedPtr<FPropertyBuffer> PropertyBuffer = BufferedPropertyContext.GetPropertyBuffer();
-		ON_SCOPE_EXIT
-		{
-			if (PropertyBuffer.IsValid())
-			{
-				PropertyBuffer->Uninitialize();
-			}
-		};
-
-		if (!ensureMsgf(PropertyBuffer.IsValid(), TEXT("BufferedPropertyContext matches path but has no property buffer.")) || !PropertyBuffer->HasRootValue())
+		if (!ensureMsgf(PropertyBuffer.IsValid(), TEXT("BufferedPropertyContext matches path but has no property buffer.")) || !PropertyBuffer->HasValue())
 		{
 			return FResult::Failure().Error(FText::Format(
 				FText::FromString(TEXT("Buffered root has no value for property path '{0}'.")),
@@ -180,7 +180,7 @@ FElementNode::FResult FPropertyElementNode::OnEnd()
 		}
 
 		TSharedPtr<FPropertyChainHandle> DirectHandle = PropertyChain.IsValid() ? PropertyChain->GetDirectHandle() : nullptr;
-		if (!DirectHandle.IsValid() || !DirectHandle->SetValue(PropertyBuffer->GetRootValueData()))
+		if (!DirectHandle.IsValid() || !DirectHandle->SetValue(*PropertyBuffer))
 		{
 			return FResult::Failure().Error(FText::Format(
 				FText::FromString(TEXT("Failed to commit buffered root value for property path '{0}'.")),
@@ -250,31 +250,31 @@ FElementNode::FResult FPropertyElementNode::OnAddChild(const TSharedRef<FElement
 			}
 
 			const TSharedPtr<const FPropertyBuffer> ChildPropertyBuffer = ChildPropertyElementNode->GetPropertyBuffer();
-			if (!ChildPropertyBuffer.IsValid() || !ChildPropertyBuffer->GetRootValueData())
+			if (!ChildPropertyBuffer.IsValid() || !ChildPropertyBuffer->GetValueData())
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add child property to array property path '{0}': child property buffer is invalid or uninitialized.")),
 					FText::FromString(PropertyPath.ToString())));
 			}
 
-			FProperty* ChildRootProperty = ChildPropertyBuffer->GetRootProperty();
-			if (!ChildRootProperty)
+			FProperty* ChildProperty = ChildPropertyBuffer->GetProperty();
+			if (!ChildProperty)
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add child property to array property path '{0}': child buffer root property is null.")),
 					FText::FromString(PropertyPath.ToString())));
 			}
 
-			if (!ArrayProperty->Inner->SameType(ChildRootProperty))
+			if (!ArrayProperty->Inner->SameType(ChildProperty))
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add child property to array property path '{0}': array inner type '{1}' is not compatible with child buffered root type '{2}'.")),
 					FText::FromString(PropertyPath.ToString()),
 					FText::FromString(ArrayProperty->Inner->GetClass()->GetName()),
-					FText::FromString(ChildRootProperty->GetClass()->GetName())));
+					FText::FromString(ChildProperty->GetClass()->GetName())));
 			}
 
-			ArrayProperty->Inner->CopyCompleteValue(NewElementPointer, ChildPropertyBuffer->GetRootValueData());
+			ArrayProperty->Inner->CopyCompleteValue(NewElementPointer, ChildPropertyBuffer->GetValueData());
 		}
 	}
 

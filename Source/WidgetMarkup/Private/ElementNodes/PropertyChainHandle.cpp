@@ -117,6 +117,36 @@ bool FPropertyChainHandle::SetValue(const void* Data) const
 	return false;
 }
 
+bool FPropertyChainHandle::SetValue(const FPropertyBuffer& PropertyBuffer) const
+{
+	if (!PropertyBuffer.HasValue())
+	{
+		return false;
+	}
+
+	FProperty* TailProperty = nullptr;
+	void* TailContainer = nullptr;
+	void* TailValueAddress = nullptr;
+	if (!Resolve(TailProperty, TailContainer, TailValueAddress) || !TailProperty || !TailValueAddress)
+	{
+		return false;
+	}
+
+	FProperty* BufferedProperty = PropertyBuffer.GetProperty();
+	if (!BufferedProperty)
+	{
+		return false;
+	}
+
+	if (!TailProperty->SameType(BufferedProperty))
+	{
+		return false;
+	}
+
+	TailProperty->CopyCompleteValue(TailValueAddress, PropertyBuffer.GetValueData());
+	return true;
+}
+
 bool FPropertyChainHandle::SetValue(const FStringView& ValueString) const
 {
 	auto TailProperty = GetTailProperty();
@@ -215,7 +245,7 @@ bool FPropertyChainHandle::ResolveAgainstBufferedRoot(FProperty*& OutTailPropert
 		return false;
 	}
 
-	if (!ensureMsgf(PropertyBuffer->HasRootValue(), TEXT("BufferedPropertyContext is valid but PropertyBuffer has no root value.")))
+	if (!ensureMsgf(PropertyBuffer->HasValue(), TEXT("BufferedPropertyContext is valid but PropertyBuffer has no buffered value.")))
 	{
 		return false;
 	}
@@ -228,16 +258,16 @@ bool FPropertyChainHandle::ResolveAgainstBufferedRoot(FProperty*& OutTailPropert
 
 	if (RelativePath.IsEmpty())
 	{
-		OutTailProperty = PropertyBuffer->GetRootProperty();
-		OutTailContainer = PropertyBuffer->GetRootValueData();
-		OutTailValueAddress = PropertyBuffer->GetRootValueData();
+		OutTailProperty = PropertyBuffer->GetProperty();
+		OutTailContainer = PropertyBuffer->GetValueData();
+		OutTailValueAddress = PropertyBuffer->GetValueData();
 		return OutTailProperty != nullptr && OutTailValueAddress != nullptr;
 	}
 
 	const auto InitialState = FPropertyPathResolver::FInitialState(
-		PropertyBuffer->GetRootValueData(),
-		PropertyBuffer->GetRootStruct(),
-		PropertyBuffer->GetRootProperty());
+		PropertyBuffer->GetValueData(),
+		PropertyBuffer->GetStruct(),
+		PropertyBuffer->GetProperty());
 	const auto ResolutionResult = FPropertyPathResolver::TryResolvePath(
 		InitialState,
 		RelativePath);

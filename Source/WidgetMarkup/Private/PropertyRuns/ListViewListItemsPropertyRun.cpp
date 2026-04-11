@@ -49,14 +49,14 @@ FElementNode::FResult FListViewListItemsPropertyRun::OnEnd(FElementNode::FContex
 	}
 
 	const TSharedPtr<const FPropertyBuffer> CachedPropertyBuffer = PropertyElementNode->GetPropertyBuffer();
-	if (!CachedPropertyBuffer.IsValid() || !CachedPropertyBuffer->GetRootValueData())
+	if (!CachedPropertyBuffer.IsValid() || !CachedPropertyBuffer->GetValueData())
 	{
 		Context.Pop();
 		PropertyElementNode.Reset();
 		return FElementNode::FResult::Failure().Error(FText::FromString(TEXT("Failed to finalize ListItems property: cached buffered data is invalid or uninitialized.")));
 	}
 
-	FArrayProperty* BufferedArrayProperty = CastField<FArrayProperty>(CachedPropertyBuffer->GetRootProperty());
+	FArrayProperty* BufferedArrayProperty = CastField<FArrayProperty>(CachedPropertyBuffer->GetProperty());
 	if (!BufferedArrayProperty)
 	{
 		Context.Pop();
@@ -74,7 +74,7 @@ FElementNode::FResult FListViewListItemsPropertyRun::OnEnd(FElementNode::FContex
 
 	TArray<UObject*> ListItemsSnapshot;
 	{
-		FScriptArrayHelper BufferedArrayHelper(BufferedArrayProperty, CachedPropertyBuffer->GetRootValueData());
+		FScriptArrayHelper BufferedArrayHelper(BufferedArrayProperty, CachedPropertyBuffer->GetValueData());
 		const int32 BufferedNum = BufferedArrayHelper.Num();
 		ListItemsSnapshot.Reserve(BufferedNum);
 		for (int32 BufferedIndex = 0; BufferedIndex < BufferedNum; ++BufferedIndex)
