@@ -7,12 +7,12 @@
 #include "Utilities/PropertyPathResolver.h"
 #include "UObject/UnrealType.h"
 
-TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FPropertyPath& PropertyPath)
+TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FWidgetPropertyPath& PropertyPath)
 {
 	return Create(Object, PropertyPath, FBufferedPropertyContext());
 }
 
-TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FPropertyPath& PropertyPath,
+TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FWidgetPropertyPath& PropertyPath,
 	const FBufferedPropertyContext& InBufferedPropertyContext)
 {
 	if (!Object || PropertyPath.IsEmpty())
@@ -43,8 +43,8 @@ TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, c
 		return nullptr;
 	}
 
-	FPropertyPath PropertyPath;
-	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath))
+	FWidgetPropertyPath PropertyPath;
+	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath))
 	{
 		return nullptr;
 	}
@@ -60,8 +60,8 @@ TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, c
 		return nullptr;
 	}
 
-	FPropertyPath PropertyPath;
-	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath))
+	FWidgetPropertyPath PropertyPath;
+	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath))
 	{
 		return nullptr;
 	}
@@ -173,7 +173,7 @@ TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::GetChildHandle(const FStr
 	{
 		return nullptr;
 	}
-	const FPropertyPath ChildPath = PropertyPath.WithAppendedProperty(ChildName);
+	const FWidgetPropertyPath ChildPath = PropertyPath.WithAppendedProperty(ChildName);
 	return Create(Object.Get(), ChildPath, BufferedPropertyContext);
 }
 
@@ -250,7 +250,7 @@ bool FPropertyChainHandle::ResolveAgainstBufferedRoot(FProperty*& OutTailPropert
 		return false;
 	}
 
-	FPropertyPath RelativePath;
+	FWidgetPropertyPath RelativePath;
 	if (!PropertyPath.TryMakeRelativeTo(BufferedPropertyContext.GetRootPropertyPath(), RelativePath))
 	{
 		return false;

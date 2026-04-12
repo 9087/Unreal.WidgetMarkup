@@ -7,7 +7,7 @@
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
 #include "ElementNode.h"
 #include "PropertyRun.h"
-#include "Utilities/PropertyPath.h"
+#include "Utilities/WidgetPropertyPath.h"
 
 WIDGETMARKUP_API DECLARE_LOG_CATEGORY_EXTERN(LogWidgetMarkup, Log, All);
 
@@ -84,7 +84,7 @@ private:
 	FOnObjectCompiled OnObjectCompiled;
 
 	/** Custom properties: keyed by UStruct* (element type), then exact canonical property path to descriptor. */
-	TMap<TWeakObjectPtr<UStruct>, TMap<FPropertyPath, FOnCreatePropertyRun>> PropertyRunCreateDelegates;
+	TMap<TWeakObjectPtr<UStruct>, TMap<FWidgetPropertyPath, FOnCreatePropertyRun>> PropertyRunCreateDelegates;
 
 public:
 	void OnPostEngineInit();

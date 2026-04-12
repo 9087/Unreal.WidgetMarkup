@@ -1,6 +1,6 @@
 // Copyright 2025 Wu Zhiwei. All Rights Reserved.
 
-#include "Utilities/PropertyPath.h"
+#include "Utilities/WidgetPropertyPath.h"
 
 namespace
 {
@@ -19,7 +19,7 @@ namespace
 		return !Token.IsEmpty() && !Token.Contains(TEXT(".")) && !Token.Contains(TEXT("[")) && !Token.Contains(TEXT("]"));
 	}
 
-	static bool AreElementsEqual(const FPropertyPathElement& Left, const FPropertyPathElement& Right)
+	static bool AreElementsEqual(const FWidgetPropertyPathElement& Left, const FWidgetPropertyPathElement& Right)
 	{
 		if (Left.Type != Right.Type || Left.bIsAny != Right.bIsAny)
 		{
@@ -28,11 +28,11 @@ namespace
 
 		switch (Left.Type)
 		{
-		case EPropertyPathElementType::Property:
-		case EPropertyPathElementType::MapKey:
+		case EWidgetPropertyPathElementType::Property:
+		case EWidgetPropertyPathElementType::MapKey:
 			return Left.Name.Equals(Right.Name, ESearchCase::CaseSensitive);
 
-		case EPropertyPathElementType::ArrayIndex:
+		case EWidgetPropertyPathElementType::ArrayIndex:
 			return Left.ArrayIndex == Right.ArrayIndex;
 
 		default:
@@ -41,55 +41,55 @@ namespace
 	}
 }
 
-FPropertyPathElement FPropertyPathElement::MakeProperty(const FStringView& PropertyName)
+FWidgetPropertyPathElement FWidgetPropertyPathElement::MakeProperty(const FStringView& PropertyName)
 {
-	FPropertyPathElement Element;
-	Element.Type = EPropertyPathElementType::Property;
+	FWidgetPropertyPathElement Element;
+	Element.Type = EWidgetPropertyPathElementType::Property;
 	Element.Name = FString(PropertyName);
 	return Element;
 }
 
-FPropertyPathElement FPropertyPathElement::MakeAnyProperty()
+FWidgetPropertyPathElement FWidgetPropertyPathElement::MakeAnyProperty()
 {
-	FPropertyPathElement Element;
-	Element.Type = EPropertyPathElementType::Property;
+	FWidgetPropertyPathElement Element;
+	Element.Type = EWidgetPropertyPathElementType::Property;
 	Element.bIsAny = true;
 	return Element;
 }
 
-FPropertyPathElement FPropertyPathElement::MakeArrayIndex(int32 InArrayIndex)
+FWidgetPropertyPathElement FWidgetPropertyPathElement::MakeArrayIndex(int32 InArrayIndex)
 {
-	FPropertyPathElement Element;
-	Element.Type = EPropertyPathElementType::ArrayIndex;
+	FWidgetPropertyPathElement Element;
+	Element.Type = EWidgetPropertyPathElementType::ArrayIndex;
 	Element.ArrayIndex = InArrayIndex;
 	return Element;
 }
 
-FPropertyPathElement FPropertyPathElement::MakeAnyArrayIndex()
+FWidgetPropertyPathElement FWidgetPropertyPathElement::MakeAnyArrayIndex()
 {
-	FPropertyPathElement Element;
-	Element.Type = EPropertyPathElementType::ArrayIndex;
+	FWidgetPropertyPathElement Element;
+	Element.Type = EWidgetPropertyPathElementType::ArrayIndex;
 	Element.bIsAny = true;
 	return Element;
 }
 
-FPropertyPathElement FPropertyPathElement::MakeMapKey(const FStringView& MapKey)
+FWidgetPropertyPathElement FWidgetPropertyPathElement::MakeMapKey(const FStringView& MapKey)
 {
-	FPropertyPathElement Element;
-	Element.Type = EPropertyPathElementType::MapKey;
+	FWidgetPropertyPathElement Element;
+	Element.Type = EWidgetPropertyPathElementType::MapKey;
 	Element.Name = FString(MapKey);
 	return Element;
 }
 
-FPropertyPathElement FPropertyPathElement::MakeAnyMapKey()
+FWidgetPropertyPathElement FWidgetPropertyPathElement::MakeAnyMapKey()
 {
-	FPropertyPathElement Element;
-	Element.Type = EPropertyPathElementType::MapKey;
+	FWidgetPropertyPathElement Element;
+	Element.Type = EWidgetPropertyPathElementType::MapKey;
 	Element.bIsAny = true;
 	return Element;
 }
 
-bool FPropertyPathElement::Matches(const FPropertyPathElement& Candidate) const
+bool FWidgetPropertyPathElement::Matches(const FWidgetPropertyPathElement& Candidate) const
 {
 	if (Type != Candidate.Type)
 	{
@@ -103,11 +103,11 @@ bool FPropertyPathElement::Matches(const FPropertyPathElement& Candidate) const
 
 	switch (Type)
 	{
-	case EPropertyPathElementType::Property:
-	case EPropertyPathElementType::MapKey:
+	case EWidgetPropertyPathElementType::Property:
+	case EWidgetPropertyPathElementType::MapKey:
 		return Name.Equals(Candidate.Name, ESearchCase::CaseSensitive);
 
-	case EPropertyPathElementType::ArrayIndex:
+	case EWidgetPropertyPathElementType::ArrayIndex:
 		return ArrayIndex == Candidate.ArrayIndex;
 
 	default:
@@ -115,17 +115,17 @@ bool FPropertyPathElement::Matches(const FPropertyPathElement& Candidate) const
 	}
 }
 
-FString FPropertyPathElement::ToString() const
+FString FWidgetPropertyPathElement::ToString() const
 {
 	switch (Type)
 	{
-	case EPropertyPathElementType::Property:
+	case EWidgetPropertyPathElementType::Property:
 		return bIsAny ? TEXT("*") : Name;
 
-	case EPropertyPathElementType::ArrayIndex:
+	case EWidgetPropertyPathElementType::ArrayIndex:
 		return bIsAny ? TEXT("[*]") : FString::Printf(TEXT("[%d]"), ArrayIndex);
 
-	case EPropertyPathElementType::MapKey:
+	case EWidgetPropertyPathElementType::MapKey:
 		return bIsAny ? TEXT("[*]") : FString::Printf(TEXT("[%s]"), *Name);
 
 	default:
@@ -133,7 +133,7 @@ FString FPropertyPathElement::ToString() const
 	}
 }
 
-bool FPropertyPath::TryParse(const FStringView& InText, FPropertyPath& OutPath, FString* OutError)
+bool FWidgetPropertyPath::TryParse(const FStringView& InText, FWidgetPropertyPath& OutPath, FString* OutError)
 {
 	OutPath.Reset();
 
@@ -258,21 +258,21 @@ bool FPropertyPath::TryParse(const FStringView& InText, FPropertyPath& OutPath, 
 	return !OutPath.IsEmpty();
 }
 
-void FPropertyPath::Reset()
+void FWidgetPropertyPath::Reset()
 {
 	Elements.Reset();
-	CanonicalString.Reset();
-	CanonicalName = NAME_None;
+	PathName = NAME_None;
+	bIsPathNameDirty = true;
 }
 
-bool FPropertyPath::IsEmpty() const
+bool FWidgetPropertyPath::IsEmpty() const
 {
 	return Elements.IsEmpty();
 }
 
-bool FPropertyPath::HasAny() const
+bool FWidgetPropertyPath::HasAny() const
 {
-	for (const FPropertyPathElement& Element : Elements)
+	for (const FWidgetPropertyPathElement& Element : Elements)
 	{
 		if (Element.bIsAny)
 		{
@@ -283,22 +283,40 @@ bool FPropertyPath::HasAny() const
 	return false;
 }
 
-FString FPropertyPath::ToString() const
+const FName& FWidgetPropertyPath::GetPathName() const
 {
-	return CanonicalString;
+	if (bIsPathNameDirty)
+	{
+		FString CanonicalString;
+		for (const FWidgetPropertyPathElement& Element : Elements)
+		{
+			if (Element.Type == EWidgetPropertyPathElementType::Property)
+			{
+				if (!CanonicalString.IsEmpty())
+				{
+					CanonicalString += TEXT(".");
+				}
+				CanonicalString += Element.ToString();
+			}
+			else
+			{
+				CanonicalString += Element.ToString();
+			}
+		}
+
+		PathName = CanonicalString.IsEmpty() ? NAME_None : FName(*CanonicalString);
+		bIsPathNameDirty = false;
+	}
+
+	return PathName;
 }
 
-const FName& FPropertyPath::GetCanonicalName() const
+bool FWidgetPropertyPath::operator==(const FWidgetPropertyPath& Other) const
 {
-	return CanonicalName;
+	return GetPathName() == Other.GetPathName();
 }
 
-bool FPropertyPath::operator==(const FPropertyPath& Other) const
-{
-	return CanonicalName == Other.CanonicalName;
-}
-
-bool FPropertyPath::Matches(const FPropertyPath& Candidate) const
+bool FWidgetPropertyPath::Matches(const FWidgetPropertyPath& Candidate) const
 {
 	if (Elements.Num() != Candidate.Elements.Num())
 	{
@@ -316,11 +334,11 @@ bool FPropertyPath::Matches(const FPropertyPath& Candidate) const
 	return true;
 }
 
-bool FPropertyPath::TryMakeRelativeTo(const FPropertyPath& BasePath, FPropertyPath& OutRelativePath) const
+bool FWidgetPropertyPath::TryMakeRelativeTo(const FWidgetPropertyPath& BasePath, FWidgetPropertyPath& OutRelativePath) const
 {
 	OutRelativePath.Reset();
 
-	const TArray<FPropertyPathElement>& BaseElements = BasePath.GetElements();
+	const TArray<FWidgetPropertyPathElement>& BaseElements = BasePath.GetElements();
 	if (BaseElements.IsEmpty() || BaseElements.Num() > Elements.Num())
 	{
 		return false;
@@ -342,8 +360,8 @@ bool FPropertyPath::TryMakeRelativeTo(const FPropertyPath& BasePath, FPropertyPa
 	FString RelativePathString;
 	for (int32 ElementIndex = BaseElements.Num(); ElementIndex < Elements.Num(); ++ElementIndex)
 	{
-		const FPropertyPathElement& Element = Elements[ElementIndex];
-		const bool bIsPropertyOrMap = Element.Type == EPropertyPathElementType::Property || Element.Type == EPropertyPathElementType::MapKey;
+		const FWidgetPropertyPathElement& Element = Elements[ElementIndex];
+		const bool bIsPropertyOrMap = Element.Type == EWidgetPropertyPathElementType::Property || Element.Type == EWidgetPropertyPathElementType::MapKey;
 		if (bIsPropertyOrMap && !RelativePathString.IsEmpty())
 		{
 			RelativePathString.AppendChar(TCHAR('.'));
@@ -357,114 +375,97 @@ bool FPropertyPath::TryMakeRelativeTo(const FPropertyPath& BasePath, FPropertyPa
 		return true;
 	}
 
-	return FPropertyPath::TryParse(FStringView(RelativePathString), OutRelativePath);
+	return FWidgetPropertyPath::TryParse(FStringView(RelativePathString), OutRelativePath);
 }
 
-FPropertyPath FPropertyPath::WithAppendedProperty(const FStringView& PropertyPathString) const
+FWidgetPropertyPath FWidgetPropertyPath::WithAppendedProperty(const FStringView& PropertyPathString) const
 {
-	FPropertyPath NewPath = *this;
-	FPropertyPath AppendedPath;
+	FWidgetPropertyPath NewPath = *this;
+	FWidgetPropertyPath AppendedPath;
 	const FString PropertyPathText(PropertyPathString);
-	checkf(FPropertyPath::TryParse(PropertyPathString, AppendedPath), TEXT("Invalid property path string '%s'."), *PropertyPathText);
+	checkf(FWidgetPropertyPath::TryParse(PropertyPathString, AppendedPath), TEXT("Invalid property path string '%s'."), *PropertyPathText);
 	NewPath.Elements.Append(AppendedPath.Elements);
-	NewPath.RefreshCanonicalPropertyPath();
+	NewPath.MarkPathNameDirty();
 	return NewPath;
 }
 
-FPropertyPath FPropertyPath::WithAppendedAnyProperty() const
+FWidgetPropertyPath FWidgetPropertyPath::WithAppendedAnyProperty() const
 {
-	FPropertyPath NewPath = *this;
+	FWidgetPropertyPath NewPath = *this;
 	NewPath.AppendAnyProperty();
 	return NewPath;
 }
 
-FPropertyPath FPropertyPath::WithAppendedArrayIndex(int32 ArrayIndex) const
+FWidgetPropertyPath FWidgetPropertyPath::WithAppendedArrayIndex(int32 ArrayIndex) const
 {
-	FPropertyPath NewPath = *this;
+	FWidgetPropertyPath NewPath = *this;
 	NewPath.AppendArrayIndex(ArrayIndex);
 	return NewPath;
 }
 
-FPropertyPath FPropertyPath::WithAppendedAnyArrayIndex() const
+FWidgetPropertyPath FWidgetPropertyPath::WithAppendedAnyArrayIndex() const
 {
-	FPropertyPath NewPath = *this;
+	FWidgetPropertyPath NewPath = *this;
 	NewPath.AppendAnyArrayIndex();
 	return NewPath;
 }
 
-FPropertyPath FPropertyPath::WithAppendedMapKey(const FStringView& MapKey) const
+FWidgetPropertyPath FWidgetPropertyPath::WithAppendedMapKey(const FStringView& MapKey) const
 {
-	FPropertyPath NewPath = *this;
+	FWidgetPropertyPath NewPath = *this;
 	NewPath.AppendMapKey(MapKey);
 	return NewPath;
 }
 
-FPropertyPath FPropertyPath::WithAppendedAnyMapKey() const
+FWidgetPropertyPath FWidgetPropertyPath::WithAppendedAnyMapKey() const
 {
-	FPropertyPath NewPath = *this;
+	FWidgetPropertyPath NewPath = *this;
 	NewPath.AppendAnyMapKey();
 	return NewPath;
 }
 
-void FPropertyPath::AppendProperty(const FStringView& PropertyName)
+void FWidgetPropertyPath::AppendProperty(const FStringView& PropertyName)
 {
-	Elements.Add(FPropertyPathElement::MakeProperty(PropertyName));
-	RefreshCanonicalPropertyPath();
+	Elements.Add(FWidgetPropertyPathElement::MakeProperty(PropertyName));
+	MarkPathNameDirty();
 }
 
-void FPropertyPath::AppendAnyProperty()
+void FWidgetPropertyPath::AppendAnyProperty()
 {
-	Elements.Add(FPropertyPathElement::MakeAnyProperty());
-	RefreshCanonicalPropertyPath();
+	Elements.Add(FWidgetPropertyPathElement::MakeAnyProperty());
+	MarkPathNameDirty();
 }
 
-void FPropertyPath::AppendArrayIndex(int32 ArrayIndex)
+void FWidgetPropertyPath::AppendArrayIndex(int32 ArrayIndex)
 {
-	Elements.Add(FPropertyPathElement::MakeArrayIndex(ArrayIndex));
-	RefreshCanonicalPropertyPath();
+	Elements.Add(FWidgetPropertyPathElement::MakeArrayIndex(ArrayIndex));
+	MarkPathNameDirty();
 }
 
-void FPropertyPath::AppendAnyArrayIndex()
+void FWidgetPropertyPath::AppendAnyArrayIndex()
 {
-	Elements.Add(FPropertyPathElement::MakeAnyArrayIndex());
-	RefreshCanonicalPropertyPath();
+	Elements.Add(FWidgetPropertyPathElement::MakeAnyArrayIndex());
+	MarkPathNameDirty();
 }
 
-void FPropertyPath::AppendMapKey(const FStringView& MapKey)
+void FWidgetPropertyPath::AppendMapKey(const FStringView& MapKey)
 {
-	Elements.Add(FPropertyPathElement::MakeMapKey(MapKey));
-	RefreshCanonicalPropertyPath();
+	Elements.Add(FWidgetPropertyPathElement::MakeMapKey(MapKey));
+	MarkPathNameDirty();
 }
 
-void FPropertyPath::AppendAnyMapKey()
+void FWidgetPropertyPath::AppendAnyMapKey()
 {
-	Elements.Add(FPropertyPathElement::MakeAnyMapKey());
-	RefreshCanonicalPropertyPath();
+	Elements.Add(FWidgetPropertyPathElement::MakeAnyMapKey());
+	MarkPathNameDirty();
 }
 
-const TArray<FPropertyPathElement>& FPropertyPath::GetElements() const
+void FWidgetPropertyPath::MarkPathNameDirty()
+{
+	bIsPathNameDirty = true;
+}
+
+const TArray<FWidgetPropertyPathElement>& FWidgetPropertyPath::GetElements() const
 {
 	return Elements;
-}
-
-void FPropertyPath::RefreshCanonicalPropertyPath()
-{
-	CanonicalString.Reset();
-	for (const FPropertyPathElement& Element : Elements)
-	{
-		if (Element.Type == EPropertyPathElementType::Property)
-		{
-			if (!CanonicalString.IsEmpty())
-			{
-				CanonicalString += TEXT(".");
-			}
-			CanonicalString += Element.ToString();
-		}
-		else
-		{
-			CanonicalString += Element.ToString();
-		}
-	}
-
-	CanonicalName = CanonicalString.IsEmpty() ? NAME_None : FName(*CanonicalString);
 }

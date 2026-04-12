@@ -6,7 +6,7 @@
 #include "PropertyBuffer.h"
 #include "PropertyChainHandle.h"
 #include "Misc/ScopeExit.h"
-#include "Utilities/PropertyPath.h"
+#include "Utilities/WidgetPropertyPath.h"
 #include "UObject/UnrealType.h"
 
 IMPLEMENT_ELEMENT_NODE(FPropertyElementNode, FElementNode)
@@ -119,7 +119,7 @@ FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UOb
 		{
 			return FResult::Failure().Error(FText::Format(
 				FText::FromString(TEXT("Failed to resolve buffered root property for property path '{0}'.")),
-				FText::FromString(PropertyPath.ToString())));
+				FText::FromString(PropertyPath.GetPathName().ToString())));
 		}
 
 		const TSharedPtr<FPropertyBuffer> PropertyBuffer = MakeShared<FPropertyBuffer>(TailProperty);
@@ -127,7 +127,7 @@ FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UOb
 		{
 			return FResult::Failure().Error(FText::Format(
 				FText::FromString(TEXT("Failed to initialize buffered root value for property path '{0}'.")),
-				FText::FromString(PropertyPath.ToString())));
+				FText::FromString(PropertyPath.GetPathName().ToString())));
 		}
 
 		BufferedPropertyContext = FBufferedPropertyContext(PropertyPath, PropertyBuffer);
@@ -135,7 +135,7 @@ FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UOb
 		{
 			return FResult::Failure().Error(FText::Format(
 				FText::FromString(TEXT("Failed to initialize buffered root value for property path '{0}'.")),
-				FText::FromString(PropertyPath.ToString())));
+				FText::FromString(PropertyPath.GetPathName().ToString())));
 		}
 	}
 
@@ -151,7 +151,7 @@ FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UOb
 	{
 		return FResult::Failure().Error(FText::Format(
 			FText::FromString(TEXT("Failed to recognize the property path '{0}'.")),
-			FText::FromString(PropertyPath.ToString())));
+			FText::FromString(PropertyPath.GetPathName().ToString())));
 	}
 
 	return FResult::Success();
@@ -165,7 +165,7 @@ FElementNode::FResult FPropertyElementNode::OnEnd()
 		{
 			return FResult::Failure().Error(FText::Format(
 				FText::FromString(TEXT("Failed to set value for property path '{0}'.")),
-				FText::FromString(PropertyPath.ToString())));
+				FText::FromString(PropertyPath.GetPathName().ToString())));
 		}
 	}
 
@@ -176,7 +176,7 @@ FElementNode::FResult FPropertyElementNode::OnEnd()
 		{
 			return FResult::Failure().Error(FText::Format(
 				FText::FromString(TEXT("Buffered root has no value for property path '{0}'.")),
-				FText::FromString(PropertyPath.ToString())));
+				FText::FromString(PropertyPath.GetPathName().ToString())));
 		}
 
 		TSharedPtr<FPropertyChainHandle> DirectHandle = PropertyChain.IsValid() ? PropertyChain->GetDirectHandle() : nullptr;
@@ -184,7 +184,7 @@ FElementNode::FResult FPropertyElementNode::OnEnd()
 		{
 			return FResult::Failure().Error(FText::Format(
 				FText::FromString(TEXT("Failed to commit buffered root value for property path '{0}'.")),
-				FText::FromString(PropertyPath.ToString())));
+				FText::FromString(PropertyPath.GetPathName().ToString())));
 		}
 	}
 
@@ -220,21 +220,21 @@ FElementNode::FResult FPropertyElementNode::OnAddChild(const TSharedRef<FElement
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add object child to array property path '{0}': object element node returned null object.")),
-					FText::FromString(PropertyPath.ToString())));
+					FText::FromString(PropertyPath.GetPathName().ToString())));
 			}
 			FObjectPropertyBase* InnerObjectProperty = CastField<FObjectPropertyBase>(ArrayProperty->Inner);
 			if (!InnerObjectProperty)
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add child object to array property path '{0}': array inner type '{1}' is not an object property.")),
-					FText::FromString(PropertyPath.ToString()),
+					FText::FromString(PropertyPath.GetPathName().ToString()),
 					FText::FromString(ArrayProperty->Inner ? ArrayProperty->Inner->GetClass()->GetName() : TEXT("null"))));
 			}
 			if (InnerObjectProperty->PropertyClass && !ChildObject->IsA(InnerObjectProperty->PropertyClass))
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add child object to array property path '{0}': child class '{1}' is not compatible with '{2}'.")),
-					FText::FromString(PropertyPath.ToString()),
+					FText::FromString(PropertyPath.GetPathName().ToString()),
 					FText::FromString(ChildObject->GetClass()->GetName()),
 					FText::FromString(InnerObjectProperty->PropertyClass->GetName())));
 			}
@@ -246,7 +246,7 @@ FElementNode::FResult FPropertyElementNode::OnAddChild(const TSharedRef<FElement
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add child property to array property path '{0}': child property node is not using buffered write mode.")),
-					FText::FromString(PropertyPath.ToString())));
+					FText::FromString(PropertyPath.GetPathName().ToString())));
 			}
 
 			const TSharedPtr<const FPropertyBuffer> ChildPropertyBuffer = ChildPropertyElementNode->GetPropertyBuffer();
@@ -254,7 +254,7 @@ FElementNode::FResult FPropertyElementNode::OnAddChild(const TSharedRef<FElement
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add child property to array property path '{0}': child property buffer is invalid or uninitialized.")),
-					FText::FromString(PropertyPath.ToString())));
+					FText::FromString(PropertyPath.GetPathName().ToString())));
 			}
 
 			FProperty* ChildProperty = ChildPropertyBuffer->GetProperty();
@@ -262,14 +262,14 @@ FElementNode::FResult FPropertyElementNode::OnAddChild(const TSharedRef<FElement
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add child property to array property path '{0}': child buffer root property is null.")),
-					FText::FromString(PropertyPath.ToString())));
+					FText::FromString(PropertyPath.GetPathName().ToString())));
 			}
 
 			if (!ArrayProperty->Inner->SameType(ChildProperty))
 			{
 				return FResult::Failure().Error(FText::Format(
 					FText::FromString(TEXT("Failed to add child property to array property path '{0}': array inner type '{1}' is not compatible with child buffered root type '{2}'.")),
-					FText::FromString(PropertyPath.ToString()),
+					FText::FromString(PropertyPath.GetPathName().ToString()),
 					FText::FromString(ArrayProperty->Inner->GetClass()->GetName()),
 					FText::FromString(ChildProperty->GetClass()->GetName())));
 			}

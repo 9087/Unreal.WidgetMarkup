@@ -10,8 +10,8 @@ struct FPropertyBuffer;
 class FPropertyChainHandle
 {
 public:
-	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FPropertyPath& PropertyPath);
-	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FPropertyPath& PropertyPath, const FBufferedPropertyContext& InBufferedPropertyContext);
+	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FWidgetPropertyPath& PropertyPath);
+	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FWidgetPropertyPath& PropertyPath, const FBufferedPropertyContext& InBufferedPropertyContext);
 	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FStringView& PropertyPathString);
 	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FStringView& PropertyPathString, const FBufferedPropertyContext& InBufferedPropertyContext);
 
@@ -35,5 +35,5 @@ private:
 
 	TWeakObjectPtr<UObject> Object;
 	FBufferedPropertyContext BufferedPropertyContext;
-	FPropertyPath PropertyPath;
+	FWidgetPropertyPath PropertyPath;
 };

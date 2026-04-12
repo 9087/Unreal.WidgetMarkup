@@ -26,7 +26,7 @@ public:
 
 	virtual ~FPropertyElementNode() override;
 
-	FString GetPropertyPath() const { return PropertyPath.ToString(); }
+	FString GetPropertyPath() const { return PropertyPath.GetPathName().ToString(); }
 	const FString& GetPropertyName() const { return PropertyName; }
 	const FString& GetPropertyValue() const { return PropertyValue; }
 	TSharedPtr<const FPropertyBuffer> GetPropertyBuffer() const { return BufferedPropertyContext.GetPropertyBuffer(); }
@@ -50,7 +50,7 @@ protected:
 	/** Name/path passed at construction (segment or canonical property path). */
 	FString PropertyName;
 	/** Full canonical property path from nearest object; computed in Begin(). */
-	FPropertyPath PropertyPath;
+	FWidgetPropertyPath PropertyPath;
 	/** Buffered write context shared by nested property nodes. */
 	FBufferedPropertyContext BufferedPropertyContext;
 	/** Value passed at construction (attribute value or ElementData). */

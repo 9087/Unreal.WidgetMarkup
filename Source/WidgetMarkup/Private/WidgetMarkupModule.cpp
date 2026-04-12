@@ -34,7 +34,7 @@
 #include "PropertyRuns/BlueprintSuperPropertyRun.h"
 #include "PropertyRuns/ListViewListItemsPropertyRun.h"
 #include "PropertyRuns/ObjectNamePropertyRun.h"
-#include "Utilities/PropertyPath.h"
+#include "Utilities/WidgetPropertyPath.h"
 #include "ElementNodes/ContentWidgetElementNode.h"
 #include "ElementNodes/PanelWidgetElementNode.h"
 #include "ElementNodes/WidgetBlueprintElementNode.h"
@@ -174,7 +174,7 @@ TSharedPtr<IPropertyRun> FWidgetMarkupModule::CreateCustomPropertyRun(UStruct* I
 	}
 
 	UStruct* BestStruct = nullptr;
-	const TMap<FPropertyPath, FOnCreatePropertyRun>* BestRegistry = nullptr;
+	const TMap<FWidgetPropertyPath, FOnCreatePropertyRun>* BestRegistry = nullptr;
 	for (const auto& KeyValuePair : PropertyRunCreateDelegates)
 	{
 		UStruct* Struct = KeyValuePair.Key.Get();
@@ -196,9 +196,9 @@ TSharedPtr<IPropertyRun> FWidgetMarkupModule::CreateCustomPropertyRun(UStruct* I
 		return nullptr;
 	}
 
-	FPropertyPath PropertyPath;
+	FWidgetPropertyPath PropertyPath;
 	FString ParseError;
-	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
+	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
 	{
 		return nullptr;
 	}
@@ -297,9 +297,9 @@ bool FWidgetMarkupModule::RegisterCustomPropertyRun(UStruct* InStruct, FName InP
 {
 	const FString PropertyPathString = InPropertyPath.ToString();
 
-	FPropertyPath PropertyPath;
+	FWidgetPropertyPath PropertyPath;
 	FString ParseError;
-	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
+	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
 	{
 		UE_LOG(LogWidgetMarkup, Error, TEXT("RegisterCustomProperty failed: invalid PropertyPath '%s' for Struct '%s': %s"), *PropertyPathString, *InStruct->GetName(), *ParseError);
 		return false;
@@ -307,7 +307,7 @@ bool FWidgetMarkupModule::RegisterCustomPropertyRun(UStruct* InStruct, FName InP
 	auto& Registry = PropertyRunCreateDelegates.FindOrAdd(InStruct);
 	if (Registry.Contains(PropertyPath))
 	{
-		UE_LOG(LogWidgetMarkup, Warning, TEXT("RegisterCustomProperty: overwriting existing entry (Struct='%s', PropertyPath='%s')."), *InStruct->GetName(), *PropertyPath.ToString());
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("RegisterCustomProperty: overwriting existing entry (Struct='%s', PropertyPath='%s')."), *InStruct->GetName(), *PropertyPath.GetPathName().ToString());
 	}
 	Registry.Add(PropertyPath, InOnCreatePropertyRun);
 	return true;
@@ -322,9 +322,9 @@ void FWidgetMarkupModule::UnregisterCustomPropertyRun(UStruct* InStruct, FName I
 		return;
 	}
 
-	FPropertyPath PropertyPath;
+	FWidgetPropertyPath PropertyPath;
 	FString ParseError;
-	if (!FPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
+	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
 	{
 		UE_LOG(LogWidgetMarkup, Warning, TEXT("UnregisterCustomProperty ignored invalid PropertyPath '%s' for Struct '%s': %s"), *PropertyPathString, *InStruct->GetName(), *ParseError);
 		return;

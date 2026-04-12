@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Utilities/PropertyPath.h"
+#include "Utilities/WidgetPropertyPath.h"
 
 class FProperty;
 class UStruct;
@@ -31,5 +31,5 @@ public:
 		void* ValueAddress = nullptr;
 	};
 
-	static TSharedPtr<FOutput> TryResolvePath(const FInitialState& InitialState, const FPropertyPath& Path);
+	static TSharedPtr<FOutput> TryResolvePath(const FInitialState& InitialState, const FWidgetPropertyPath& Path);
 };

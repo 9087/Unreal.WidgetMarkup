@@ -5,14 +5,14 @@
 #include "Templates/SharedPointer.h"
 #include "UObject/UnrealType.h"
 
-TSharedPtr<FPropertyPathResolver::FOutput> FPropertyPathResolver::TryResolvePath(const FInitialState& InitialState, const FPropertyPath& Path)
+TSharedPtr<FPropertyPathResolver::FOutput> FPropertyPathResolver::TryResolvePath(const FInitialState& InitialState, const FWidgetPropertyPath& Path)
 {
 	if (!InitialState.Container || Path.IsEmpty())
 	{
 		return nullptr;
 	}
 
-	const TArray<FPropertyPathElement>& Elements = Path.GetElements();
+	const TArray<FWidgetPropertyPathElement>& Elements = Path.GetElements();
 	if (Elements.IsEmpty())
 	{
 		return nullptr;
@@ -24,7 +24,7 @@ TSharedPtr<FPropertyPathResolver::FOutput> FPropertyPathResolver::TryResolvePath
 
 	for (int32 ElementIndex = 0; ElementIndex < Elements.Num(); ++ElementIndex)
 	{
-		const FPropertyPathElement& Element = Elements[ElementIndex];
+		const FWidgetPropertyPathElement& Element = Elements[ElementIndex];
 
 		if (Element.bIsAny)
 		{
@@ -32,7 +32,7 @@ TSharedPtr<FPropertyPathResolver::FOutput> FPropertyPathResolver::TryResolvePath
 		}
 
 		void* ValueAddress = nullptr;
-		if (Element.Type == EPropertyPathElementType::Property)
+		if (Element.Type == EWidgetPropertyPathElementType::Property)
 		{
 			CurrentProperty = CurrentStruct ? CurrentStruct->FindPropertyByName(FName(*Element.Name)) : nullptr;
 			if (!CurrentProperty)
@@ -40,7 +40,7 @@ TSharedPtr<FPropertyPathResolver::FOutput> FPropertyPathResolver::TryResolvePath
 				return nullptr;
 			}
 		}
-		else if (Element.Type == EPropertyPathElementType::ArrayIndex)
+		else if (Element.Type == EWidgetPropertyPathElementType::ArrayIndex)
 		{
 			FArrayProperty* ArrayProperty = CastField<FArrayProperty>(CurrentProperty);
 			if (!ArrayProperty)

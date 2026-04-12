@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Utilities/PropertyPath.h"
+#include "Utilities/WidgetPropertyPath.h"
 #include "PropertyBuffer.h"
 
 struct FBufferedPropertyContext
@@ -12,7 +12,7 @@ struct FBufferedPropertyContext
 		check(IsStateConsistent());
 	}
 
-	FBufferedPropertyContext(const FPropertyPath& InRootPropertyPath, const TSharedPtr<FPropertyBuffer>& InPropertyBuffer)
+	FBufferedPropertyContext(const FWidgetPropertyPath& InRootPropertyPath, const TSharedPtr<FPropertyBuffer>& InPropertyBuffer)
 	{
 		if (!InPropertyBuffer.IsValid())
 		{
@@ -47,12 +47,12 @@ struct FBufferedPropertyContext
 		return PropertyBuffer;
 	}
 
-	const FPropertyPath& GetRootPropertyPath() const
+	const FWidgetPropertyPath& GetRootPropertyPath() const
 	{
 		return RootPropertyPath;
 	}
 
-	bool MatchesPath(const FPropertyPath& PropertyPath) const
+	bool MatchesPath(const FWidgetPropertyPath& PropertyPath) const
 	{
 		return PropertyBuffer.IsValid() && !RootPropertyPath.IsEmpty() && RootPropertyPath == PropertyPath;
 	}
@@ -65,6 +65,6 @@ private:
 		return bHasPropertyBuffer == bHasRootPropertyPath;
 	}
 
-	FPropertyPath RootPropertyPath;
+	FWidgetPropertyPath RootPropertyPath;
 	TSharedPtr<FPropertyBuffer> PropertyBuffer;
 };
