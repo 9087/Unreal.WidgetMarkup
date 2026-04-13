@@ -39,15 +39,14 @@ bool FWidgetStyleEntry::CanApply(FString* OutErrorMessage) const
 	return true;
 }
 
-FWidgetStyleSheetApplyResult UWidgetStyleSheet::ApplyToUserWidget(UUserWidget* UserWidget) const
+bool FWidgetStyleSheetData::ApplyToUserWidget(UUserWidget* UserWidget) const
 {
-	FWidgetStyleSheetApplyResult ApplyResult;
-	const TArray<FWidgetStyleEntry>& Styles = StyleSheet.Styles;
+	bool bAllSucceeded = true;
+	const TArray<FWidgetStyleEntry>& Styles = this->Styles;
 	if (!UserWidget)
 	{
-		ApplyResult.FailedCount = Styles.Num();
 		UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: failed to apply styles because UserWidget is null."));
-		return ApplyResult;
+		return false;
 	}
 
 	for (int32 StyleIndex = 0; StyleIndex < Styles.Num(); ++StyleIndex)
@@ -56,7 +55,7 @@ FWidgetStyleSheetApplyResult UWidgetStyleSheet::ApplyToUserWidget(UUserWidget* U
 		FString ErrorMessage;
 		if (!Style.CanApply(&ErrorMessage))
 		{
-			++ApplyResult.FailedCount;
+			bAllSucceeded = false;
 			UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: style [%d] is invalid. Reason: %s"), StyleIndex, *ErrorMessage);
 			continue;
 		}
@@ -64,7 +63,7 @@ FWidgetStyleSheetApplyResult UWidgetStyleSheet::ApplyToUserWidget(UUserWidget* U
 		UWidget* WidgetNode = UserWidget->GetWidgetFromName(Style.WidgetName);
 		if (!WidgetNode)
 		{
-			++ApplyResult.FailedCount;
+			bAllSucceeded = false;
 			UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: style [%d] could not find widget '%s'."), StyleIndex, *Style.WidgetName.ToString());
 			continue;
 		}
@@ -72,20 +71,23 @@ FWidgetStyleSheetApplyResult UWidgetStyleSheet::ApplyToUserWidget(UUserWidget* U
 		const TSharedPtr<FPropertyChainHandle> PropertyChainHandle = FPropertyChainHandle::Create(WidgetNode, Style.PropertyPath);
 		if (!PropertyChainHandle.IsValid())
 		{
-			++ApplyResult.FailedCount;
+			bAllSucceeded = false;
 			UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: style [%d] failed to resolve property path '%s' on widget '%s'."), StyleIndex, *Style.PropertyPath.GetPathName().ToString(), *Style.WidgetName.ToString());
 			continue;
 		}
 
 		if (!PropertyChainHandle->SetValue(Style.PropertyValue))
 		{
-			++ApplyResult.FailedCount;
+			bAllSucceeded = false;
 			UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: style [%d] failed to apply property buffer on widget '%s' path '%s'."), StyleIndex, *Style.WidgetName.ToString(), *Style.PropertyPath.GetPathName().ToString());
 			continue;
 		}
-
-		++ApplyResult.AppliedCount;
 	}
 
-	return ApplyResult;
+	return bAllSucceeded;
+}
+
+bool UWidgetStyleSheet::ApplyToUserWidget(UUserWidget* UserWidget) const
+{
+	return StyleSheet.ApplyToUserWidget(UserWidget);
 }

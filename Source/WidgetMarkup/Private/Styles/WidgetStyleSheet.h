@@ -29,19 +29,6 @@ public:
 	bool CanApply(FString* OutErrorMessage = nullptr) const;
 };
 
-USTRUCT(BlueprintType)
-struct FWidgetStyleSheetApplyResult
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(BlueprintReadOnly, Category = "Style")
-	int32 AppliedCount = 0;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Style")
-	int32 FailedCount = 0;
-};
-
 USTRUCT()
 struct FWidgetStyleSheetData
 {
@@ -50,6 +37,8 @@ struct FWidgetStyleSheetData
 public:
 	UPROPERTY(EditAnywhere, Category = "Style")
 	TArray<FWidgetStyleEntry> Styles;
+
+	bool ApplyToUserWidget(UUserWidget* UserWidget) const;
 };
 
 UCLASS(BlueprintType)
@@ -62,5 +51,5 @@ public:
 	FWidgetStyleSheetData StyleSheet;
 
 	UFUNCTION(BlueprintCallable, Category = "Widget Markup|Style")
-	FWidgetStyleSheetApplyResult ApplyToUserWidget(UUserWidget* UserWidget) const;
+	bool ApplyToUserWidget(UUserWidget* UserWidget) const;
 };

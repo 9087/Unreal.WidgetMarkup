@@ -3,8 +3,10 @@
 #include "WidgetBlueprintElementNode.h"
 
 #include "BlueprintElementNode.h"
+#include "Extensions/WidgetMarkupBlueprintExtension.h"
 #include "WidgetBlueprint.h"
 #include "Blueprint/WidgetTree.h"
+#include "WidgetBlueprintExtension.h"
 
 IMPLEMENT_ELEMENT_NODE(FWidgetBlueprintElementNode, FBlueprintElementNode)
 
@@ -21,7 +23,20 @@ FElementNode::FResult FWidgetBlueprintElementNode::OnBegin(const FContext& Conte
 		return FResult::Failure().Error(FText::FromString(TEXT("WidgetBlueprintElementNode: outer object must be a UPackage when creating a Widget Blueprint.")));
 	}
 
-	return CreateOrReuseBlueprint(Package, UUserWidget::StaticClass(), UWidgetBlueprint::StaticClass(), UWidgetBlueprintGeneratedClass::StaticClass());
+	FResult Result = CreateOrReuseBlueprint(Package, UUserWidget::StaticClass(), UWidgetBlueprint::StaticClass(), UWidgetBlueprintGeneratedClass::StaticClass());
+	if (!Result)
+	{
+		return Result;
+	}
+
+	UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(Object);
+	if (!WidgetBlueprint)
+	{
+		return FResult::Failure().Error(FText::FromString(TEXT("WidgetBlueprintElementNode: failed to cast stored object to UWidgetBlueprint after creation.")));
+	}
+
+	UWidgetBlueprintExtension::RequestExtension<UWidgetMarkupBlueprintExtension>(WidgetBlueprint);
+	return FResult::Success();
 }
 
 FElementNode::FResult FWidgetBlueprintElementNode::OnEnd()
