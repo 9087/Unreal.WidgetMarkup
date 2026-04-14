@@ -128,6 +128,7 @@ void FWidgetMarkupModule::ShutdownModule()
 	FCoreDelegates::OnPostEngineInit.RemoveAll(this);
 	StopSourceFileWatching();
 	PropertyRunCreateDelegates.Empty();
+	PropertySetterCreateDelegates.Empty();
 }
 
 // ---------------------------------------------------------------------------
@@ -176,6 +177,53 @@ TSharedPtr<IPropertyRun> FWidgetMarkupModule::CreateCustomPropertyRun(UStruct* I
 	UStruct* BestStruct = nullptr;
 	const TMap<FWidgetPropertyPath, FOnCreatePropertyRun>* BestRegistry = nullptr;
 	for (const auto& KeyValuePair : PropertyRunCreateDelegates)
+	{
+		UStruct* Struct = KeyValuePair.Key.Get();
+		if (!Struct)
+		{
+			continue;
+		}
+		if (InStruct->IsChildOf(Struct))
+		{
+			if (!BestStruct || Struct->IsChildOf(BestStruct))
+			{
+				BestStruct = Struct;
+				BestRegistry = &KeyValuePair.Value;
+			}
+		}
+	}
+	if (!BestRegistry)
+	{
+		return nullptr;
+	}
+
+	FWidgetPropertyPath PropertyPath;
+	FString ParseError;
+	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
+	{
+		return nullptr;
+	}
+
+	auto Found = BestRegistry->Find(PropertyPath);
+	if (!Found || !Found->IsBound())
+	{
+		return nullptr;
+	}
+	return Found->Execute();
+}
+
+TSharedPtr<FPropertySetter> FWidgetMarkupModule::CreateCustomPropertySetter(UStruct* InStruct, FName InPropertyPath) const
+{
+	const FString PropertyPathString = InPropertyPath.ToString();
+
+	if (!InStruct)
+	{
+		return nullptr;
+	}
+
+	UStruct* BestStruct = nullptr;
+	const TMap<FWidgetPropertyPath, FOnCreatePropertySetter>* BestRegistry = nullptr;
+	for (const auto& KeyValuePair : PropertySetterCreateDelegates)
 	{
 		UStruct* Struct = KeyValuePair.Key.Get();
 		if (!Struct)
@@ -313,6 +361,26 @@ bool FWidgetMarkupModule::RegisterCustomPropertyRun(UStruct* InStruct, FName InP
 	return true;
 }
 
+bool FWidgetMarkupModule::RegisterCustomPropertySetter(UStruct* InStruct, FName InPropertyPath, FOnCreatePropertySetter InOnCreatePropertySetter)
+{
+	const FString PropertyPathString = InPropertyPath.ToString();
+
+	FWidgetPropertyPath PropertyPath;
+	FString ParseError;
+	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
+	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("RegisterCustomPropertySetter failed: invalid PropertyPath '%s' for Struct '%s': %s"), *PropertyPathString, *InStruct->GetName(), *ParseError);
+		return false;
+	}
+	auto& Registry = PropertySetterCreateDelegates.FindOrAdd(InStruct);
+	if (Registry.Contains(PropertyPath))
+	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("RegisterCustomPropertySetter: overwriting existing entry (Struct='%s', PropertyPath='%s')."), *InStruct->GetName(), *PropertyPath.GetPathName().ToString());
+	}
+	Registry.Add(PropertyPath, InOnCreatePropertySetter);
+	return true;
+}
+
 void FWidgetMarkupModule::UnregisterCustomPropertyRun(UStruct* InStruct, FName InPropertyPath)
 {
 	const FString PropertyPathString = InPropertyPath.ToString();
@@ -336,6 +404,33 @@ void FWidgetMarkupModule::UnregisterCustomPropertyRun(UStruct* InStruct, FName I
 		if (Registry->IsEmpty())
 		{
 			PropertyRunCreateDelegates.Remove(InStruct);
+		}
+	}
+}
+
+void FWidgetMarkupModule::UnregisterCustomPropertySetter(UStruct* InStruct, FName InPropertyPath)
+{
+	const FString PropertyPathString = InPropertyPath.ToString();
+
+	if (!InStruct)
+	{
+		return;
+	}
+
+	FWidgetPropertyPath PropertyPath;
+	FString ParseError;
+	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
+	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("UnregisterCustomPropertySetter ignored invalid PropertyPath '%s' for Struct '%s': %s"), *PropertyPathString, *InStruct->GetName(), *ParseError);
+		return;
+	}
+	auto* Registry = PropertySetterCreateDelegates.Find(InStruct);
+	if (Registry)
+	{
+		Registry->Remove(PropertyPath);
+		if (Registry->IsEmpty())
+		{
+			PropertySetterCreateDelegates.Remove(InStruct);
 		}
 	}
 }

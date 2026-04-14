@@ -7,6 +7,7 @@
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
 #include "ElementNode.h"
 #include "PropertyRun.h"
+#include "PropertySetter.h"
 #include "Utilities/WidgetPropertyPath.h"
 
 WIDGETMARKUP_API DECLARE_LOG_CATEGORY_EXTERN(LogWidgetMarkup, Log, All);
@@ -54,11 +55,11 @@ public:
 	{
 		if constexpr (TIsDerivedFrom<T, UObject>::Value)
 		{
-			return RegisterCustomProperty(T::StaticClass(), InPropertyPath, InOnCreatePropertyRun);
+			return RegisterCustomPropertyRun(T::StaticClass(), InPropertyPath, InOnCreatePropertyRun);
 		}
 		else
 		{
-			return RegisterCustomProperty(T::StaticStruct(), InPropertyPath, InOnCreatePropertyRun);
+			return RegisterCustomPropertyRun(T::StaticStruct(), InPropertyPath, InOnCreatePropertyRun);
 		}
 	}
 
@@ -67,15 +68,47 @@ public:
 	{
 		if constexpr (TIsDerivedFrom<T, UObject>::Value)
 		{
-			UnregisterCustomProperty(T::StaticClass(), InPropertyPath);
+			UnregisterCustomPropertyRun(T::StaticClass(), InPropertyPath);
 		}
 		else
 		{
-			UnregisterCustomProperty(T::StaticStruct(), InPropertyPath);
+			UnregisterCustomPropertyRun(T::StaticStruct(), InPropertyPath);
 		}
 	}
 
 	TSharedPtr<IPropertyRun> CreateCustomPropertyRun(UStruct* InStruct, FName InPropertyPath) const;
+
+	DECLARE_DELEGATE_RetVal(TSharedRef<FPropertySetter>, FOnCreatePropertySetter);
+	bool RegisterCustomPropertySetter(UStruct* InStruct, FName InPropertyPath, FOnCreatePropertySetter InOnCreatePropertySetter);
+	void UnregisterCustomPropertySetter(UStruct* InStruct, FName InPropertyPath);
+
+	template <typename T>
+	bool RegisterCustomPropertySetter(FName InPropertyPath, FOnCreatePropertySetter InOnCreatePropertySetter)
+	{
+		if constexpr (TIsDerivedFrom<T, UObject>::Value)
+		{
+			return RegisterCustomPropertySetter(T::StaticClass(), InPropertyPath, InOnCreatePropertySetter);
+		}
+		else
+		{
+			return RegisterCustomPropertySetter(T::StaticStruct(), InPropertyPath, InOnCreatePropertySetter);
+		}
+	}
+
+	template <typename T>
+	void UnregisterCustomPropertySetter(FName InPropertyPath)
+	{
+		if constexpr (TIsDerivedFrom<T, UObject>::Value)
+		{
+			UnregisterCustomPropertySetter(T::StaticClass(), InPropertyPath);
+		}
+		else
+		{
+			UnregisterCustomPropertySetter(T::StaticStruct(), InPropertyPath);
+		}
+	}
+
+	TSharedPtr<FPropertySetter> CreateCustomPropertySetter(UStruct* InStruct, FName InPropertyPath) const;
 
 private:
 	UObject* CompileFromSourceCode(FName PackagePath, const FString& XML);
@@ -85,6 +118,8 @@ private:
 
 	/** Custom properties: keyed by UStruct* (element type), then exact canonical property path to descriptor. */
 	TMap<TWeakObjectPtr<UStruct>, TMap<FWidgetPropertyPath, FOnCreatePropertyRun>> PropertyRunCreateDelegates;
+	/** Custom property setters: keyed by UStruct* (element type), then exact canonical property path to setter factory. */
+	TMap<TWeakObjectPtr<UStruct>, TMap<FWidgetPropertyPath, FOnCreatePropertySetter>> PropertySetterCreateDelegates;
 
 public:
 	void OnPostEngineInit();

@@ -19,6 +19,7 @@ struct FPropertyBuffer
 public:
 	FPropertyBuffer() = default;
 	explicit FPropertyBuffer(FProperty* InProperty);
+	FPropertyBuffer(FProperty* InProperty, const FStringView& InValueString);
 	~FPropertyBuffer();
 
 	FPropertyBuffer(const FPropertyBuffer& Other);

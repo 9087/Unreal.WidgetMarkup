@@ -42,7 +42,6 @@ bool FWidgetStyleEntry::CanApply(FString* OutErrorMessage) const
 bool FWidgetStyleSheetData::ApplyToUserWidget(UUserWidget* UserWidget) const
 {
 	bool bAllSucceeded = true;
-	const TArray<FWidgetStyleEntry>& Styles = this->Styles;
 	if (!UserWidget)
 	{
 		UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: failed to apply styles because UserWidget is null."));

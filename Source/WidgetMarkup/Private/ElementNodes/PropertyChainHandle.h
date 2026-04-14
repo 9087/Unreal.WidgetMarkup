@@ -21,7 +21,6 @@ public:
 
 	bool IsArrayProperty() const;
 
-	bool SetValue(const void* Data) const;
 	bool SetValue(const FPropertyBuffer& PropertyBuffer) const;
 	bool SetValue(const FStringView& ValueString) const;
 

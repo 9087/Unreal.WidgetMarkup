@@ -3,8 +3,10 @@
 #include "PropertyChainHandle.h"
 
 #include "PropertyBuffer.h"
-#include "ConverterRegistry.h"
+#include "PropertySetter.h"
 #include "Utilities/PropertyPathResolver.h"
+#include "WidgetMarkupModule.h"
+#include "Modules/ModuleManager.h"
 #include "UObject/UnrealType.h"
 
 TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FWidgetPropertyPath& PropertyPath)
@@ -99,24 +101,6 @@ bool FPropertyChainHandle::IsArrayProperty() const
 	return TailProperty && CastField<FArrayProperty>(TailProperty) != nullptr;
 }
 
-bool FPropertyChainHandle::SetValue(const void* Data) const
-{
-	FProperty* TailProperty = nullptr;
-	void* TailContainer = nullptr;
-	void* TailValueAddress = nullptr;
-	if (!Resolve(TailProperty, TailContainer, TailValueAddress))
-	{
-		return false;
-	}
-
-	if (TailValueAddress && TailProperty)
-	{
-		TailProperty->CopyCompleteValue(TailValueAddress, Data);
-		return true;
-	}
-	return false;
-}
-
 bool FPropertyChainHandle::SetValue(const FPropertyBuffer& PropertyBuffer) const
 {
 	if (!PropertyBuffer.HasValue())
@@ -143,28 +127,40 @@ bool FPropertyChainHandle::SetValue(const FPropertyBuffer& PropertyBuffer) const
 		return false;
 	}
 
-	TailProperty->CopyCompleteValue(TailValueAddress, PropertyBuffer.GetValueData());
-	return true;
+	UObject* TargetObject = Object.Get();
+	if (!TargetObject)
+	{
+		return false;
+	}
+
+	TSharedPtr<FPropertySetter> PropertySetter = nullptr;
+	if (FWidgetMarkupModule* WidgetMarkupModule = FModuleManager::GetModulePtr<FWidgetMarkupModule>("WidgetMarkup"))
+	{
+		PropertySetter = WidgetMarkupModule->CreateCustomPropertySetter(TargetObject->GetClass(), FName(*PropertyPath.GetPathName().ToString()));
+	}
+	if (!PropertySetter.IsValid())
+	{
+		PropertySetter = MakeShared<FPropertySetter>();
+	}
+
+	return PropertySetter->SetValue(TargetObject, PropertyPath, TailProperty, TailValueAddress, PropertyBuffer);
 }
 
 bool FPropertyChainHandle::SetValue(const FStringView& ValueString) const
 {
-	auto TailProperty = GetTailProperty();
+	FProperty* TailProperty = GetTailProperty();
 	if (!TailProperty)
 	{
 		return false;
 	}
 
-	void* Data = TailProperty->AllocateAndInitializeValue();
-	if (!FConverterRegistry::Get().Convert(*TailProperty, Data, ValueString))
+	const FPropertyBuffer PropertyBuffer(TailProperty, ValueString);
+	if (!PropertyBuffer.HasValue())
 	{
-		TailProperty->DestroyAndFreeValue(Data);
 		return false;
 	}
-	bool bOK = SetValue(Data);
-	TailProperty->DestroyAndFreeValue(Data);
-	Data = nullptr;
-	return bOK;
+
+	return SetValue(PropertyBuffer);
 }
 
 TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::GetChildHandle(const FStringView& ChildName) const

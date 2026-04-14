@@ -2,6 +2,7 @@
 
 #include "PropertyBuffer.h"
 
+#include "ConverterRegistry.h"
 #include "Misc/OutputDevice.h"
 #include "Serialization/StructuredArchiveAdapters.h"
 #include "UObject/UObjectGlobals.h"
@@ -10,6 +11,15 @@
 FPropertyBuffer::FPropertyBuffer(FProperty* InProperty)
 {
 	SetProperty(InProperty);
+}
+
+FPropertyBuffer::FPropertyBuffer(FProperty* InProperty, const FStringView& InValueString)
+{
+	SetProperty(InProperty);
+	if (!HasValue() || !InProperty || !FConverterRegistry::Get().Convert(*InProperty, ValueData, InValueString))
+	{
+		SetProperty(nullptr);
+	}
 }
 
 FPropertyBuffer::~FPropertyBuffer()
