@@ -133,6 +133,21 @@ FString FWidgetPropertyPathElement::ToString() const
 	}
 }
 
+FWidgetPropertyPath::FWidgetPropertyPath(const FStringView& InText)
+{
+	FString ParseError;
+	if (!TryParse(InText, *this, &ParseError))
+	{
+		Reset();
+		ensureMsgf(false, TEXT("Invalid widget property path '%s': %s"), *FString(InText), *ParseError);
+	}
+}
+
+FWidgetPropertyPath::FWidgetPropertyPath(const TCHAR* InText)
+	: FWidgetPropertyPath(FStringView(InText ? InText : TEXT("")))
+{
+}
+
 bool FWidgetPropertyPath::TryParse(const FStringView& InText, FWidgetPropertyPath& OutPath, FString* OutError)
 {
 	OutPath.Reset();

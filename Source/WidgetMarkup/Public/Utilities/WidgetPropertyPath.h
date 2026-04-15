@@ -48,6 +48,10 @@ struct WIDGETMARKUP_API FWidgetPropertyPath
 	GENERATED_BODY()
 
 public:
+	FWidgetPropertyPath() = default;
+	explicit FWidgetPropertyPath(const FStringView& InText);
+	explicit FWidgetPropertyPath(const TCHAR* InText);
+
 	static bool TryParse(const FStringView& InText, FWidgetPropertyPath& OutPath, FString* OutError = nullptr);
 
 	void Reset();

@@ -11,6 +11,15 @@ void UWidgetMarkupBlueprintExtension::SetStyleSheets(const TArray<FWidgetStyleSh
 	StyleSheets = InStyleSheets;
 }
 
+FWidgetStyleSheetData& UWidgetMarkupBlueprintExtension::GetOrAddDefaultStyleSheet()
+{
+	if (StyleSheets.Num() == 0)
+	{
+		StyleSheets.AddDefaulted(1);
+	}
+	return StyleSheets[0];
+}
+
 void UWidgetMarkupBlueprintExtension::HandleBeginCompilation(FWidgetBlueprintCompilerContext& InCreationContext)
 {
 	Super::HandleBeginCompilation(InCreationContext);

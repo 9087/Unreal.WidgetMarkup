@@ -31,6 +31,7 @@
 #include "Converters/TextConverter.h"
 #include "Converters/VectorConverter.h"
 #include "ElementNodes/BlueprintElementNode.h"
+#include "PropertySetters/ListViewListItemsPropertySetter.h"
 #include "PropertyRuns/BlueprintSuperPropertyRun.h"
 #include "PropertyRuns/ListViewListItemsPropertyRun.h"
 #include "PropertyRuns/ObjectNamePropertyRun.h"
@@ -83,6 +84,7 @@ void FWidgetMarkupModule::StartupModule()
 	RegisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"), FOnCreatePropertyRun::CreateStatic(&FObjectNamePropertyRun::Create));
 	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"), FOnCreatePropertyRun::CreateStatic(&FBlueprintSuperPropertyRun::Create));
 	RegisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertyRun::CreateStatic(&FListViewListItemsPropertyRun::Create));
+	RegisterCustomPropertySetter(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertySetter::CreateStatic(&FListViewListItemsPropertySetter::Create));
 	
 	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FWidgetMarkupModule::OnPostEngineInit);
 }
@@ -124,6 +126,7 @@ void FWidgetMarkupModule::ShutdownModule()
 	UnregisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"));
 	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"));
 	UnregisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"));
+	UnregisterCustomPropertySetter(UListView::StaticClass(), TEXT("ListItems"));
 
 	FCoreDelegates::OnPostEngineInit.RemoveAll(this);
 	StopSourceFileWatching();

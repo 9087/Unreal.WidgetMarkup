@@ -39,6 +39,19 @@ bool FWidgetStyleEntry::CanApply(FString* OutErrorMessage) const
 	return true;
 }
 
+void FWidgetStyleSheetData::AddOrReplaceStyleEntry(const FWidgetStyleEntry& Entry)
+{
+	for (FWidgetStyleEntry& Existing : Styles)
+	{
+		if (Existing.WidgetName == Entry.WidgetName && Existing.PropertyPath == Entry.PropertyPath)
+		{
+			Existing = Entry;
+			return;
+		}
+	}
+	Styles.Add(Entry);
+}
+
 bool FWidgetStyleSheetData::ApplyToUserWidget(UUserWidget* UserWidget) const
 {
 	bool bAllSucceeded = true;

@@ -35,6 +35,8 @@ FElementNode::FResult FWidgetBlueprintElementNode::OnBegin(const FContext& Conte
 		return FResult::Failure().Error(FText::FromString(TEXT("WidgetBlueprintElementNode: failed to cast stored object to UWidgetBlueprint after creation.")));
 	}
 
+	WidgetBlueprint->bCanCallInitializedWithoutPlayerContext = true;
+
 	UWidgetBlueprintExtension::RequestExtension<UWidgetMarkupBlueprintExtension>(WidgetBlueprint);
 	return FResult::Success();
 }

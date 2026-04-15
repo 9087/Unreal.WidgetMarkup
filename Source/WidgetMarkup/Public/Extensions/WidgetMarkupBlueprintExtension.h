@@ -16,6 +16,7 @@ class WIDGETMARKUP_API UWidgetMarkupBlueprintExtension : public UWidgetBlueprint
 {
 	GENERATED_BODY()
 
+
 public:
 	void SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets);
 
@@ -23,6 +24,11 @@ public:
 	{
 		return StyleSheets;
 	}
+
+   /**
+	* Get or create the default StyleSheet entry (StyleSheets[0]).
+	*/
+   FWidgetStyleSheetData& GetOrAddDefaultStyleSheet();
 
 protected:
 	virtual void HandleBeginCompilation(FWidgetBlueprintCompilerContext& InCreationContext) override;

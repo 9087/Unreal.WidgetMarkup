@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/FieldPath.h"
+#include "UObject/UnrealType.h"
 
 #include "PropertyBuffer.generated.h"
 
@@ -41,6 +42,53 @@ public:
 	bool ImportTextItem(const TCHAR*& Buffer, int32 PortFlags, UObject* Parent, FOutputDevice* ErrorText);
 	bool ExportValueText(FString& OutValueText, int32 PortFlags = 0, UObject* Parent = nullptr, UObject* ExportRootScope = nullptr) const;
 	bool ImportValueText(const TCHAR* Buffer, int32 PortFlags = 0, UObject* Parent = nullptr, FOutputDevice* ErrorText = nullptr);
+
+	template <typename TObjectType>
+	bool ToArray(TArray<TObjectType*>& OutArray) const
+	{
+		static_assert(TIsDerivedFrom<TObjectType, UObject>::IsDerived, "FPropertyBuffer::ToArray only supports UObject types.");
+
+		FArrayProperty* BufferedArrayProperty = CastField<FArrayProperty>(GetProperty());
+		if (!BufferedArrayProperty || !GetValueData())
+		{
+			return false;
+		}
+
+		FObjectPropertyBase* BufferedInnerObjectProperty = CastField<FObjectPropertyBase>(BufferedArrayProperty->Inner);
+		if (!BufferedInnerObjectProperty)
+		{
+			return false;
+		}
+
+		FScriptArrayHelper BufferedArrayHelper(BufferedArrayProperty, GetValueData());
+		const int32 BufferedItemCount = BufferedArrayHelper.Num();
+		OutArray.Reset();
+		OutArray.Reserve(BufferedItemCount);
+		for (int32 BufferedIndex = 0; BufferedIndex < BufferedItemCount; ++BufferedIndex)
+		{
+			void* BufferedElementPointer = BufferedArrayHelper.GetRawPtr(BufferedIndex);
+			if (!BufferedElementPointer)
+			{
+				continue;
+			}
+
+			UObject* BufferedObject = BufferedInnerObjectProperty->GetObjectPropertyValue(BufferedElementPointer);
+			if (!BufferedObject)
+			{
+				continue;
+			}
+
+			TObjectType* TypedBufferedObject = Cast<TObjectType>(BufferedObject);
+			if (!TypedBufferedObject)
+			{
+				return false;
+			}
+
+			OutArray.Add(TypedBufferedObject);
+		}
+
+		return true;
+	}
 
 private:
 	bool Initialize();

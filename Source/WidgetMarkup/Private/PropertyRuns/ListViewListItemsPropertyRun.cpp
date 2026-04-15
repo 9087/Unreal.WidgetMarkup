@@ -2,9 +2,13 @@
 
 #include "PropertyRuns/ListViewListItemsPropertyRun.h"
 
+#include "WidgetBlueprint.h"
+#include "WidgetBlueprintExtension.h"
 #include "Components/ListView.h"
 #include "ElementNodes/PropertyBuffer.h"
 #include "ElementNodes/PropertyElementNode.h"
+#include "Extensions/WidgetMarkupBlueprintExtension.h"
+#include "Styles/WidgetStyleSheet.h"
 #include "UObject/UnrealType.h"
 
 TSharedRef<IPropertyRun> FListViewListItemsPropertyRun::Create()
@@ -109,6 +113,19 @@ FElementNode::FResult FListViewListItemsPropertyRun::OnEnd(FElementNode::FContex
 		return Result;
 	}
 
-	ListView->SetListItems(ListItemsSnapshot);
+	// Store the entire ListItemsSnapshot as a single FWidgetStyleEntry in the default StyleSheet
+	UWidgetBlueprint* WidgetBlueprint = Context.FindObject<UWidgetBlueprint>();
+	if (WidgetBlueprint)
+	{
+		UWidgetMarkupBlueprintExtension* WidgetMarkupBlueprintExtension = UWidgetBlueprintExtension::GetExtension<UWidgetMarkupBlueprintExtension>(WidgetBlueprint);
+		if (WidgetMarkupBlueprintExtension)
+		{
+			FWidgetStyleEntry Entry;
+			Entry.WidgetName = ListView->GetFName();
+			Entry.PropertyPath = FWidgetPropertyPath(TEXT("ListItems"));
+			Entry.PropertyValue = *CachedPropertyBuffer;
+			WidgetMarkupBlueprintExtension->GetOrAddDefaultStyleSheet().AddOrReplaceStyleEntry(Entry);
+		}
+	}
 	return FElementNode::FResult::Success();
 }

@@ -38,6 +38,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Style")
 	TArray<FWidgetStyleEntry> Styles;
 
+	/**
+	* Add or replace a style entry by WidgetName and PropertyPath.
+	*/
+	void AddOrReplaceStyleEntry(const FWidgetStyleEntry& Entry);
+
 	bool ApplyToUserWidget(UUserWidget* UserWidget) const;
 };
 
