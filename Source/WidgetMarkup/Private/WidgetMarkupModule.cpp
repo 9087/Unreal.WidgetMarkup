@@ -32,6 +32,7 @@
 #include "Converters/VectorConverter.h"
 #include "ElementNodes/BlueprintElementNode.h"
 #include "PropertySetters/ListViewListItemsPropertySetter.h"
+#include "PropertyRuns/BlueprintImplementsPropertyRun.h"
 #include "PropertyRuns/BlueprintSuperPropertyRun.h"
 #include "PropertyRuns/ListViewListItemsPropertyRun.h"
 #include "PropertyRuns/ObjectNamePropertyRun.h"
@@ -83,6 +84,7 @@ void FWidgetMarkupModule::StartupModule()
 	FConverterRegistry::Get().Register(NAME_Vector2D, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector2D::FReal, 2>::Create));
 	RegisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"), FOnCreatePropertyRun::CreateStatic(&FObjectNamePropertyRun::Create));
 	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"), FOnCreatePropertyRun::CreateStatic(&FBlueprintSuperPropertyRun::Create));
+	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Implements"), FOnCreatePropertyRun::CreateStatic(&FBlueprintImplementsPropertyRun::Create));
 	RegisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertyRun::CreateStatic(&FListViewListItemsPropertyRun::Create));
 	RegisterCustomPropertySetter(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertySetter::CreateStatic(&FListViewListItemsPropertySetter::Create));
 	
@@ -125,6 +127,7 @@ void FWidgetMarkupModule::ShutdownModule()
 	FConverterRegistry::Get().Unregister(NAME_Vector2D);
 	UnregisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"));
 	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"));
+	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Implements"));
 	UnregisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"));
 	UnregisterCustomPropertySetter(UListView::StaticClass(), TEXT("ListItems"));
 

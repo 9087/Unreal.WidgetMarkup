@@ -3,6 +3,7 @@
 #include "TypeParser.h"
 
 #include "EdGraphSchema_K2.h"
+#include "UObject/Interface.h"
 #include "UObject/UObjectIterator.h"
 
 namespace
@@ -92,6 +93,16 @@ UClass* FTypeParser::ResolveClass(const FString& InClassText)
 	}
 
 	return nullptr;
+}
+
+UClass* FTypeParser::ResolveInterface(const FString& InInterfaceText)
+{
+	UClass* Class = ResolveClass(InInterfaceText);
+	if (!Class || !Class->IsChildOf(UInterface::StaticClass()))
+	{
+		return nullptr;
+	}
+	return Class;
 }
 
 UScriptStruct* FTypeParser::ResolveStruct(const FString& InStructText)

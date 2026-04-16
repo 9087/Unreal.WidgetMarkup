@@ -53,6 +53,8 @@ FElementNode::FResult FBlueprintElementNode::CreateOrReuseBlueprint(UPackage* Pa
 		{
 			FBlueprintEditorUtils::BulkRemoveMemberVariables(Blueprint, VarNames);
 		}
+
+		Blueprint->ImplementedInterfaces.Empty();
 	}
 
 	Object = Blueprint;

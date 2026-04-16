@@ -9,6 +9,7 @@ class FTypeParser
 public:
 	static bool ParseType(const FString& InTypeText, FEdGraphPinType& OutPinType, FString& OutError);
 	static UClass* ResolveClass(const FString& InClassText);
+	static UClass* ResolveInterface(const FString& InInterfaceText);
 	static UScriptStruct* ResolveStruct(const FString& InStructText);
 	static UEnum* ResolveEnum(const FString& InEnumText);
 
