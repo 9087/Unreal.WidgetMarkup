@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+
 class FElementNode;
 
 class FElementNodeFactory
@@ -11,19 +13,24 @@ public:
 
 	DECLARE_DELEGATE_RetVal(TSharedRef<FElementNode>, FOnCreateElementNode)
 
-	bool Register(UStruct* Struct, const FOnCreateElementNode& OnCreateElementNode);
+	struct FRegisterOptions
+	{
+		TOptional<FString> Alias;
+	};
+
+	bool Register(UStruct* Struct, const FOnCreateElementNode& OnCreateElementNode, const FRegisterOptions& RegisterOptions = FRegisterOptions());
 	bool Unregister(UStruct* Struct);
 
 	template <typename T>
-	bool Register(FOnCreateElementNode OnCreateElementNode)
+	bool Register(FOnCreateElementNode OnCreateElementNode, const FRegisterOptions& RegisterOptions = FRegisterOptions())
 	{
 		if constexpr (TIsDerivedFrom<T, UObject>::Value)
 		{
-			return Register(T::StaticClass(), OnCreateElementNode);
+			return Register(T::StaticClass(), OnCreateElementNode, RegisterOptions);
 		}
 		else
 		{
-			return Register(T::StaticStruct(), OnCreateElementNode);
+			return Register(T::StaticStruct(), OnCreateElementNode, RegisterOptions);
 		}
 	}
 
@@ -43,5 +50,8 @@ public:
 	TSharedPtr<FElementNode> CreateElementNode(UObject* Outer, const FString& ElementName, UStruct*& Struct);
 
 private:
+	UStruct* ResolveStructByAlias(const FString& ElementName);
+
 	TMap<TWeakObjectPtr<UStruct>, FOnCreateElementNode> CreateElementNodeDelegateMap;
+	TMap<FString, TWeakObjectPtr<UStruct>> AliasToStructMap;
 };
