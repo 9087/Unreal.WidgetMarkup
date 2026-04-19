@@ -51,6 +51,7 @@ public:
 	}
 
 	virtual UObject* GetObject() const { return nullptr; }
+	virtual UStruct* GetPropertyOwnerStruct() const { return nullptr; }
 
 	enum class EMessageType
 	{

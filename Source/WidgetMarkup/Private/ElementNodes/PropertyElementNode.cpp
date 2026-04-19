@@ -282,6 +282,28 @@ FElementNode::FResult FPropertyElementNode::OnAddChild(const TSharedRef<FElement
 	return FResult::Success();
 }
 
+UStruct* FPropertyElementNode::GetPropertyOwnerStruct() const
+{
+	if (!PropertyChain.IsValid())
+	{
+		return nullptr;
+	}
+	FProperty* TailProperty = PropertyChain->GetTailProperty();
+	if (!TailProperty)
+	{
+		return nullptr;
+	}
+	if (FStructProperty* StructProperty = CastField<FStructProperty>(TailProperty))
+	{
+		return StructProperty->Struct;
+	}
+	if (FObjectPropertyBase* ObjectProperty = CastField<FObjectPropertyBase>(TailProperty))
+	{
+		return ObjectProperty->PropertyClass;
+	}
+	return nullptr;
+}
+
 bool FPropertyElementNode::HasProperty(const FStringView& AttributeName)
 {
 	return PropertyChain.IsValid() && PropertyChain->GetChildHandle(AttributeName).IsValid();

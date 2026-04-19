@@ -11,6 +11,7 @@ class FObjectElementNode : public FElementNode, public FGCObject
 	//~Begin FElementNode interface
 public:
 	virtual UObject* GetObject() const override;
+	virtual UStruct* GetPropertyOwnerStruct() const override;
 
 protected:
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;

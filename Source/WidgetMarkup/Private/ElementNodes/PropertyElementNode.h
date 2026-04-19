@@ -26,6 +26,8 @@ public:
 
 	virtual ~FPropertyElementNode() override;
 
+	virtual UStruct* GetPropertyOwnerStruct() const override;
+
 	FString GetPropertyPath() const { return PropertyPath.GetPathName().ToString(); }
 	const FString& GetPropertyName() const { return PropertyName; }
 	const FString& GetPropertyValue() const { return PropertyValue; }

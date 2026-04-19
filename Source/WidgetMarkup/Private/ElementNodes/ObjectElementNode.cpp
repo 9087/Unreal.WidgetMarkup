@@ -12,6 +12,11 @@ UObject* FObjectElementNode::GetObject() const
 	return Object;
 }
 
+UStruct* FObjectElementNode::GetPropertyOwnerStruct() const
+{
+	return Object ? Object->GetClass() : nullptr;
+}
+
 void FObjectElementNode::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	Collector.AddReferencedObject(Object);

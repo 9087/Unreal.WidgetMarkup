@@ -82,6 +82,7 @@ void FWidgetMarkupModule::StartupModule()
 	FConverterRegistry::Get().Register(FSlateColor::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FSlateColorConverter::Create));
 	FConverterRegistry::Get().Register(NAME_Vector, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector::FReal, 3>::Create));
 	FConverterRegistry::Get().Register(NAME_Vector2D, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector2D::FReal, 2>::Create));
+	
 	RegisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"), FOnCreatePropertyRun::CreateStatic(&FObjectNamePropertyRun::Create));
 	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"), FOnCreatePropertyRun::CreateStatic(&FBlueprintSuperPropertyRun::Create));
 	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Implements"), FOnCreatePropertyRun::CreateStatic(&FBlueprintImplementsPropertyRun::Create));
@@ -125,6 +126,7 @@ void FWidgetMarkupModule::ShutdownModule()
 	FConverterRegistry::Get().Unregister(FSlateColor::StaticStruct()->GetFName());
 	FConverterRegistry::Get().Unregister(NAME_Vector);
 	FConverterRegistry::Get().Unregister(NAME_Vector2D);
+
 	UnregisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"));
 	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"));
 	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Implements"));
@@ -216,6 +218,16 @@ TSharedPtr<IPropertyRun> FWidgetMarkupModule::CreateCustomPropertyRun(UStruct* I
 		return nullptr;
 	}
 	return Found->Execute();
+}
+
+TSharedRef<IPropertyRun> FWidgetMarkupModule::CreatePropertyRun(UStruct* InStruct, FName InPropertyPath) const
+{
+	TSharedPtr<IPropertyRun> CustomPropertyRun = CreateCustomPropertyRun(InStruct, InPropertyPath);
+	if (CustomPropertyRun.IsValid())
+	{
+		return CustomPropertyRun.ToSharedRef();
+	}
+	return MakeShared<FPropertyRun>();
 }
 
 TSharedPtr<FPropertySetter> FWidgetMarkupModule::CreateCustomPropertySetter(UStruct* InStruct, FName InPropertyPath) const

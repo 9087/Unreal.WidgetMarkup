@@ -77,6 +77,7 @@ public:
 	}
 
 	TSharedPtr<IPropertyRun> CreateCustomPropertyRun(UStruct* InStruct, FName InPropertyPath) const;
+	TSharedRef<IPropertyRun> CreatePropertyRun(UStruct* InStruct, FName InPropertyPath) const;
 
 	DECLARE_DELEGATE_RetVal(TSharedRef<FPropertySetter>, FOnCreatePropertySetter);
 	bool RegisterCustomPropertySetter(UStruct* InStruct, FName InPropertyPath, FOnCreatePropertySetter InOnCreatePropertySetter);

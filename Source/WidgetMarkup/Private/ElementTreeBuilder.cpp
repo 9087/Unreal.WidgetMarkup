@@ -47,17 +47,11 @@ bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* 
 		}
 
 		UObject* Object = ObjectNode->GetObject();
-		TSharedPtr<IPropertyRun> PropertyRun = nullptr;
-		if (Object && WidgetMarkupModule)
-		{
-			PropertyRun = WidgetMarkupModule->CreateCustomPropertyRun(Object->GetClass(), FName(ElementName));
-		}
+		TSharedPtr<FElementNode> ParentNode = Context.GetLastNode();
+		UStruct* OwnerStruct = ParentNode.IsValid() ? ParentNode->GetPropertyOwnerStruct() : nullptr;
+		TSharedRef<IPropertyRun> PropertyRun = WidgetMarkupModule->CreatePropertyRun(OwnerStruct, FName(ElementName));
 		FStringView PropertyName(ElementName);
 		FStringView PropertyValue(ElementData ? ElementData : TEXT(""));
-		if (!PropertyRun)
-		{
-			PropertyRun = MakeShared<FPropertyRun>();
-		}
 		if (PropertyRun->OnBegin(Context, Object, PropertyName, PropertyValue))
 		{
 			return true;
@@ -122,15 +116,12 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 	}
 
 	UObject* Object = Current->GetObject();
-	TSharedPtr<IPropertyRun> PropertyRun = nullptr;
-	if (Object && WidgetMarkupModule)
+	if (!Object)
 	{
-		PropertyRun = WidgetMarkupModule->CreateCustomPropertyRun(Object->GetClass(), FName(PropertyName));
+		TSharedPtr<FElementNode> ObjectNode = Context.GetLastObjectNode();
+		Object = ObjectNode.IsValid() ? ObjectNode->GetObject() : nullptr;
 	}
-	if (!PropertyRun)
-	{
-		PropertyRun = MakeShared<FPropertyRun>();
-	}
+	TSharedRef<IPropertyRun> PropertyRun = WidgetMarkupModule->CreatePropertyRun(Current->GetPropertyOwnerStruct(), FName(PropertyName));
 	auto Result = PropertyRun->OnBegin(Context, Object, PropertyName, PropertyValue);
 	if (Result)
 	{
