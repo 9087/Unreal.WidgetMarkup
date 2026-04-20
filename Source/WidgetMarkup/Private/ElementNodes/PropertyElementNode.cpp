@@ -5,6 +5,7 @@
 #include "ObjectElementNode.h"
 #include "PropertyBuffer.h"
 #include "PropertyChainHandle.h"
+#include "StructElementNode.h"
 #include "Misc/ScopeExit.h"
 #include "Utilities/WidgetPropertyPath.h"
 #include "UObject/UnrealType.h"
@@ -76,39 +77,36 @@ FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UOb
 	{
 		PropertyPath = PropertyPath.WithAppendedProperty(PropertyName);
 	}
-	else
+	else if (TSharedPtr<FStructElementNode> StructParent = CastElementNode<FStructElementNode>(Parent))
 	{
-		PropertyParent = CastElementNode<FPropertyElementNode>(Parent);
-		if (!PropertyParent)
+		PropertyPath = StructParent->GetBufferedPropertyContext().GetRootPropertyPath().WithAppendedProperty(PropertyName);
+		BufferedPropertyContext = StructParent->GetBufferedPropertyContext();
+	}
+	else if ((PropertyParent = CastElementNode<FPropertyElementNode>(Parent)))
+	{
+		PropertyPath = PropertyParent->PropertyPath;
+		BufferedPropertyContext = PropertyParent->BufferedPropertyContext;
+		bool bPropertyPathInitialized = false;
+		if (PropertyParent->PropertyChain)
 		{
-			return FResult::Failure().Error(FText::Format(
-				FText::FromString(TEXT("Expected property parent node for nested property '{0}'.")),
-				FText::FromString(PropertyName)));
-		}
-		else
-		{
-			PropertyPath = PropertyParent->PropertyPath;
-			bool bPropertyPathInitialized = false;
-			if (PropertyParent->PropertyChain)
+			if (PropertyParent->PropertyChain->IsArrayProperty())
 			{
-				if (PropertyParent->PropertyChain->IsArrayProperty())
-				{
-					bUseBufferedWrite = true;
-					PropertyPath = PropertyPath.WithAppendedArrayIndex(PropertyParent->ElementChildren.Num());
-					bPropertyPathInitialized = true;
-				}
-			}
-			if (!bPropertyPathInitialized)
-			{
-				PropertyPath = PropertyPath.WithAppendedProperty(PropertyName);
+				bUseBufferedWrite = true;
+				PropertyPath = PropertyPath.WithAppendedArrayIndex(PropertyParent->ElementChildren.Num());
 				bPropertyPathInitialized = true;
 			}
 		}
+		if (!bPropertyPathInitialized)
+		{
+			PropertyPath = PropertyPath.WithAppendedProperty(PropertyName);
+			bPropertyPathInitialized = true;
+		}
 	}
-
-	if (PropertyParent)
+	else
 	{
-		BufferedPropertyContext = PropertyParent->BufferedPropertyContext;
+		return FResult::Failure().Error(FText::Format(
+			FText::FromString(TEXT("Expected property, struct, or object parent node for nested property '{0}'.")),
+			FText::FromString(PropertyName)));
 	}
 
 	if (bUseBufferedWrite && BufferedPropertyContext.InValid())

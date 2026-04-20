@@ -39,6 +39,7 @@
 #include "Utilities/WidgetPropertyPath.h"
 #include "ElementNodes/ContentWidgetElementNode.h"
 #include "ElementNodes/PanelWidgetElementNode.h"
+#include "ElementNodes/StructElementNode.h"
 #include "ElementNodes/WidgetBlueprintElementNode.h"
 #include "ElementNodes/WidgetElementNode.h"
 #include "ElementNodes/WidgetTreeElementNode.h"
