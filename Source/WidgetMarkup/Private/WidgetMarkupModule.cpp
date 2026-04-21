@@ -31,6 +31,8 @@
 #include "Converters/TextConverter.h"
 #include "Converters/VectorConverter.h"
 #include "ElementNodes/BlueprintElementNode.h"
+#include "ElementNodes/BlueprintVariableElementNode.h"
+#include "ElementNodes/WidgetMarkupBlueprintVariable.h"
 #include "PropertySetters/ListViewListItemsPropertySetter.h"
 #include "PropertyRuns/BlueprintImplementsPropertyRun.h"
 #include "PropertyRuns/BlueprintSuperPropertyRun.h"
@@ -57,6 +59,7 @@ void FWidgetMarkupModule::StartupModule()
 	FElementNodeFactory::Get().Register<UContentWidget>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FContentWidgetElementNode::Create));
 	FElementNodeFactory::Get().Register<UBlueprint>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FBlueprintElementNode::Create));
 	FElementNodeFactory::Get().Register<UWidgetBlueprint>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetBlueprintElementNode::Create));
+	FElementNodeFactory::Get().Register<FWidgetMarkupBlueprintVariable>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FBlueprintVariableElementNode::Create), FElementNodeFactory::FRegisterOptions{FString(TEXT("Variable"))});
 
 	FConverterRegistry::Get().Register(NAME_ByteProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<uint8>::Create));
 	FConverterRegistry::Get().Register(NAME_IntProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<int>::Create));
@@ -101,6 +104,7 @@ void FWidgetMarkupModule::ShutdownModule()
 	FElementNodeFactory::Get().Unregister<UContentWidget>();
 	FElementNodeFactory::Get().Unregister<UWidgetBlueprint>();
 	FElementNodeFactory::Get().Unregister<UBlueprint>();
+	FElementNodeFactory::Get().Unregister<FWidgetMarkupBlueprintVariable>();
 
 	FConverterRegistry::Get().Unregister(NAME_ByteProperty);
 	FConverterRegistry::Get().Unregister(NAME_IntProperty);

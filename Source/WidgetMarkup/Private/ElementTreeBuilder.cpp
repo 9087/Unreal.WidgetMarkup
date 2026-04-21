@@ -5,7 +5,6 @@
 #include "ElementNode.h"
 #include "ElementNodeFactory.h"
 #include "WidgetMarkupModule.h"
-#include "ElementNodes/BlueprintVariableElementNode.h"
 #include "ElementNodes/ObjectElementNode.h"
 #include "ElementNodes/PropertyElementNode.h"
 #include "Utilities/TypeResolver.h"
@@ -28,14 +27,7 @@ bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* 
 	TSharedPtr<FElementNode> ElementNode;
 
 	const FString ElementNameString(ElementName);
-	if (ElementNameString.Equals(TEXT("Variable"), ESearchCase::IgnoreCase))
-	{
-		ElementNode = FBlueprintVariableElementNode::Create();
-	}
-	else
-	{
-		ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, ElementName, Struct);
-	}
+	ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, ElementName, Struct);
 
 	if (!ElementNode.IsValid())
 	{
@@ -105,15 +97,6 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 
 	FStringView PropertyName(AttributeName);
 	FStringView PropertyValue(AttributeValue);
-
-	if (FBlueprintVariableElementNode* VariableElementNode = CastElementNode<FBlueprintVariableElementNode>(Current.Get()))
-	{
-		if (!VariableElementNode->ApplyVariableAttribute(PropertyName, PropertyValue).PrintOnFailure())
-		{
-			return false;
-		}
-		return true;
-	}
 
 	UObject* Object = Current->GetObject();
 	if (!Object)

@@ -34,6 +34,7 @@ private:
 	void Cleanup();
 
 	UScriptStruct* ScriptStruct = nullptr;
+	UScriptStruct* ValueOwnerStruct = nullptr;
 	FStructProperty* ValueProperty = nullptr;
 	TSharedPtr<FPropertyBuffer> StructPropertyBuffer;
 	FBufferedPropertyContext StructBufferedPropertyContext;

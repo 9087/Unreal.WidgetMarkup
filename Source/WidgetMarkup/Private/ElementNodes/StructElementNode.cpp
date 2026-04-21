@@ -46,7 +46,10 @@ FElementNode::FResult FStructElementNode::OnBegin(const FContext& Context, UObje
 		return FResult::Failure().Error(FText::FromString(TEXT("StructElementNode: Struct must be a UScriptStruct.")));
 	}
 
-	ValueProperty = new FStructProperty(FFieldVariant(), TEXT("Value"), RF_NoFlags);
+	ValueOwnerStruct = NewObject<UScriptStruct>(GetTransientPackage(), NAME_None, RF_Transient);
+	ValueOwnerStruct->AddToRoot();
+
+	ValueProperty = new FStructProperty(FFieldVariant(ValueOwnerStruct), TEXT("Value"), RF_NoFlags);
 	ValueProperty->Struct = ScriptStruct;
 	ValueProperty->ElementSize = ScriptStruct->GetStructureSize();
 
@@ -105,6 +108,11 @@ void FStructElementNode::Cleanup()
 	{
 		delete ValueProperty;
 		ValueProperty = nullptr;
+	}
+	if (ValueOwnerStruct)
+	{
+		ValueOwnerStruct->RemoveFromRoot();
+		ValueOwnerStruct = nullptr;
 	}
 	ScriptStruct = nullptr;
 }

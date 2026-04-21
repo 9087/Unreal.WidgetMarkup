@@ -2,47 +2,26 @@
 
 #include "BlueprintVariableElementNode.h"
 
+#include "WidgetMarkupBlueprintVariable.h"
 #include "../Utilities/TypeParser.h"
 #include "Engine/Blueprint.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 
-IMPLEMENT_ELEMENT_NODE(FBlueprintVariableElementNode, FElementNode)
+IMPLEMENT_ELEMENT_NODE(FBlueprintVariableElementNode, FStructElementNode)
 
 TSharedRef<FElementNode> FBlueprintVariableElementNode::Create()
 {
 	return MakeShared<FBlueprintVariableElementNode>();
 }
 
-FElementNode::FResult FBlueprintVariableElementNode::ApplyVariableAttribute(const FStringView& InAttributeName, const FStringView& InAttributeValue)
-{
-	const FString AttributeName(InAttributeName);
-	const FString AttributeValue = FString(InAttributeValue).TrimStartAndEnd();
-
-	if (AttributeName.Equals(TEXT("Name"), ESearchCase::IgnoreCase))
-	{
-		VariableName = AttributeValue;
-		bNameSet = true;
-		return FResult::Success();
-	}
-	if (AttributeName.Equals(TEXT("Type"), ESearchCase::IgnoreCase))
-	{
-		VariableType = AttributeValue;
-		bTypeSet = true;
-		return FResult::Success();
-	}
-	if (AttributeName.Equals(TEXT("Default"), ESearchCase::IgnoreCase))
-	{
-		VariableDefaultValue = AttributeValue;
-		return FResult::Success();
-	}
-
-	return FResult::Failure().Error(FText::Format(
-		FText::FromString(TEXT("Variable element: unsupported attribute '{0}'.")),
-		FText::FromString(AttributeName)));
-}
-
 FElementNode::FResult FBlueprintVariableElementNode::OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct)
 {
+	FResult Result = FStructElementNode::OnBegin(Context, Outer, Struct);
+	if (!Result)
+	{
+		return Result;
+	}
+
 	ParentBlueprint = Context.FindObject<UBlueprint>();
 	if (!ParentBlueprint.IsValid())
 	{
@@ -58,11 +37,22 @@ FElementNode::FResult FBlueprintVariableElementNode::OnEnd()
 	{
 		return FResult::Failure().Error(FText::FromString(TEXT("Variable element has no owning Blueprint.")));
 	}
-	if (!bNameSet || VariableName.TrimStartAndEnd().IsEmpty())
+
+	const auto* VariableData = static_cast<const FWidgetMarkupBlueprintVariable*>(GetStructMemory());
+	if (!VariableData)
+	{
+		return FResult::Failure().Error(FText::FromString(TEXT("Variable element has no struct data.")));
+	}
+
+	const FString VariableName = VariableData->Name.TrimStartAndEnd();
+	const FString VariableType = VariableData->Type.TrimStartAndEnd();
+	const FString VariableDefaultValue = VariableData->Default;
+
+	if (VariableName.IsEmpty())
 	{
 		return FResult::Failure().Error(FText::FromString(TEXT("Variable element requires a non-empty Name attribute.")));
 	}
-	if (!bTypeSet || VariableType.TrimStartAndEnd().IsEmpty())
+	if (VariableType.IsEmpty())
 	{
 		return FResult::Failure().Error(FText::FromString(TEXT("Variable element requires a non-empty Type attribute.")));
 	}
@@ -86,15 +76,10 @@ FElementNode::FResult FBlueprintVariableElementNode::OnEnd()
 			FText::FromString(ParentBlueprintObject->GetName())));
 	}
 
-	return FResult::Success();
+	return FStructElementNode::OnEnd();
 }
 
 FElementNode::FResult FBlueprintVariableElementNode::OnAddChild(const TSharedRef<FElementNode>& Child)
 {
 	return FResult::Failure().Error(FText::FromString(TEXT("Variable element does not support child elements.")));
-}
-
-bool FBlueprintVariableElementNode::HasProperty(const FStringView& AttributeName)
-{
-	return false;
 }
