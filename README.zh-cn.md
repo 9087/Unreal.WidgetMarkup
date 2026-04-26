@@ -1,18 +1,40 @@
 # WidgetMarkup
 
-[English](https://github.com/9087/Unreal.WidgetMarkup) | **简体中文**
+[English](README.md) | **简体中文**
 
 在Unreal引擎中利用XML语言搭建UMG控件树。
 
 ![](Documents/WidgetMarkup.gif)
 
+## 快速开始
+
+1. 在 Unreal 编辑器中启用 WidgetMarkup 插件。
+2. 在项目内容源中准备一个 `*.unrealwidgetmarkup` 文件。
+3. 在编辑器 CMD 输入栏执行：
+
+```txt
+WidgetMarkup.Show /Game/WidgetMarkup/Example
+```
+
+4. 预览窗口会打开，并在源文件变化时自动刷新。
+
 ## 用法
 
 在Unreal引擎编辑器的CMD输入栏中输入：
 
+```txt
+WidgetMarkup.Show <包路径>
 ```
-WidgetMarkup.Show <*.unrealwidgetmarkup文件路径>
+
+`包路径`需要使用 Unreal 资源路径格式，例如：
+
+```txt
+/Game/WidgetMarkup/Example
 ```
+
+它对应同一路径下的 `Example.unrealwidgetmarkup` 源文件。
+
+不要传入磁盘文件路径，也不要带 `.unrealwidgetmarkup` 扩展名。
 
 文件内容如下：
 

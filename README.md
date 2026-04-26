@@ -6,13 +6,35 @@ Build UMG widget trees with XML in Unreal Engine.
 
 ![](Documents/WidgetMarkup.gif)
 
+## Quick Start
+
+1. Enable the WidgetMarkup plugin in the Unreal Editor.
+2. Prepare a `*.unrealwidgetmarkup` file in your project content source.
+3. In the Editor CMD input bar, run:
+
+```txt
+WidgetMarkup.Show /Game/WidgetMarkup/Example
+```
+
+4. The preview window opens and updates when the source file changes.
+
 ## Usage
 
 In the Unreal Editor, enter the following in the CMD input bar:
 
+```txt
+WidgetMarkup.Show <Package Path>
 ```
-WidgetMarkup.Show <*.unrealwidgetmarkup File Path>
+
+`Package Path` must be in Unreal asset path format, for example:
+
+```txt
+/Game/WidgetMarkup/Example
 ```
+
+It points to the `Example.unrealwidgetmarkup` source file under the same logical path.
+
+Do not pass a disk file path or extension such as `.unrealwidgetmarkup`.
 
 Example file content:
 
