@@ -16,13 +16,8 @@ TSharedRef<IPropertyRun> FListViewListItemsPropertyRun::Create()
 	return MakeShared<FListViewListItemsPropertyRun>();
 }
 
-FElementNode::FResult FListViewListItemsPropertyRun::OnBegin(FElementNode::FContext& Context, UObject* Object, const FStringView& PropertyName, const FStringView& PropertyValue)
+FElementNode::FResult FListViewListItemsPropertyRun::OnBegin(FElementNode::FContext& Context, UObject* Object, const FStringView& /*PropertyName*/, const FStringView& PropertyValue)
 {
-	if (!PropertyName.Equals(TEXT("ListItems"), ESearchCase::IgnoreCase))
-	{
-		return FElementNode::FResult::Failure();
-	}
-
 	UListView* ListView = Cast<UListView>(Object);
 	if (!ListView)
 	{
@@ -32,7 +27,7 @@ FElementNode::FResult FListViewListItemsPropertyRun::OnBegin(FElementNode::FCont
 			FText::FromString(ObjectTypeName)));
 	}
 
-	TSharedPtr<FPropertyElementNode> NewPropertyElementNode = MakeShared<FPropertyElementNode>(PropertyName, PropertyValue, true);
+	TSharedPtr<FPropertyElementNode> NewPropertyElementNode = MakeShared<FPropertyElementNode>(TEXT("ListItems"), PropertyValue, true);
 	FElementNode::FResult Result = NewPropertyElementNode->Begin(Context, ListView, nullptr);
 	if (!Result)
 	{

@@ -11,13 +11,8 @@ TSharedRef<IPropertyRun> FBlueprintSuperPropertyRun::Create()
 	return MakeShared<FBlueprintSuperPropertyRun>();
 }
 
-FElementNode::FResult FBlueprintSuperPropertyRun::OnBegin(FElementNode::FContext& /*Context*/, UObject* Object, const FStringView& PropertyName, const FStringView& PropertyValue)
+FElementNode::FResult FBlueprintSuperPropertyRun::OnBegin(FElementNode::FContext& /*Context*/, UObject* Object, const FStringView& /*PropertyName*/, const FStringView& PropertyValue)
 {
-	if (!PropertyName.Equals(TEXT("Super"), ESearchCase::IgnoreCase))
-	{
-		return FElementNode::FResult::Failure();
-	}
-
 	UBlueprint* Blueprint = Cast<UBlueprint>(Object);
 	if (!Blueprint)
 	{

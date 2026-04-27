@@ -10,13 +10,8 @@ TSharedRef<IPropertyRun> FWidgetBlueprintScriptPropertyRun::Create()
 	return MakeShared<FWidgetBlueprintScriptPropertyRun>();
 }
 
-FElementNode::FResult FWidgetBlueprintScriptPropertyRun::OnBegin(FElementNode::FContext& /*Context*/, UObject* Object, const FStringView& PropertyName, const FStringView& PropertyValue)
+FElementNode::FResult FWidgetBlueprintScriptPropertyRun::OnBegin(FElementNode::FContext& /*Context*/, UObject* Object, const FStringView& /*PropertyName*/, const FStringView& PropertyValue)
 {
-	if (!PropertyName.Equals(TEXT("Script"), ESearchCase::IgnoreCase))
-	{
-		return FElementNode::FResult::Failure();
-	}
-
 	UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(Object);
 	if (!WidgetBlueprint)
 	{

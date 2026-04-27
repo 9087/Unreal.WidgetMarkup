@@ -17,13 +17,8 @@ TSharedRef<IPropertyRun> FObjectNamePropertyRun::Create()
 	return MakeShared<FObjectNamePropertyRun>();
 }
 
-FElementNode::FResult FObjectNamePropertyRun::OnBegin(FElementNode::FContext& Context, UObject* Object, const FStringView& PropertyName, const FStringView& PropertyValue)
+FElementNode::FResult FObjectNamePropertyRun::OnBegin(FElementNode::FContext& Context, UObject* Object, const FStringView& /*PropertyName*/, const FStringView& PropertyValue)
 {
-	if (!PropertyName.Equals(TEXT("Name"), ESearchCase::IgnoreCase))
-	{
-		return FElementNode::FResult::Failure();
-	}
-
 	if (!Object)
 	{
 		return FElementNode::FResult::Failure().Error(FText::FromString(TEXT("Name property target object is null.")));
@@ -47,8 +42,7 @@ FElementNode::FResult FObjectNamePropertyRun::OnBegin(FElementNode::FContext& Co
 	}
 
 	TSharedRef<FObjectNamePropertyMetaData> MetaData = Context.GetOrAddMetaData<FObjectNamePropertyMetaData>();
-	const FString NormalizedName = Name.ToLower();
-	if (const FString* ExistingDescription = MetaData->UsedNames.Find(NormalizedName))
+	if (const FString* ExistingDescription = MetaData->UsedNames.Find(Name))
 	{
 		return FElementNode::FResult::Failure().Error(
 			FText::Format(
@@ -57,7 +51,7 @@ FElementNode::FResult FObjectNamePropertyRun::OnBegin(FElementNode::FContext& Co
 				FText::FromString(*ExistingDescription)));
 	}
 
-	MetaData->UsedNames.Add(NormalizedName, FString::Printf(TEXT("%s (%s)"), *Object->GetClass()->GetName(), *Object->GetName()));
+	MetaData->UsedNames.Add(Name, FString::Printf(TEXT("%s (%s)"), *Object->GetClass()->GetName(), *Object->GetName()));
 
 	if (!Object->Rename(*Name, nullptr, REN_DontCreateRedirectors | REN_NonTransactional))
 	{

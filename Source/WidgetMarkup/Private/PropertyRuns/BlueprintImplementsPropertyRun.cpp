@@ -11,13 +11,8 @@ TSharedRef<IPropertyRun> FBlueprintImplementsPropertyRun::Create()
 	return MakeShared<FBlueprintImplementsPropertyRun>();
 }
 
-FElementNode::FResult FBlueprintImplementsPropertyRun::OnBegin(FElementNode::FContext& /*Context*/, UObject* Object, const FStringView& PropertyName, const FStringView& PropertyValue)
+FElementNode::FResult FBlueprintImplementsPropertyRun::OnBegin(FElementNode::FContext& /*Context*/, UObject* Object, const FStringView& /*PropertyName*/, const FStringView& PropertyValue)
 {
-	if (!PropertyName.Equals(TEXT("Implements"), ESearchCase::IgnoreCase))
-	{
-		return FElementNode::FResult::Failure();
-	}
-
 	UBlueprint* Blueprint = Cast<UBlueprint>(Object);
 	if (!Blueprint)
 	{
