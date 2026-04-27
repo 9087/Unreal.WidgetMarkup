@@ -19,13 +19,22 @@ public:
 	virtual void Initialize(UUserWidget* UserWidget) override;
 
 	void SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets);
+	void SetScript(const FString& InScript);
 
 	const TArray<FWidgetStyleSheetData>& GetStyleSheets() const
 	{
 		return StyleSheets;
 	}
 
+	const FString& GetScript() const
+	{
+		return Script;
+	}
+
 private:
 	UPROPERTY()
 	TArray<FWidgetStyleSheetData> StyleSheets;
+
+	UPROPERTY()
+	FString Script;
 };

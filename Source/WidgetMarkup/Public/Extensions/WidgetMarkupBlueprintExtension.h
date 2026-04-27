@@ -19,10 +19,16 @@ class WIDGETMARKUP_API UWidgetMarkupBlueprintExtension : public UWidgetBlueprint
 
 public:
 	void SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets);
+	void SetScript(const FString& InScript);
 
 	const TArray<FWidgetStyleSheetData>& GetStyleSheets() const
 	{
 		return StyleSheets;
+	}
+
+	const FString& GetScript() const
+	{
+		return Script;
 	}
 
    /**
@@ -38,6 +44,9 @@ protected:
 private:
 	UPROPERTY(EditAnywhere, Category = "Widget Markup")
 	TArray<FWidgetStyleSheetData> StyleSheets;
+
+	UPROPERTY(EditAnywhere, Category = "Widget Markup")
+	FString Script;
 
 	FWidgetBlueprintCompilerContext* CurrentCompilerContext = nullptr;
 };

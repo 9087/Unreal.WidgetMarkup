@@ -38,6 +38,7 @@
 #include "PropertyRuns/BlueprintSuperPropertyRun.h"
 #include "PropertyRuns/ListViewListItemsPropertyRun.h"
 #include "PropertyRuns/ObjectNamePropertyRun.h"
+#include "PropertyRuns/WidgetBlueprintScriptPropertyRun.h"
 #include "Utilities/WidgetPropertyPath.h"
 #include "ElementNodes/ContentWidgetElementNode.h"
 #include "ElementNodes/PanelWidgetElementNode.h"
@@ -90,6 +91,7 @@ void FWidgetMarkupModule::StartupModule()
 	RegisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"), FOnCreatePropertyRun::CreateStatic(&FObjectNamePropertyRun::Create));
 	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"), FOnCreatePropertyRun::CreateStatic(&FBlueprintSuperPropertyRun::Create));
 	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Implements"), FOnCreatePropertyRun::CreateStatic(&FBlueprintImplementsPropertyRun::Create));
+	RegisterCustomPropertyRun(UWidgetBlueprint::StaticClass(), TEXT("Script"), FOnCreatePropertyRun::CreateStatic(&FWidgetBlueprintScriptPropertyRun::Create));
 	RegisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertyRun::CreateStatic(&FListViewListItemsPropertyRun::Create));
 	RegisterCustomPropertySetter(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertySetter::CreateStatic(&FListViewListItemsPropertySetter::Create));
 	
@@ -135,6 +137,7 @@ void FWidgetMarkupModule::ShutdownModule()
 	UnregisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"));
 	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"));
 	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Implements"));
+	UnregisterCustomPropertyRun(UWidgetBlueprint::StaticClass(), TEXT("Script"));
 	UnregisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"));
 	UnregisterCustomPropertySetter(UListView::StaticClass(), TEXT("ListItems"));
 
@@ -362,6 +365,11 @@ FString FWidgetMarkupModule::GetReferencerName() const
 FWidgetMarkupModule::FOnObjectCompiled& FWidgetMarkupModule::GetOnObjectCompiled()
 {
 	return OnObjectCompiled;
+}
+
+FWidgetMarkupModule::FOnWidgetMarkupUserWidgetInitialized& FWidgetMarkupModule::GetOnWidgetMarkupUserWidgetInitialized()
+{
+	return OnWidgetMarkupUserWidgetInitialized;
 }
 
 bool FWidgetMarkupModule::RegisterCustomPropertyRun(UStruct* InStruct, FName InPropertyPath, FOnCreatePropertyRun InOnCreatePropertyRun)

@@ -12,6 +12,9 @@
 
 WIDGETMARKUP_API DECLARE_LOG_CATEGORY_EXTERN(LogWidgetMarkup, Log, All);
 
+class UUserWidget;
+class UWidgetMarkupBlueprintGeneratedClassExtension;
+
 class FWidgetMarkupModule : public IModuleInterface, public FGCObject
 {
 public:
@@ -45,6 +48,9 @@ public:
 
 	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnObjectCompiled, FName, UObject*)
 	FOnObjectCompiled& GetOnObjectCompiled();
+
+	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnWidgetMarkupUserWidgetInitialized, UUserWidget*, UWidgetMarkupBlueprintGeneratedClassExtension*)
+	FOnWidgetMarkupUserWidgetInitialized& GetOnWidgetMarkupUserWidgetInitialized();
 
 	DECLARE_DELEGATE_RetVal(TSharedRef<IPropertyRun>, FOnCreatePropertyRun);
 	bool RegisterCustomPropertyRun(UStruct* InStruct, FName InPropertyPath, FOnCreatePropertyRun InOnCreatePropertyRun);
@@ -116,6 +122,7 @@ private:
 
 	TMap<FName, TObjectPtr<UObject>> Objects;
 	FOnObjectCompiled OnObjectCompiled;
+	FOnWidgetMarkupUserWidgetInitialized OnWidgetMarkupUserWidgetInitialized;
 
 	/** Custom properties: keyed by UStruct* (element type), then exact canonical property path to descriptor. */
 	TMap<TWeakObjectPtr<UStruct>, TMap<FWidgetPropertyPath, FOnCreatePropertyRun>> PropertyRunCreateDelegates;

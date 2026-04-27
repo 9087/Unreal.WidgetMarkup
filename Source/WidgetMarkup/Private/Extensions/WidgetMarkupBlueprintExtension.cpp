@@ -11,6 +11,11 @@ void UWidgetMarkupBlueprintExtension::SetStyleSheets(const TArray<FWidgetStyleSh
 	StyleSheets = InStyleSheets;
 }
 
+void UWidgetMarkupBlueprintExtension::SetScript(const FString& InScript)
+{
+	Script = InScript;
+}
+
 FWidgetStyleSheetData& UWidgetMarkupBlueprintExtension::GetOrAddDefaultStyleSheet()
 {
 	if (StyleSheets.Num() == 0)
@@ -38,11 +43,13 @@ void UWidgetMarkupBlueprintExtension::HandleFinishCompilingClass(UWidgetBlueprin
 	if (UWidgetMarkupBlueprintGeneratedClassExtension* ExistingExtension = Class->GetExtension<UWidgetMarkupBlueprintGeneratedClassExtension>(false))
 	{
 		ExistingExtension->SetStyleSheets(StyleSheets);
+		ExistingExtension->SetScript(Script);
 		return;
 	}
 
 	UWidgetMarkupBlueprintGeneratedClassExtension* ClassExtension = NewObject<UWidgetMarkupBlueprintGeneratedClassExtension>(Class);
 	ClassExtension->SetStyleSheets(StyleSheets);
+	ClassExtension->SetScript(Script);
 	CurrentCompilerContext->AddExtension(Class, ClassExtension);
 }
 
