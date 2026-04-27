@@ -190,29 +190,6 @@ TSharedPtr<IPropertyRun> FWidgetMarkupModule::CreateCustomPropertyRun(UStruct* I
 		return nullptr;
 	}
 
-	UStruct* BestStruct = nullptr;
-	const TMap<FWidgetPropertyPath, FOnCreatePropertyRun>* BestRegistry = nullptr;
-	for (const auto& KeyValuePair : PropertyRunCreateDelegates)
-	{
-		UStruct* Struct = KeyValuePair.Key.Get();
-		if (!Struct)
-		{
-			continue;
-		}
-		if (InStruct->IsChildOf(Struct))
-		{
-			if (!BestStruct || Struct->IsChildOf(BestStruct))
-			{
-				BestStruct = Struct;
-				BestRegistry = &KeyValuePair.Value;
-			}
-		}
-	}
-	if (!BestRegistry)
-	{
-		return nullptr;
-	}
-
 	FWidgetPropertyPath PropertyPath;
 	FString ParseError;
 	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
@@ -220,12 +197,37 @@ TSharedPtr<IPropertyRun> FWidgetMarkupModule::CreateCustomPropertyRun(UStruct* I
 		return nullptr;
 	}
 
-	auto Found = BestRegistry->Find(PropertyPath);
-	if (!Found || !Found->IsBound())
+	UStruct* BestStruct = nullptr;
+	const FOnCreatePropertyRun* BestDelegate = nullptr;
+	for (const auto& KeyValuePair : PropertyRunCreateDelegates)
+	{
+		UStruct* Struct = KeyValuePair.Key.Get();
+		if (!Struct)
+		{
+			continue;
+		}
+		if (!InStruct->IsChildOf(Struct))
+		{
+			continue;
+		}
+
+		const FOnCreatePropertyRun* Found = KeyValuePair.Value.Find(PropertyPath);
+		if (!Found || !Found->IsBound())
+		{
+			continue;
+		}
+
+		if (!BestStruct || Struct->IsChildOf(BestStruct))
+		{
+			BestStruct = Struct;
+			BestDelegate = Found;
+		}
+	}
+	if (!BestDelegate)
 	{
 		return nullptr;
 	}
-	return Found->Execute();
+	return BestDelegate->Execute();
 }
 
 TSharedRef<IPropertyRun> FWidgetMarkupModule::CreatePropertyRun(UStruct* InStruct, FName InPropertyPath) const
@@ -247,29 +249,6 @@ TSharedPtr<FPropertySetter> FWidgetMarkupModule::CreateCustomPropertySetter(UStr
 		return nullptr;
 	}
 
-	UStruct* BestStruct = nullptr;
-	const TMap<FWidgetPropertyPath, FOnCreatePropertySetter>* BestRegistry = nullptr;
-	for (const auto& KeyValuePair : PropertySetterCreateDelegates)
-	{
-		UStruct* Struct = KeyValuePair.Key.Get();
-		if (!Struct)
-		{
-			continue;
-		}
-		if (InStruct->IsChildOf(Struct))
-		{
-			if (!BestStruct || Struct->IsChildOf(BestStruct))
-			{
-				BestStruct = Struct;
-				BestRegistry = &KeyValuePair.Value;
-			}
-		}
-	}
-	if (!BestRegistry)
-	{
-		return nullptr;
-	}
-
 	FWidgetPropertyPath PropertyPath;
 	FString ParseError;
 	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath, &ParseError))
@@ -277,12 +256,37 @@ TSharedPtr<FPropertySetter> FWidgetMarkupModule::CreateCustomPropertySetter(UStr
 		return nullptr;
 	}
 
-	auto Found = BestRegistry->Find(PropertyPath);
-	if (!Found || !Found->IsBound())
+	UStruct* BestStruct = nullptr;
+	const FOnCreatePropertySetter* BestDelegate = nullptr;
+	for (const auto& KeyValuePair : PropertySetterCreateDelegates)
+	{
+		UStruct* Struct = KeyValuePair.Key.Get();
+		if (!Struct)
+		{
+			continue;
+		}
+		if (!InStruct->IsChildOf(Struct))
+		{
+			continue;
+		}
+
+		const FOnCreatePropertySetter* Found = KeyValuePair.Value.Find(PropertyPath);
+		if (!Found || !Found->IsBound())
+		{
+			continue;
+		}
+
+		if (!BestStruct || Struct->IsChildOf(BestStruct))
+		{
+			BestStruct = Struct;
+			BestDelegate = Found;
+		}
+	}
+	if (!BestDelegate)
 	{
 		return nullptr;
 	}
-	return Found->Execute();
+	return BestDelegate->Execute();
 }
 
 UObject* FWidgetMarkupModule::CompileFromSourceCode(FName PackagePath, const FString& XML)
