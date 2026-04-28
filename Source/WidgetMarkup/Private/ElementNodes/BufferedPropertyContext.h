@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "Utilities/WidgetPropertyPath.h"
 #include "PropertyBuffer.h"
+#include "Utilities/WidgetPropertyPath.h"
 
 struct FBufferedPropertyContext
 {

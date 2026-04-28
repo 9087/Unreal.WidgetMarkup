@@ -3,7 +3,7 @@
 #include "PropertySetters/ListViewListItemsPropertySetter.h"
 
 #include "Components/ListView.h"
-#include "ElementNodes/PropertyBuffer.h"
+#include "PropertyBuffer.h"
 
 TSharedRef<FPropertySetter> FListViewListItemsPropertySetter::Create()
 {

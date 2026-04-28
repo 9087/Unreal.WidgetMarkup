@@ -3,8 +3,24 @@
 #include "Extensions/WidgetMarkupUserWidgetExtension.h"
 
 #include "Blueprint/UserWidget.h"
+#include "Components/IWidgetMarkupComponent.h"
 #include "Styles/WidgetStyleSheet.h"
 #include "WidgetMarkupModule.h"
+
+UWidgetMarkupUserWidgetExtension* UWidgetMarkupUserWidgetExtension::GetOrAddExtension(UUserWidget* UserWidget)
+{
+	if (!UserWidget)
+	{
+		return nullptr;
+	}
+
+	if (UWidgetMarkupUserWidgetExtension* ExistingExtension = UserWidget->GetExtension<UWidgetMarkupUserWidgetExtension>())
+	{
+		return ExistingExtension;
+	}
+
+	return UserWidget->AddExtension<UWidgetMarkupUserWidgetExtension>();
+}
 
 void UWidgetMarkupUserWidgetExtension::Initialize()
 {
@@ -15,6 +31,11 @@ void UWidgetMarkupUserWidgetExtension::Initialize()
 void UWidgetMarkupUserWidgetExtension::SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets)
 {
 	StyleSheets = InStyleSheets;
+}
+
+void UWidgetMarkupUserWidgetExtension::SetWidgetMarkupComponent(TSharedPtr<IWidgetMarkupComponent> InWidgetMarkupComponent)
+{
+	WidgetMarkupComponent = MoveTemp(InWidgetMarkupComponent);
 }
 
 void UWidgetMarkupUserWidgetExtension::ApplyStyleSheets()

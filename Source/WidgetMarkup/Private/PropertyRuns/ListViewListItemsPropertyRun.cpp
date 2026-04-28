@@ -5,7 +5,7 @@
 #include "WidgetBlueprint.h"
 #include "WidgetBlueprintExtension.h"
 #include "Components/ListView.h"
-#include "ElementNodes/PropertyBuffer.h"
+#include "PropertyBuffer.h"
 #include "ElementNodes/PropertyElementNode.h"
 #include "Extensions/WidgetMarkupBlueprintExtension.h"
 #include "Styles/WidgetStyleSheet.h"

@@ -15,7 +15,7 @@ WIDGETMARKUP_API DECLARE_LOG_CATEGORY_EXTERN(LogWidgetMarkup, Log, All);
 class UUserWidget;
 class UWidgetMarkupBlueprintGeneratedClassExtension;
 
-class FWidgetMarkupModule : public IModuleInterface, public FGCObject
+class WIDGETMARKUP_API FWidgetMarkupModule : public IModuleInterface, public FGCObject
 {
 public:
 	virtual void StartupModule() override;

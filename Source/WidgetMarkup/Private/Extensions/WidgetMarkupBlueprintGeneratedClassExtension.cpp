@@ -14,21 +14,10 @@ void UWidgetMarkupBlueprintGeneratedClassExtension::Initialize(UUserWidget* User
 		return;
 	}
 
-	UWidgetMarkupUserWidgetExtension* UserWidgetExtension = UserWidget->GetExtension<UWidgetMarkupUserWidgetExtension>();
-	if (!UserWidgetExtension)
-	{
-		UserWidgetExtension = UserWidget->AddExtension<UWidgetMarkupUserWidgetExtension>();
-	}
+	UWidgetMarkupUserWidgetExtension::GetOrAddExtension(UserWidget)->SetStyleSheets(StyleSheets);
 
-	if (UserWidgetExtension)
-	{
-		UserWidgetExtension->SetStyleSheets(StyleSheets);
-	}
-
-	if (FWidgetMarkupModule* WidgetMarkupModule = FModuleManager::GetModulePtr<FWidgetMarkupModule>(TEXT("WidgetMarkup")))
-	{
-		WidgetMarkupModule->GetOnWidgetMarkupUserWidgetInitialized().Broadcast(UserWidget, this);
-	}
+	FWidgetMarkupModule& WidgetMarkupModule = FModuleManager::GetModuleChecked<FWidgetMarkupModule>(TEXT("WidgetMarkup"));
+	WidgetMarkupModule.GetOnWidgetMarkupUserWidgetInitialized().Broadcast(UserWidget, this);
 }
 
 void UWidgetMarkupBlueprintGeneratedClassExtension::SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets)

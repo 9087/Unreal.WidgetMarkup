@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "ElementNodes/PropertyBuffer.h"
+#include "PropertyBuffer.h"
 #include "Utilities/WidgetPropertyPath.h"
 
 #include "WidgetStyleSheet.generated.h"

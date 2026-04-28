@@ -2,7 +2,7 @@
 
 #include "PropertySetter.h"
 
-#include "ElementNodes/PropertyBuffer.h"
+#include "PropertyBuffer.h"
 #include "UObject/UnrealType.h"
 
 bool FPropertySetter::SetValue(
