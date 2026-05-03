@@ -54,7 +54,7 @@ WidgetMarkup.Show <包路径>
 
 ## 语法插件
 
-本项目同时开发了[VSCode插件](https://github.com/9087/Unreal.WidgetMarkup.VSCodeExtension)，支持简单的语法检查和智能提示。
+本项目同时开发了[VSCode插件](https://github.com/9087/Unreal.WidgetMarkup.VSC)，支持简单的语法检查和智能提示。
 
 
 使用插件前需要在引擎编辑器的CMD输入栏中输入：

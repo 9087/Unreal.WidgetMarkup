@@ -54,7 +54,7 @@ A window will open with a live preview of the corresponding UI:
 
 ## Language Extension
 
-This project also provides a [VSCode extension](https://github.com/9087/Unreal.WidgetMarkup.VSCodeExtension) with basic syntax checking and IntelliSense.
+This project also provides a [VSCode extension](https://github.com/9087/Unreal.WidgetMarkup.VSC) with basic syntax checking and IntelliSense.
 
 Before using the extension, run the following in the Editor CMD input bar:
 
