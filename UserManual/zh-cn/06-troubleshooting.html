@@ -1,0 +1,40 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · 排错与参考 — WidgetMarkup</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div id="manual-header"></div>
+<main class="container">
+    <h1>6. 排错与参考</h1>
+    <p class="lead">常用命令、常见错误与源码定位入口。</p>
+    <h2>6.1 编辑器命令</h2>
+    <pre><code>WidgetMarkup.Show &lt;PackagePath&gt;
+WidgetMarkup.Compile &lt;Name&gt; &lt;XML&gt;
+WidgetMarkup.GenerateIntellisenseData &lt;OutputPath&gt;</code></pre>
+    <h2>6.2 常见错误</h2>
+    <ul>
+        <li>Unresolved Type：类型名无法解析。</li>
+        <li>Container nesting is not supported：不支持容器嵌套。</li>
+        <li>Script property target is not a WidgetBlueprint：Script 只应写在 WidgetBlueprint 根节点。</li>
+    </ul>
+    <h2>6.3 日志类别</h2>
+    <ul>
+        <li>LogWidgetMarkup</li>
+        <li>LogWidgetMarkupPythonIntegration</li>
+    </ul>
+
+    <nav class="pager">
+        <a class="prev" href="05-reactive-components.html"><span class="label">上一页</span>&larr; 05 · 响应式 Python 组件</a>
+        <a class="next" href="index.html"><span class="label">下一页</span>返回目录 &rarr;</a>
+    </nav>
+</main>
+<div id="manual-footer"></div>
+<script src="../assets/manual-shell.js"></script>
+</body>
+</html>
+
+

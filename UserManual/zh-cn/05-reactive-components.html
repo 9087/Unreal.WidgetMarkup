@@ -1,0 +1,35 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · 响应式 Python 组件 — WidgetMarkup</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div id="manual-header"></div>
+<main class="container">
+    <h1>5. 响应式 Python 组件</h1>
+    <p class="lead">使用 @reactive、@computed 与 ObservableCollection 构建轻量视图模型。</p>
+    <h2>5.1 基类能力</h2>
+    <ul>
+        <li>create(module_name)</li>
+        <li>prime_computed_dependencies()</li>
+        <li>on_property_changed(name, value)</li>
+    </ul>
+    <h2>5.2 响应式与计算属性</h2>
+    <p>@reactive 可写且会触发通知，@computed 只读并自动跟踪依赖。</p>
+    <h2>5.3 可观察列表</h2>
+    <p>给响应式属性赋 list 时会自动包装为 ObservableCollection，append/pop 等原地修改也会触发通知。</p>
+
+    <nav class="pager">
+        <a class="prev" href="04-python-integration.html"><span class="label">上一页</span>&larr; 04 · Python 集成概览</a>
+        <a class="next" href="06-troubleshooting.html"><span class="label">下一页</span>06 · 排错与参考 &rarr;</a>
+    </nav>
+</main>
+<div id="manual-footer"></div>
+<script src="../assets/manual-shell.js"></script>
+</body>
+</html>
+
+
