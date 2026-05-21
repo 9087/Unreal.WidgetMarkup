@@ -16,6 +16,16 @@ void UWidgetMarkupBlueprintExtension::SetScript(const FString& InScript)
 	Script = InScript;
 }
 
+void UWidgetMarkupBlueprintExtension::SetPropertyBindings(const TArray<FWidgetPropertyBinding>& InPropertyBindings)
+{
+	PropertyBindings = InPropertyBindings;
+}
+
+void UWidgetMarkupBlueprintExtension::AddDelegateBinding(const FWidgetDelegateBinding& InDelegateBinding)
+{
+	DelegateBindings.Add(InDelegateBinding);
+}
+
 FWidgetStyleSheetData& UWidgetMarkupBlueprintExtension::GetOrAddDefaultStyleSheet()
 {
 	if (StyleSheets.Num() == 0)
@@ -44,12 +54,16 @@ void UWidgetMarkupBlueprintExtension::HandleFinishCompilingClass(UWidgetBlueprin
 	{
 		ExistingExtension->SetStyleSheets(StyleSheets);
 		ExistingExtension->SetScript(Script);
+		ExistingExtension->SetPropertyBindings(PropertyBindings);
+		ExistingExtension->SetDelegateBindings(DelegateBindings);
 		return;
 	}
 
 	UWidgetMarkupBlueprintGeneratedClassExtension* ClassExtension = NewObject<UWidgetMarkupBlueprintGeneratedClassExtension>(Class);
 	ClassExtension->SetStyleSheets(StyleSheets);
 	ClassExtension->SetScript(Script);
+	ClassExtension->SetPropertyBindings(PropertyBindings);
+	ClassExtension->SetDelegateBindings(DelegateBindings);
 	CurrentCompilerContext->AddExtension(Class, ClassExtension);
 }
 

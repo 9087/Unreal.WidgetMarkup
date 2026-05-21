@@ -4,7 +4,7 @@
 
 #include "ObjectElementNode.h"
 #include "PropertyBuffer.h"
-#include "PropertyChainHandle.h"
+#include "ElementNodes/PropertyChainHandle.h"
 #include "StructElementNode.h"
 #include "Misc/ScopeExit.h"
 #include "Utilities/WidgetPropertyPath.h"
@@ -34,6 +34,56 @@ FPropertyElementNode::~FPropertyElementNode()
 			return;
 		}
 	}
+}
+
+bool FPropertyElementNode::TryResolvePropertyPathFromContext(
+	const FContext& Context,
+	const FStringView& PropertyName,
+	bool& bInOutUseBufferedWrite,
+	FWidgetPropertyPath& OutPropertyPath,
+	FBufferedPropertyContext& OutBufferedPropertyContext,
+	FText* OutError)
+{
+	TSharedPtr<FElementNode> ObjectNode = Context.GetLastObjectNode();
+	TSharedPtr<FElementNode> Parent = Context.GetLastNode();
+	OutPropertyPath.Reset();
+	OutBufferedPropertyContext.Reset();
+
+	if (!Parent.IsValid() || Parent == ObjectNode)
+	{
+		OutPropertyPath = OutPropertyPath.WithAppendedProperty(PropertyName);
+		return true;
+	}
+
+	if (TSharedPtr<FStructElementNode> StructParent = CastElementNode<FStructElementNode>(Parent))
+	{
+		OutPropertyPath = StructParent->GetBufferedPropertyContext().GetRootPropertyPath().WithAppendedProperty(PropertyName);
+		OutBufferedPropertyContext = StructParent->GetBufferedPropertyContext();
+		return true;
+	}
+
+	if (TSharedPtr<FPropertyElementNode> PropertyParent = CastElementNode<FPropertyElementNode>(Parent))
+	{
+		OutPropertyPath = PropertyParent->PropertyPath;
+		OutBufferedPropertyContext = PropertyParent->BufferedPropertyContext;
+		if (PropertyParent->PropertyChain && PropertyParent->PropertyChain->IsArrayProperty())
+		{
+			bInOutUseBufferedWrite = true;
+			OutPropertyPath = OutPropertyPath.WithAppendedArrayIndex(PropertyParent->ElementChildren.Num());
+			return true;
+		}
+
+		OutPropertyPath = OutPropertyPath.WithAppendedProperty(PropertyName);
+		return true;
+	}
+
+	if (OutError)
+	{
+		*OutError = FText::Format(
+			FText::FromString(TEXT("Expected property, struct, or object parent node for nested property '{0}'.")),
+			FText::FromString(FString(PropertyName)));
+	}
+	return false;
 }
 
 void FPropertyElementNode::AddReferencedObjects(FReferenceCollector& Collector)
@@ -71,42 +121,10 @@ FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UOb
 
 	PropertyPath.Reset();
 	BufferedPropertyContext.Reset();
-	TSharedPtr<FElementNode> Parent = Context.GetLastNode();
-	TSharedPtr<FPropertyElementNode> PropertyParent = nullptr;
-	if (!Parent.IsValid() || Parent == ObjectNode)
+	FText PropertyPathError;
+	if (!TryResolvePropertyPathFromContext(Context, PropertyName, bUseBufferedWrite, PropertyPath, BufferedPropertyContext, &PropertyPathError))
 	{
-		PropertyPath = PropertyPath.WithAppendedProperty(PropertyName);
-	}
-	else if (TSharedPtr<FStructElementNode> StructParent = CastElementNode<FStructElementNode>(Parent))
-	{
-		PropertyPath = StructParent->GetBufferedPropertyContext().GetRootPropertyPath().WithAppendedProperty(PropertyName);
-		BufferedPropertyContext = StructParent->GetBufferedPropertyContext();
-	}
-	else if ((PropertyParent = CastElementNode<FPropertyElementNode>(Parent)))
-	{
-		PropertyPath = PropertyParent->PropertyPath;
-		BufferedPropertyContext = PropertyParent->BufferedPropertyContext;
-		bool bPropertyPathInitialized = false;
-		if (PropertyParent->PropertyChain)
-		{
-			if (PropertyParent->PropertyChain->IsArrayProperty())
-			{
-				bUseBufferedWrite = true;
-				PropertyPath = PropertyPath.WithAppendedArrayIndex(PropertyParent->ElementChildren.Num());
-				bPropertyPathInitialized = true;
-			}
-		}
-		if (!bPropertyPathInitialized)
-		{
-			PropertyPath = PropertyPath.WithAppendedProperty(PropertyName);
-			bPropertyPathInitialized = true;
-		}
-	}
-	else
-	{
-		return FResult::Failure().Error(FText::Format(
-			FText::FromString(TEXT("Expected property, struct, or object parent node for nested property '{0}'.")),
-			FText::FromString(PropertyName)));
+		return FResult::Failure().Error(PropertyPathError);
 	}
 
 	if (bUseBufferedWrite && BufferedPropertyContext.InValid())

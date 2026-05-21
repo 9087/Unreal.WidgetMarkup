@@ -13,7 +13,7 @@ class FReferenceCollector;
 class UStruct;
 
 USTRUCT()
-struct FPropertyBuffer
+struct WIDGETMARKUP_API FPropertyBuffer
 {
 	GENERATED_BODY()
 

@@ -18,6 +18,8 @@ public class WidgetMarkup : ModuleRules
 		{
 			"CoreUObject",
 			"Engine",
+			"ApplicationCore",
+			"StandaloneRenderer",
 			"Slate",
 			"SlateCore",
 			"UMG",
@@ -29,6 +31,8 @@ public class WidgetMarkup : ModuleRules
 			"DirectoryWatcher",
 			"DeveloperSettings",
 			"Json",
+			"Projects",
+			"WidgetMarkupPythonIntegration",
 		});
 	}
 }

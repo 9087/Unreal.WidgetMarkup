@@ -6,18 +6,23 @@
 #include "Modules/ModuleManager.h"
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
 #include "ElementNode.h"
+#include "PropertyBuffer.h"
 #include "PropertyRun.h"
 #include "PropertySetter.h"
 #include "Utilities/WidgetPropertyPath.h"
+#include "WidgetMarkupScriptIntegration.h"
 
 WIDGETMARKUP_API DECLARE_LOG_CATEGORY_EXTERN(LogWidgetMarkup, Log, All);
 
+class FWidgetMarkupModule;
 class UUserWidget;
 class UWidgetMarkupBlueprintGeneratedClassExtension;
 
 class WIDGETMARKUP_API FWidgetMarkupModule : public IModuleInterface, public FGCObject
 {
 public:
+	static FWidgetMarkupModule& Get();
+
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
@@ -116,6 +121,8 @@ public:
 	}
 
 	TSharedPtr<FPropertySetter> CreateCustomPropertySetter(UStruct* InStruct, FName InPropertyPath) const;
+	bool ApplyPropertyValue(UObject* TargetObject, const FWidgetPropertyPath& PropertyPath, const FStringView& ValueString, FText* OutError = nullptr) const;
+	bool ApplyPropertyValue(UObject* TargetObject, const FWidgetPropertyPath& PropertyPath, const FPropertyBuffer& PropertyBuffer, FText* OutError = nullptr) const;
 
 private:
 	UObject* CompileFromSourceCode(FName PackagePath, const FString& XML);
@@ -140,4 +147,26 @@ private:
 	TMap<FString, FName> SourceFileToName;
 	/** Maps absolute watched directory path -> delegate handle. Supports multiple watched directories. */
 	TMap<FString, FDelegateHandle> WatchedDirectories;
+
+public:
+	DECLARE_MULTICAST_DELEGATE(FOnInitialized);
+	FOnInitialized& GetOnInitialized() { return OnInitialized; }
+	void ExecuteOrRegisterOnInitialized(FSimpleDelegate InCallback);
+	bool IsInitialized() const { return bInitialized; }
+	void NotifyInitialized();
+
+	template <typename T>
+	void StartUp()
+	{
+		StartUp(MakeShared<T>(*this));
+	}
+
+	void StartUp(TSharedRef<IWidgetMarkupScriptIntegration> InScriptIntegration);
+	void Shutdown();
+
+private:
+	FOnInitialized OnInitialized;
+	bool bInitialized = false;
+	TArray<FSimpleDelegate> PendingInitializedCallbacks;
+	TSharedPtr<IWidgetMarkupScriptIntegration> ScriptIntegration;
 };

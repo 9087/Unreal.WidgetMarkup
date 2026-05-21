@@ -2,13 +2,17 @@
 
 #include "ElementTreeBuilder.h"
 
+#include "Binding/WidgetPropertyBindingCollection.h"
 #include "ElementNode.h"
 #include "ElementNodeFactory.h"
+#include "Extensions/WidgetMarkupBlueprintExtension.h"
 #include "WidgetMarkupModule.h"
 #include "ElementNodes/ObjectElementNode.h"
 #include "ElementNodes/PropertyElementNode.h"
 #include "Utilities/TypeResolver.h"
 #include "Modules/ModuleManager.h"
+#include "WidgetBlueprint.h"
+#include "WidgetBlueprintExtension.h"
 
 FElementTreeBuilder::FElementTreeBuilder(UObject* InOuter)
 	: Outer(InOuter)
@@ -105,11 +109,13 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 		Object = ObjectNode.IsValid() ? ObjectNode->GetObject() : nullptr;
 	}
 	TSharedRef<IPropertyRun> PropertyRun = WidgetMarkupModule->CreatePropertyRun(Current->GetPropertyOwnerStruct(), FName(PropertyName));
+	Context.AddMetaData<FWidgetPropertyAttributeValueScope>();
 	auto Result = PropertyRun->OnBegin(Context, Object, PropertyName, PropertyValue);
 	if (Result)
 	{
 		Result = PropertyRun->OnEnd(Context);
 	}
+	Context.RemoveMetaData<FWidgetPropertyAttributeValueScope>();
 	return !!Result;
 }
 
@@ -128,6 +134,23 @@ bool FElementTreeBuilder::ProcessClose(const TCHAR* Element)
 	}
 
 	Current = Context.Pop();
+	if (Context.IsEmpty())
+	{
+		if (UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(Current->GetObject()))
+		{
+			TArray<FWidgetPropertyBinding> PropertyBindings;
+			if (TSharedPtr<FWidgetPropertyBindingCollection> BindingCollection = Context.GetMetaData<FWidgetPropertyBindingCollection>())
+			{
+				PropertyBindings = BindingCollection->Bindings;
+			}
+
+			UWidgetMarkupBlueprintExtension* Extension = UWidgetBlueprintExtension::RequestExtension<UWidgetMarkupBlueprintExtension>(WidgetBlueprint);
+			if (Extension)
+			{
+				Extension->SetPropertyBindings(PropertyBindings);
+			}
+		}
+	}
 	if (!Current->End().PrintOnFailure())
 	{
 		return false;

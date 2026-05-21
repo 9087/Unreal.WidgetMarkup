@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "BufferedPropertyContext.h"
+#include "ElementNodes/BufferedPropertyContext.h"
 
 #include "ElementNode.h"
 
@@ -20,6 +20,13 @@ class FPropertyElementNode : public FElementNode, public FGCObject
 
 public:
 	static TSharedRef<FElementNode> Create(const FStringView& InPropertyName, const FStringView& InPropertyValue);
+	static bool TryResolvePropertyPathFromContext(
+		const FContext& Context,
+		const FStringView& PropertyName,
+		bool& bInOutUseBufferedWrite,
+		FWidgetPropertyPath& OutPropertyPath,
+		FBufferedPropertyContext& OutBufferedPropertyContext,
+		FText* OutError = nullptr);
 
 	/** Attribute form: (name, value). Element form: (element name, ElementData). */
 	FPropertyElementNode(const FStringView& InPropertyName, const FStringView& InPropertyValue, bool bInUseBufferedWrite = false);

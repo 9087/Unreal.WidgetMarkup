@@ -7,7 +7,7 @@
 class FProperty;
 struct FPropertyBuffer;
 
-class FPropertyChainHandle
+class WIDGETMARKUP_API FPropertyChainHandle
 {
 public:
 	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FWidgetPropertyPath& PropertyPath);

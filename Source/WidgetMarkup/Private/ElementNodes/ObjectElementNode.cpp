@@ -2,7 +2,7 @@
 
 #include "ObjectElementNode.h"
 
-#include "PropertyChainHandle.h"
+#include "ElementNodes/PropertyChainHandle.h"
 #include "PropertyElementNode.h"
 
 IMPLEMENT_ELEMENT_NODE(FObjectElementNode, FElementNode)

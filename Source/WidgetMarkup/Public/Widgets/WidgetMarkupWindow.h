@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "PreviewScene.h"
 #include "UObject/Object.h"
+#include "UObject/StrongObjectPtr.h"
 
 #include "WidgetMarkupWindow.generated.h"
 
@@ -24,6 +25,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Widget Markup|Window")
 	static UWidgetMarkupWindow* CreateWidgetMarkupWindow(UObject* Outer, const FString& InPackagePath);
 
+	static bool CreateAndOpenWidgetMarkupWindow(UObject* Outer, const FString& InPackagePath, TStrongObjectPtr<UWidgetMarkupWindow>& OutWindow);
+
 	UFUNCTION(BlueprintCallable, Category = "Widget Markup|Window")
 	bool SetPackagePath(const FString& InPackagePath);
 
@@ -38,6 +41,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Widget Markup|Window")
 	void CloseWindow();
+
+	UFUNCTION(BlueprintPure, Category = "Widget Markup|Window")
+	bool IsWindowOpen() const;
 
 	FOnWidgetMarkupWindowClosed OnWindowClosed;
 

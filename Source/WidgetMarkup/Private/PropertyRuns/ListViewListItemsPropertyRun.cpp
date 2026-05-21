@@ -2,6 +2,9 @@
 
 #include "PropertyRuns/ListViewListItemsPropertyRun.h"
 
+#include "Binding/WidgetPropertyBindingCollection.h"
+#include "Binding/WidgetPropertyBindingUtility.h"
+#include "PropertyRuns/ObjectNamePropertyRun.h"
 #include "WidgetBlueprint.h"
 #include "WidgetBlueprintExtension.h"
 #include "Components/ListView.h"
@@ -27,7 +30,28 @@ FElementNode::FResult FListViewListItemsPropertyRun::OnBegin(FElementNode::FCont
 			FText::FromString(ObjectTypeName)));
 	}
 
-	TSharedPtr<FPropertyElementNode> NewPropertyElementNode = MakeShared<FPropertyElementNode>(TEXT("ListItems"), PropertyValue, true);
+	FWidgetPropertyBindingToken BindingToken;
+	if (Context.HasMetaData<FWidgetPropertyAttributeValueScope>()
+		&& TryParseWidgetPropertyBindingToken(PropertyValue, BindingToken))
+	{
+		FText NameError;
+		if (!FObjectNamePropertyMetaData::IsWidgetMarkupObjectNameRegistered(Context, ListView)
+			&& !FObjectNamePropertyMetaData::TryApplyGeneratedWidgetMarkupObjectName(Context, ListView, NameError))
+		{
+			return FElementNode::FResult::Failure().Error(NameError);
+		}
+
+		FWidgetPropertyBinding Binding = FWidgetPropertyBinding::Create(
+			BindingToken.SourceExpression,
+			ListView->GetFName(),
+			FWidgetPropertyPath(TEXT("ListItems")));
+		Context.GetOrAddMetaData<FWidgetPropertyBindingCollection>()->Bindings.Add(Binding);
+		PropertyElementNode.Reset();
+		return FElementNode::FResult::Success();
+	}
+
+	const FString LiteralPropertyValue = UnescapeWidgetPropertyBindingLiteral(PropertyValue);
+	TSharedPtr<FPropertyElementNode> NewPropertyElementNode = MakeShared<FPropertyElementNode>(TEXT("ListItems"), LiteralPropertyValue, true);
 	FElementNode::FResult Result = NewPropertyElementNode->Begin(Context, ListView, nullptr);
 	if (!Result)
 	{
@@ -44,7 +68,7 @@ FElementNode::FResult FListViewListItemsPropertyRun::OnEnd(FElementNode::FContex
 {
 	if (!PropertyElementNode.IsValid())
 	{
-		return FElementNode::FResult::Failure().Error(FText::FromString(TEXT("ListItems property run has no cached property node to finalize.")));
+		return FElementNode::FResult::Success();
 	}
 
 	const TSharedPtr<const FPropertyBuffer> CachedPropertyBuffer = PropertyElementNode->GetPropertyBuffer();

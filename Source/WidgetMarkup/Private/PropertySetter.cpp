@@ -23,6 +23,14 @@ bool FPropertySetter::SetValue(
 		return false;
 	}
 
+	// 1. Try native setter declared via UPROPERTY(Setter=...) metadata.
+	if (InTargetProperty->HasSetter())
+	{
+		InTargetProperty->CallSetter(InObject, InPropertyBuffer.GetValueData());
+		return true;
+	}
+
+	// 2. Fallback: direct property copy.
 	InTargetProperty->CopyCompleteValue(InTargetValueAddress, InPropertyBuffer.GetValueData());
 	return true;
 }

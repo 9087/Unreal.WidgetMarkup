@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Binding/WidgetPropertyBinding.h"
 #include "Extensions/UserWidgetExtension.h"
 #include "Styles/WidgetStyleSheet.h"
 

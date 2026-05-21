@@ -1,0 +1,38 @@
+// Copyright 2025 Wu Zhiwei. All Rights Reserved.
+
+#pragma once
+
+#include "ElementNodes/BufferedPropertyContext.h"
+
+class FProperty;
+struct FPropertyBuffer;
+
+class WIDGETMARKUP_API FPropertyChainHandle
+{
+public:
+	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FWidgetPropertyPath& PropertyPath);
+	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FWidgetPropertyPath& PropertyPath, const FBufferedPropertyContext& InBufferedPropertyContext);
+	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FStringView& PropertyPathString);
+	static TSharedPtr<FPropertyChainHandle> Create(UObject* Object, const FStringView& PropertyPathString, const FBufferedPropertyContext& InBufferedPropertyContext);
+
+	FProperty* GetTailProperty() const;
+	void* GetTailContainer() const;
+	void* GetTailValueAddress() const;
+
+	bool IsArrayProperty() const;
+
+	bool SetValue(const FPropertyBuffer& PropertyBuffer) const;
+	bool SetValue(const FStringView& ValueString) const;
+
+	TSharedPtr<FPropertyChainHandle> GetChildHandle(const FStringView& ChildName) const;
+	TSharedPtr<FPropertyChainHandle> GetDirectHandle() const;
+
+private:
+	bool Resolve(FProperty*& OutTailProperty, void*& OutTailContainer, void*& OutTailValueAddress) const;
+	bool ResolveAgainstObjectRoot(FProperty*& OutTailProperty, void*& OutTailContainer, void*& OutTailValueAddress) const;
+	bool ResolveAgainstBufferedRoot(FProperty*& OutTailProperty, void*& OutTailContainer, void*& OutTailValueAddress) const;
+
+	TWeakObjectPtr<UObject> Object;
+	FBufferedPropertyContext BufferedPropertyContext;
+	FWidgetPropertyPath PropertyPath;
+};

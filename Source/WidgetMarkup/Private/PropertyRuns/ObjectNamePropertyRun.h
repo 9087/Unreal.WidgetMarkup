@@ -4,6 +4,15 @@
 
 #include "PropertyRun.h"
 
+struct FObjectNamePropertyMetaData : public FElementNode::FContext::TMetaData<FObjectNamePropertyMetaData>
+{
+	TMap<FString, FString> UsedNames;
+
+	static bool TryApplyWidgetMarkupObjectName(FElementNode::FContext& Context, UObject* Object, const FString& Name, FText& OutError);
+	static bool TryApplyGeneratedWidgetMarkupObjectName(FElementNode::FContext& Context, UObject* Object, FText& OutError);
+	static bool IsWidgetMarkupObjectNameRegistered(FElementNode::FContext& Context, UObject* Object);
+};
+
 class FObjectNamePropertyRun : public IPropertyRun
 {
 public:

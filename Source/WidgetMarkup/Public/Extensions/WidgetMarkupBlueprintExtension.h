@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Binding/WidgetDelegateBinding.h"
+#include "Binding/WidgetPropertyBinding.h"
 #include "Styles/WidgetStyleSheet.h"
 #include "WidgetBlueprintExtension.h"
 
@@ -20,6 +22,8 @@ class WIDGETMARKUP_API UWidgetMarkupBlueprintExtension : public UWidgetBlueprint
 public:
 	void SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets);
 	void SetScript(const FString& InScript);
+	void SetPropertyBindings(const TArray<FWidgetPropertyBinding>& InPropertyBindings);
+	void AddDelegateBinding(const FWidgetDelegateBinding& InDelegateBinding);
 
 	const TArray<FWidgetStyleSheetData>& GetStyleSheets() const
 	{
@@ -29,6 +33,16 @@ public:
 	const FString& GetScript() const
 	{
 		return Script;
+	}
+
+	const TArray<FWidgetPropertyBinding>& GetPropertyBindings() const
+	{
+		return PropertyBindings;
+	}
+
+	const TArray<FWidgetDelegateBinding>& GetDelegateBindings() const
+	{
+		return DelegateBindings;
 	}
 
    /**
@@ -47,6 +61,12 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Widget Markup")
 	FString Script;
+
+	UPROPERTY()
+	TArray<FWidgetPropertyBinding> PropertyBindings;
+
+	UPROPERTY()
+	TArray<FWidgetDelegateBinding> DelegateBindings;
 
 	FWidgetBlueprintCompilerContext* CurrentCompilerContext = nullptr;
 };

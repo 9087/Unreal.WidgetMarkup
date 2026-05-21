@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "BufferedPropertyContext.h"
+#include "ElementNodes/BufferedPropertyContext.h"
 #include "ElementNode.h"
 
 struct FPropertyBuffer;

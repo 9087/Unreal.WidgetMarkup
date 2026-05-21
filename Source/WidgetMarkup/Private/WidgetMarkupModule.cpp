@@ -32,6 +32,7 @@
 #include "Converters/VectorConverter.h"
 #include "ElementNodes/BlueprintElementNode.h"
 #include "ElementNodes/BlueprintVariableElementNode.h"
+#include "ElementNodes/PropertyChainHandle.h"
 #include "ElementNodes/WidgetMarkupBlueprintVariable.h"
 #include "PropertySetters/ListViewListItemsPropertySetter.h"
 #include "PropertyRuns/BlueprintImplementsPropertyRun.h"
@@ -39,6 +40,7 @@
 #include "PropertyRuns/ListViewListItemsPropertyRun.h"
 #include "PropertyRuns/ObjectNamePropertyRun.h"
 #include "PropertyRuns/WidgetBlueprintScriptPropertyRun.h"
+#include "PropertyRuns/WidgetDelegatePropertyRun.h"
 #include "Utilities/WidgetPropertyPath.h"
 #include "ElementNodes/ContentWidgetElementNode.h"
 #include "ElementNodes/PanelWidgetElementNode.h"
@@ -46,14 +48,50 @@
 #include "ElementNodes/WidgetBlueprintElementNode.h"
 #include "ElementNodes/WidgetElementNode.h"
 #include "ElementNodes/WidgetTreeElementNode.h"
+#include "Interfaces/IPluginManager.h"
 #include "Misc/PackageName.h"
 
 #define LOCTEXT_NAMESPACE "WidgetMarkup"
 
 DEFINE_LOG_CATEGORY(LogWidgetMarkup);
 
+IWidgetMarkupScriptIntegration::IWidgetMarkupScriptIntegration(FWidgetMarkupModule& InWidgetMarkupModule)
+	: WidgetMarkupModule(InWidgetMarkupModule)
+{
+}
+
+void IWidgetMarkupScriptIntegration::Initialize(bool bOK)
+{
+	if (bOK)
+	{
+		this->WidgetMarkupModule.NotifyInitialized();
+	}
+}
+
+FWidgetMarkupModule& FWidgetMarkupModule::Get()
+{
+	return FModuleManager::GetModuleChecked<FWidgetMarkupModule>("WidgetMarkup");
+}
+
 void FWidgetMarkupModule::StartupModule()
 {
+	// Ensure the plugin's Content directory is mounted so subsystems (e.g. PythonScriptPlugin)
+	// can discover assets and scripts via the plugin's mounted asset path.
+	if (TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("WidgetMarkup")))
+	{
+		const FString MountedAssetPath = Plugin->GetMountedAssetPath();
+		const FString ContentDir = Plugin->GetContentDir();
+		if (!MountedAssetPath.IsEmpty() && !ContentDir.IsEmpty() && !FPackageName::MountPointExists(MountedAssetPath))
+		{
+			FPackageName::RegisterMountPoint(MountedAssetPath, ContentDir);
+			UE_LOG(LogWidgetMarkup, Display, TEXT("WidgetMarkup mounted content root: %s -> %s"), *MountedAssetPath, *ContentDir);
+		}
+	}
+	else
+	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("Failed to locate plugin 'WidgetMarkup' while mounting Content directory."));
+	}
+
 	FElementNodeFactory::Get().Register<UWidgetTree>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetTreeElementNode::Create));
 	FElementNodeFactory::Get().Register<UWidget>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetElementNode::Create));
 	FElementNodeFactory::Get().Register<UPanelWidget>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FPanelWidgetElementNode::Create));
@@ -237,6 +275,20 @@ TSharedRef<IPropertyRun> FWidgetMarkupModule::CreatePropertyRun(UStruct* InStruc
 	{
 		return CustomPropertyRun.ToSharedRef();
 	}
+
+	// Auto-detect delegate properties: any multicast delegate attribute on a widget
+	// is treated as a delegate binding and forwarded to FWidgetDelegatePropertyRun.
+	if (InStruct && InStruct->IsChildOf<UWidget>())
+	{
+		if (FProperty* Property = InStruct->FindPropertyByName(InPropertyPath))
+		{
+			if (Property->IsA<FMulticastDelegateProperty>())
+			{
+				return FWidgetDelegatePropertyRun::Create();
+			}
+		}
+	}
+
 	return MakeShared<FPropertyRun>();
 }
 
@@ -287,6 +339,96 @@ TSharedPtr<FPropertySetter> FWidgetMarkupModule::CreateCustomPropertySetter(UStr
 		return nullptr;
 	}
 	return BestDelegate->Execute();
+}
+
+bool FWidgetMarkupModule::ApplyPropertyValue(UObject* TargetObject, const FWidgetPropertyPath& PropertyPath, const FStringView& ValueString, FText* OutError) const
+{
+	if (!TargetObject)
+	{
+		if (OutError)
+		{
+			*OutError = FText::FromString(TEXT("Target object is null."));
+		}
+		return false;
+	}
+
+	if (PropertyPath.IsEmpty())
+	{
+		if (OutError)
+		{
+			*OutError = FText::FromString(TEXT("Target property path is empty."));
+		}
+		return false;
+	}
+
+	TSharedPtr<FPropertyChainHandle> PropertyChain = FPropertyChainHandle::Create(TargetObject, PropertyPath);
+	if (!PropertyChain.IsValid())
+	{
+		if (OutError)
+		{
+			*OutError = FText::Format(
+				FText::FromString(TEXT("Failed to resolve target property path '{0}' on '{1}'.")),
+				FText::FromString(PropertyPath.GetPathName().ToString()),
+				FText::FromString(TargetObject->GetClass()->GetName()));
+		}
+		return false;
+	}
+
+	if (!PropertyChain->SetValue(ValueString))
+	{
+		if (OutError)
+		{
+			*OutError = FText::Format(
+				FText::FromString(TEXT("Failed to convert or apply value to property path '{0}' on '{1}'.")),
+				FText::FromString(PropertyPath.GetPathName().ToString()),
+				FText::FromString(TargetObject->GetClass()->GetName()));
+		}
+		return false;
+	}
+
+	return true;
+}
+
+bool FWidgetMarkupModule::ApplyPropertyValue(UObject* TargetObject, const FWidgetPropertyPath& PropertyPath, const FPropertyBuffer& PropertyBuffer, FText* OutError) const
+{
+	if (!TargetObject)
+	{
+		if (OutError) { *OutError = FText::FromString(TEXT("Target object is null.")); }
+		return false;
+	}
+
+	if (PropertyPath.IsEmpty())
+	{
+		if (OutError) { *OutError = FText::FromString(TEXT("Target property path is empty.")); }
+		return false;
+	}
+
+	TSharedPtr<FPropertyChainHandle> PropertyChain = FPropertyChainHandle::Create(TargetObject, PropertyPath);
+	if (!PropertyChain.IsValid())
+	{
+		if (OutError)
+		{
+			*OutError = FText::Format(
+				FText::FromString(TEXT("Failed to resolve target property path '{0}' on '{1}'.")),
+				FText::FromString(PropertyPath.GetPathName().ToString()),
+				FText::FromString(TargetObject->GetClass()->GetName()));
+		}
+		return false;
+	}
+
+	if (!PropertyChain->SetValue(PropertyBuffer))
+	{
+		if (OutError)
+		{
+			*OutError = FText::Format(
+				FText::FromString(TEXT("Failed to apply value to property path '{0}' on '{1}'.")),
+				FText::FromString(PropertyPath.GetPathName().ToString()),
+				FText::FromString(TargetObject->GetClass()->GetName()));
+		}
+		return false;
+	}
+
+	return true;
 }
 
 UObject* FWidgetMarkupModule::CompileFromSourceCode(FName PackagePath, const FString& XML)
@@ -580,9 +722,54 @@ void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct
 	}
 }
 
-IMPLEMENT_MODULE(FWidgetMarkupModule, WidgetMarkup)
+void FWidgetMarkupModule::StartUp(TSharedRef<IWidgetMarkupScriptIntegration> InScriptIntegration)
+{
+	check(!ScriptIntegration);
+	ScriptIntegration = InScriptIntegration;
+}
 
-enum class ESlotCapacityPolicy
+void FWidgetMarkupModule::Shutdown()
+{
+	bInitialized = false;
+	PendingInitializedCallbacks.Empty();
+	ScriptIntegration = nullptr;
+}
+
+void FWidgetMarkupModule::NotifyInitialized()
+{
+	if (bInitialized)
+	{
+		return;
+	}
+
+	bInitialized = true;
+	UE_LOG(LogWidgetMarkup, Display, TEXT("FWidgetMarkupModule is now initialized. Broadcasting OnInitialized and executing %d pending callbacks."), PendingInitializedCallbacks.Num());
+	OnInitialized.Broadcast();
+
+	for (FSimpleDelegate& Callback : PendingInitializedCallbacks)
+	{
+		Callback.ExecuteIfBound();
+	}
+	PendingInitializedCallbacks.Empty();
+}
+
+void FWidgetMarkupModule::ExecuteOrRegisterOnInitialized(FSimpleDelegate InCallback)
+{
+	if (!InCallback.IsBound())
+	{
+		return;
+	}
+
+	if (bInitialized)
+	{
+		InCallback.Execute();
+		return;
+	}
+
+	PendingInitializedCallbacks.Add(MoveTemp(InCallback));
+}
+
+IMPLEMENT_MODULE(FWidgetMarkupModule, WidgetMarkup)enum class ESlotCapacityPolicy
 {
 	None = 0,
 	Single = 1,

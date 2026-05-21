@@ -1,6 +1,6 @@
 // Copyright 2025 Wu Zhiwei. All Rights Reserved.
 
-#include "PropertyChainHandle.h"
+#include "ElementNodes/PropertyChainHandle.h"
 
 #include "PropertyBuffer.h"
 #include "PropertySetter.h"

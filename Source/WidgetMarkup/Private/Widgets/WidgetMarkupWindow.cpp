@@ -1,6 +1,6 @@
 // Copyright 2025 Wu Zhiwei. All Rights Reserved.
 
-#include "WidgetMarkupWindow.h"
+#include "Widgets/WidgetMarkupWindow.h"
 
 #include "Misc/PackageName.h"
 #include "WidgetBlueprint.h"
@@ -8,6 +8,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/SNullWidget.h"
+#include "Widgets/Layout/SBox.h"
 #include "Widgets/SWindow.h"
 
 UWidgetMarkupWindow::UWidgetMarkupWindow() = default;
@@ -15,12 +16,43 @@ UWidgetMarkupWindow::UWidgetMarkupWindow() = default;
 UWidgetMarkupWindow* UWidgetMarkupWindow::CreateWidgetMarkupWindow(UObject* Outer, const FString& InPackagePath)
 {
 	UObject* ObjectOuter = Outer ? Outer : GetTransientPackage();
-	TStrongObjectPtr<UWidgetMarkupWindow> WidgetMarkupWindow(NewObject<UWidgetMarkupWindow>(ObjectOuter));
-	if (!WidgetMarkupWindow->SetPackagePath(InPackagePath))
+	UWidgetMarkupWindow* WidgetMarkupWindow = NewObject<UWidgetMarkupWindow>(ObjectOuter);
+	if (!WidgetMarkupWindow || !WidgetMarkupWindow->SetPackagePath(InPackagePath))
 	{
 		return nullptr;
 	}
-	return WidgetMarkupWindow.Get();
+	return WidgetMarkupWindow;
+}
+
+bool UWidgetMarkupWindow::CreateAndOpenWidgetMarkupWindow(UObject* Outer, const FString& InPackagePath, TStrongObjectPtr<UWidgetMarkupWindow>& OutWindow)
+{
+	FText PackagePathError;
+	if (!FPackageName::IsValidTextForLongPackageName(InPackagePath, &PackagePathError))
+	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("WidgetMarkup window: invalid package path '%s': %s"), *InPackagePath, *PackagePathError.ToString());
+		return false;
+	}
+
+	UObject* ObjectOuter = Outer ? Outer : GetTransientPackage();
+	UWidgetMarkupWindow* Window = NewObject<UWidgetMarkupWindow>(ObjectOuter);
+	if (!Window)
+	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("WidgetMarkup window: failed to create UWidgetMarkupWindow."));
+		return false;
+	}
+
+	// Pin before SetPackagePath/OpenWindow because those code paths can allocate
+	// objects that trigger GC.
+	OutWindow.Reset(Window);
+
+	if (!Window->SetPackagePath(InPackagePath) || !Window->OpenWindow())
+	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("WidgetMarkup window: failed to open window for '%s'."), *InPackagePath);
+		OutWindow.Reset();
+		return false;
+	}
+
+	return true;
 }
 
 bool UWidgetMarkupWindow::SetPackagePath(const FString& InPackagePath)
@@ -69,12 +101,17 @@ void UWidgetMarkupWindow::RebuildWidget()
 
 	TGuardValue<bool> RebuildGuard(bIsRebuilding, true);
 
+	// Hold a strong local reference because constructing a UMG widget below can pump
+	// Slate events (e.g. layout / focus) and may end up resetting our member SlateWindow
+	// via HandleSlateWindowClosed before we get a chance to call SetContent.
+	const TSharedRef<SWindow> LocalWindow = SlateWindow.ToSharedRef();
+
 	Widget = nullptr;
 
 	auto& WidgetMarkupModule = FModuleManager::Get().LoadModuleChecked<FWidgetMarkupModule>(TEXT("WidgetMarkup"));
 	UObject* Object = WidgetMarkupModule.GetObjectOrCompileFromPackage(PackagePath);
 
-	TSharedRef<SWidget> NewContent = SNullWidget::NullWidget;
+	TSharedPtr<SWidget> NewContent = nullptr;
 
 	if (UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(Object))
 	{
@@ -96,7 +133,10 @@ void UWidgetMarkupWindow::RebuildWidget()
 		}
 	}
 
-	SlateWindow->SetContent(NewContent);
+	if (NewContent.IsValid())
+	{
+		LocalWindow->SetContent(NewContent.ToSharedRef());
+	}
 }
 
 void UWidgetMarkupWindow::CloseWindow()
@@ -106,6 +146,11 @@ void UWidgetMarkupWindow::CloseWindow()
 		SlateWindow->RequestDestroyWindow();
 	}
 	SlateWindow.Reset();
+}
+
+bool UWidgetMarkupWindow::IsWindowOpen() const
+{
+	return SlateWindow.IsValid();
 }
 
 void UWidgetMarkupWindow::HandleSlateWindowClosed(const TSharedRef<SWindow>& ClosedWindow)
@@ -140,7 +185,7 @@ void UWidgetMarkupWindow::HandleOnObjectCompiled(FName Name, UObject* Object)
 static FAutoConsoleCommand GWidgetMarkupShow
 (
 	TEXT("WidgetMarkup.Show"),
-	TEXT("Show the Widget Markup Content in a Window. Expects a package path like /Game/WidgetMarkup/MyWidget (no file extension)."),
+	TEXT("Show the Widget Markup Content in a Window. Expects a package path like /Game/WidgetMarkup/MyWidget or /WidgetMarkupApp/WidgetMarkup/MyWidget (no file extension)."),
 	FConsoleCommandWithArgsDelegate::CreateLambda([](const TArray<FString>& Args)
 	{
 		if (Args.Num() < 1)
@@ -148,22 +193,17 @@ static FAutoConsoleCommand GWidgetMarkupShow
 			return;
 		}
 		const FString& InputPackagePath = Args[0];
-		if (!InputPackagePath.StartsWith(TEXT("/Game/")))
-		{
-			UE_LOG(LogWidgetMarkup, Error, TEXT("WidgetMarkup.Show: expected a package path like /Game/WidgetMarkup/MyWidget, got '%s'."), *InputPackagePath);
-			return;
-		}
-
-		UWidgetMarkupWindow* WindowObject = UWidgetMarkupWindow::CreateWidgetMarkupWindow(GetTransientPackage(), InputPackagePath);
-		WindowObject->AddToRoot();
-		if (!WindowObject || !WindowObject->OpenWindow())
+		TStrongObjectPtr<UWidgetMarkupWindow> WindowObject;
+		if (!UWidgetMarkupWindow::CreateAndOpenWidgetMarkupWindow(GetTransientPackage(), InputPackagePath, WindowObject))
 		{
 			UE_LOG(LogWidgetMarkup, Error, TEXT("WidgetMarkup.Show: failed to create or open window for '%s'."), *InputPackagePath);
 			return;
 		}
-		WindowObject->OnWindowClosed.AddLambda([WindowObject]()
+		UWidgetMarkupWindow* WindowRaw = WindowObject.Get();
+		WindowRaw->AddToRoot();
+		WindowRaw->OnWindowClosed.AddLambda([WindowRaw]()
 		{
-			WindowObject->RemoveFromRoot();
+			WindowRaw->RemoveFromRoot();
 		});
 	})
 );
