@@ -30,23 +30,24 @@ bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* 
 	UStruct* Struct = nullptr;
 	TSharedPtr<FElementNode> ElementNode;
 
-	const FString ElementNameString(ElementName);
-	ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, ElementName, Struct);
+	FString ElementNameString(ElementName);
+	ElementNameString.TrimStartAndEndInline();
+	ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, *ElementNameString, Struct);
 
 	if (!ElementNode.IsValid())
 	{
 		TSharedPtr<FElementNode> ObjectNode = Context.GetLastObjectNode();
 		if (!ObjectNode.IsValid())
 		{
-			UE_LOG(LogWidgetMarkup, Warning, TEXT("Unknown element '%s' at line %d."), ElementName, XmlFileLineNumber);
+			UE_LOG(LogWidgetMarkup, Warning, TEXT("Unknown element '%s' at line %d."), *ElementNameString, XmlFileLineNumber);
 			return false;
 		}
 
 		UObject* Object = ObjectNode->GetObject();
 		TSharedPtr<FElementNode> ParentNode = Context.GetLastNode();
 		UStruct* OwnerStruct = ParentNode.IsValid() ? ParentNode->GetPropertyOwnerStruct() : nullptr;
-		TSharedRef<IPropertyRun> PropertyRun = WidgetMarkupModule->CreatePropertyRun(OwnerStruct, FName(ElementName));
-		FStringView PropertyName(ElementName);
+		TSharedRef<IPropertyRun> PropertyRun = WidgetMarkupModule->CreatePropertyRun(OwnerStruct, FName(*ElementNameString));
+		FStringView PropertyName(*ElementNameString);
 		FStringView PropertyValue(ElementData ? ElementData : TEXT(""));
 		if (PropertyRun->OnBegin(Context, Object, PropertyName, PropertyValue))
 		{
@@ -64,7 +65,7 @@ bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* 
 	}
 	if (!ElementNode)
 	{
-		auto FallbackClass = TTypeResolver<UClass>::Resolve(FStringView(ElementName));
+		auto FallbackClass = TTypeResolver<UClass>::Resolve(FStringView(*ElementNameString));
 		if (!FallbackClass)
 		{
 			return false;

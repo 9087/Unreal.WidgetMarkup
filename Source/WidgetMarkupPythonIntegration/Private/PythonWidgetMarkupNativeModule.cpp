@@ -7,6 +7,7 @@
 #include "Blueprint/WidgetTree.h"
 #include "Components/Widget.h"
 #include "Modules/ModuleManager.h"
+#include "PythonWidgetMarkupListEntry.h"
 #include "PropertyBuffer.h"
 #include "ElementNodes/PropertyChainHandle.h"
 #include "PyConversion.h"
@@ -114,6 +115,43 @@ namespace
 		{
 			return PyConversion::Internal::NativizeStructInstance(PyValue, StructProperty->Struct, OutData, PyConversion::ESetErrorState::No).Succeeded();
 		}
+		if (FArrayProperty* ArrayProperty = CastField<FArrayProperty>(Property))
+		{
+			if (!PyList_Check(PyValue)) return false;
+
+			FProperty* InnerProperty = ArrayProperty->Inner;
+			FScriptArrayHelper ArrayHelper(ArrayProperty, OutData);
+			const Py_ssize_t ListLen = PyList_Size(PyValue);
+			ArrayHelper.Resize(ListLen);
+			for (Py_ssize_t i = 0; i < ListLen; ++i)
+			{
+				PyObject* PyElement = PyList_GetItem(PyValue, i);
+				void* ElementPtr = ArrayHelper.GetRawPtr(i);
+				if (!PyElement || !ElementPtr) return false;
+
+				// For UObject arrays (e.g. ListView items), auto-wrap primitive Python
+				// values in UPythonWidgetMarkupListEntry so the ListView can display them.
+				if (FObjectPropertyBase* ObjectProperty = CastField<FObjectPropertyBase>(InnerProperty))
+				{
+					UObject* Object = nullptr;
+					if (PyConversion::NativizeObject(PyElement, Object, UObject::StaticClass()))
+					{
+						ObjectProperty->SetObjectPropertyValue(ElementPtr, Object);
+					}
+					else
+					{
+						PyErr_Clear(); // NativizeObject failed for non-UObject value; clear the error.
+						UPythonWidgetMarkupListEntry* Entry = UPythonWidgetMarkupListEntry::Create(GetTransientPackage(), PyElement);
+						ObjectProperty->SetObjectPropertyValue(ElementPtr, Entry);
+					}
+				}
+				else if (!NativizePythonValueToProperty(PyElement, InnerProperty, ElementPtr))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
 
 		return false;
 	}
@@ -201,9 +239,14 @@ namespace
 
 		if (!NativizePythonValueToProperty(PyValue, TailProperty, PropertyBuffer.GetValueData()))
 		{
+			FString ExpectedType = TailProperty->GetClass()->GetName();
+			if (const FStructProperty* StructProp = CastField<FStructProperty>(TailProperty))
+			{
+				ExpectedType += FString::Printf(TEXT(" (%s)"), *StructProp->Struct->GetName());
+			}
 			const FString FallbackString = FPythonUtilities::PythonObjectToString(PyValue);
 			UE_LOG(LogWidgetMarkupPythonIntegration, Warning, TEXT("Binding: SourceExpression='%s', Target='%s.%s', Python value could not be converted to '%s', falling back to string."),
-				*Binding.SourceExpression, *Binding.TargetObjectName.ToString(), *Binding.TargetPropertyPath, *TailProperty->GetClass()->GetName());
+				*Binding.SourceExpression, *Binding.TargetObjectName.ToString(), *Binding.TargetPropertyPath, *ExpectedType);
 
 			FPropertyBuffer FallbackBuffer(TailProperty, FStringView(FallbackString));
 			if (FallbackBuffer.HasValue())

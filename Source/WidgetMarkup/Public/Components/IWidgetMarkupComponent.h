@@ -8,4 +8,7 @@ class WIDGETMARKUP_API IWidgetMarkupComponent
 {
 public:
 	virtual ~IWidgetMarkupComponent() = default;
+
+	/** Refresh the component's display with the given data object. */
+	virtual void OnDataRefresh(class UObject* Data) {}
 };

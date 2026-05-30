@@ -376,3 +376,16 @@ class WidgetMarkupComponent:
             if binding.source_expression == property_name:
                 widget_markup.apply_property_binding(user_widget, binding, value)
                 return
+
+    def refresh(self, data: Any) -> None:
+        """Set data on this component by calling on_data_refresh."""
+        self.on_data_refresh(data)
+
+    def on_data_refresh(self, data: Any) -> None:
+        """Called when data is pushed to this component via refresh().
+
+        Override in subclasses to update UI from data. The component's owning
+        UserWidget is available via self._widget_markup_user_widget.
+        Same data on same component type should produce identical display.
+        """
+        pass

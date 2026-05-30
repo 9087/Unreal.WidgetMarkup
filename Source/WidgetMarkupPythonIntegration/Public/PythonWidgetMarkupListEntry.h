@@ -1,0 +1,34 @@
+// Copyright 2025 Wu Zhiwei. All Rights Reserved.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "PythonUtilities.h"
+#include "UObject/Object.h"
+#include "PythonWidgetMarkupListEntry.generated.h"
+
+/**
+ * List entry data wrapper that caches a Python object for WidgetMarkup ListView items.
+ * Lives in WidgetMarkupPythonIntegration so it can hold a PyObject reference.
+ */
+UCLASS(BlueprintType)
+class WIDGETMARKUPPYTHONINTEGRATION_API UPythonWidgetMarkupListEntry : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	~UPythonWidgetMarkupListEntry();
+
+	/** Creates a list entry that caches the given Python value. */
+	static UPythonWidgetMarkupListEntry* Create(UObject* Outer, PyObject* InPyValue);
+
+	/** Returns the cached Python object, borrowed reference. */
+	PyObject* GetPyValue() const { return PyValue; }
+
+	/** Returns a display string representation of the cached value. */
+	FString GetDisplayText() const;
+
+private:
+	// Cached Python value (new reference).
+	PyObject* PyValue = nullptr;
+};

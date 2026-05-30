@@ -14,7 +14,8 @@ TSharedRef<FElementNode> FWidgetElementNode::Create()
 
 FElementNode::FResult FWidgetElementNode::OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct)
 {
-	if (auto WidgetTree = Context.FindObject<UWidgetTree>())
+	auto WidgetTree = Context.FindObject<UWidgetTree>();
+	if (ensure(WidgetTree))
 	{
 		Outer = WidgetTree;
 	}

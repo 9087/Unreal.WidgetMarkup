@@ -5,6 +5,8 @@
 #include "Engine/Blueprint.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Utilities/TypeParser.h"
+#include "WidgetBlueprint.h"
+#include "Widgets/WidgetMarkupUserWidget.h"
 
 TSharedRef<IPropertyRun> FBlueprintSuperPropertyRun::Create()
 {
@@ -38,6 +40,14 @@ FElementNode::FResult FBlueprintSuperPropertyRun::OnBegin(FElementNode::FContext
 	{
 		return FElementNode::FResult::Failure().Error(FText::Format(
 			FText::FromString(TEXT("Super class '{0}' cannot be used to create a Blueprint.")),
+			FText::FromString(ResolvedClass->GetName())));
+	}
+
+	// For WidgetBlueprints, the Super must be a subclass of UWidgetMarkupUserWidget.
+	if (Cast<UWidgetBlueprint>(Blueprint) && !ResolvedClass->IsChildOf<UWidgetMarkupUserWidget>())
+	{
+		return FElementNode::FResult::Failure().Error(FText::Format(
+			FText::FromString(TEXT("Super class '{0}' must derive from WidgetMarkupUserWidget for Widget Blueprints.")),
 			FText::FromString(ResolvedClass->GetName())));
 	}
 

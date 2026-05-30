@@ -4,6 +4,7 @@
 
 #include "Components/ListView.h"
 #include "PropertyBuffer.h"
+#include "UObject/UnrealType.h"
 
 TSharedRef<FPropertySetter> FListViewListItemsPropertySetter::Create()
 {

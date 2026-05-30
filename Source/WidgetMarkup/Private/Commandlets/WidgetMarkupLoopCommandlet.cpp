@@ -17,7 +17,6 @@
 #include "UObject/StrongObjectPtr.h"
 #include "WidgetMarkupModule.h"
 #include "Widgets/WidgetMarkupWindow.h"
-#include "WidgetMarkupPythonIntegration.h"
 
 namespace
 {

@@ -6,6 +6,7 @@
 #include "IPythonScriptPlugin.h"
 #include "PyConversion.h"
 #include "PythonUtilities.h"
+#include "PythonWidgetMarkupListEntry.h"
 #include "WidgetMarkupPythonIntegration.h"
 
 TSharedPtr<FPythonWidgetMarkupComponent> FPythonWidgetMarkupComponent::Create(UUserWidget* InUserWidget, const FString& InScript)
@@ -134,4 +135,35 @@ FPythonWidgetMarkupComponent::~FPythonWidgetMarkupComponent()
 	#endif
 
 	PythonComponentInstance = nullptr;
+}
+
+void FPythonWidgetMarkupComponent::OnDataRefresh(UObject* Data)
+{
+	if (!PythonComponentInstance || !Data)
+	{
+		return;
+	}
+
+	UPythonWidgetMarkupListEntry* ListEntry = Cast<UPythonWidgetMarkupListEntry>(Data);
+	if (!ListEntry)
+	{
+		return;
+	}
+
+	PyObject* PyValue = ListEntry->GetPyValue();
+	if (!PyValue)
+	{
+		return;
+	}
+
+#if defined(WITH_PYTHON) && WITH_PYTHON
+	FPythonGILScope GILScope;
+
+	PyObject* PyInstance = reinterpret_cast<PyObject*>(PythonComponentInstance);
+	FPythonAutoRelease PyResult(PyObject_CallMethod(PyInstance, "refresh", "O", PyValue));
+	if (!PyResult)
+	{
+		PyErr_Print();
+	}
+#endif
 }

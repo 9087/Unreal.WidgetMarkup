@@ -32,7 +32,6 @@ public class WidgetMarkup : ModuleRules
 			"DeveloperSettings",
 			"Json",
 			"Projects",
-			"WidgetMarkupPythonIntegration",
 		});
 	}
 }

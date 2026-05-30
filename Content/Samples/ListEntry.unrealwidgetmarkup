@@ -1,0 +1,5 @@
+<WidgetBlueprint Script="Samples.ListEntryComponent">
+  <WidgetTree>
+    <TextBlock Name="ItemLabel" Text="{display_text}" ColorAndOpacity="{color}" />
+  </WidgetTree>
+</WidgetBlueprint>

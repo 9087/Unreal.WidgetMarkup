@@ -13,6 +13,7 @@ public:
 	static TSharedPtr<FPythonWidgetMarkupComponent> Create(UUserWidget* InUserWidget, const FString& InScript);
 
 	virtual ~FPythonWidgetMarkupComponent() override;
+	virtual void OnDataRefresh(UObject* Data) override;
 
 private:
 	void* PythonComponentInstance = nullptr;

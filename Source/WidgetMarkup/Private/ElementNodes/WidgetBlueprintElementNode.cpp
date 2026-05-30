@@ -7,6 +7,7 @@
 #include "WidgetBlueprint.h"
 #include "Blueprint/WidgetTree.h"
 #include "WidgetBlueprintExtension.h"
+#include "Widgets/WidgetMarkupUserWidget.h"
 
 IMPLEMENT_ELEMENT_NODE(FWidgetBlueprintElementNode, FBlueprintElementNode)
 
@@ -23,7 +24,7 @@ FElementNode::FResult FWidgetBlueprintElementNode::OnBegin(const FContext& Conte
 		return FResult::Failure().Error(FText::FromString(TEXT("WidgetBlueprintElementNode: outer object must be a UPackage when creating a Widget Blueprint.")));
 	}
 
-	FResult Result = CreateOrReuseBlueprint(Package, UUserWidget::StaticClass(), UWidgetBlueprint::StaticClass(), UWidgetBlueprintGeneratedClass::StaticClass());
+	FResult Result = CreateOrReuseBlueprint(Package, UWidgetMarkupUserWidget::StaticClass(), UWidgetBlueprint::StaticClass(), UWidgetBlueprintGeneratedClass::StaticClass());
 	if (!Result)
 	{
 		return Result;
