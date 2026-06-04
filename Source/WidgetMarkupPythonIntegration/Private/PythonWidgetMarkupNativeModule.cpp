@@ -3,8 +3,10 @@
 #include "PythonWidgetMarkupNativeModule.h"
 
 #include "Binding/WidgetPropertyBinding.h"
+#include "Blueprint/IUserObjectListEntry.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetTree.h"
+#include "Components/ListViewBase.h"
 #include "Components/Widget.h"
 #include "Modules/ModuleManager.h"
 #include "PythonWidgetMarkupListEntry.h"
@@ -298,10 +300,38 @@ namespace
 		return PyConversion::PythonizeObject(FoundWidget);
 	}
 
+	PyObject* PyGetPythonObject(PyObject* /*Self*/, PyObject* Args)
+	{
+		PyObject* PyEntry = nullptr;
+		if (!PyArg_ParseTuple(Args, "O:get_python_object", &PyEntry))
+		{
+			return nullptr;
+		}
+
+		UObject* EntryObject = nullptr;
+		if (!PyConversion::NativizeObject(PyEntry, EntryObject, UPythonWidgetMarkupListEntry::StaticClass()))
+		{
+			Py_RETURN_NONE;
+		}
+
+		UPythonWidgetMarkupListEntry* ListEntry = Cast<UPythonWidgetMarkupListEntry>(EntryObject);
+		if (ListEntry)
+		{
+			PyObject* PythonObject = ListEntry->GetPythonObject();
+			if (PythonObject)
+			{
+				Py_INCREF(PythonObject);
+				return PythonObject;
+			}
+		}
+		Py_RETURN_NONE;
+	}
+
 	PyMethodDef NativeModuleMethods[] =
 	{
 		{ "apply_property_binding", PyApplyPropertyBinding, METH_VARARGS, "Apply one WidgetMarkup property binding with a Python value." },
 		{ "find_widget_in_user_widget", PyFindWidgetInUserWidget, METH_VARARGS, "Find a widget by name in a UserWidget's WidgetTree." },
+		{ "get_python_object", PyGetPythonObject, METH_VARARGS, "Get the raw Python value from a PythonWidgetMarkupListEntry." },
 		{ nullptr, nullptr, 0, nullptr }
 	};
 

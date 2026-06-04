@@ -1,4 +1,5 @@
 from WidgetMarkupComponent import WidgetMarkupComponent, reactive
+from IUserObjectListEntry import IUserObjectListEntry
 import unreal
 
 
@@ -9,7 +10,7 @@ _COLORS = [
 ]
 
 
-class ListEntryComponent(WidgetMarkupComponent):
+class ListEntryComponent(WidgetMarkupComponent, IUserObjectListEntry):
     @reactive
     def display_text(self):
         return ""

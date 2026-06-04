@@ -15,6 +15,8 @@ public:
 	virtual ~FPythonWidgetMarkupComponent() override;
 	virtual void OnDataRefresh(UObject* Data) override;
 
+	void* GetPythonInstance() const { return PythonComponentInstance; }
+
 private:
 	void* PythonComponentInstance = nullptr;
 };

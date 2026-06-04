@@ -23,9 +23,10 @@ public:
 	static UPythonWidgetMarkupListEntry* Create(UObject* Outer, PyObject* InPyValue);
 
 	/** Returns the cached Python object, borrowed reference. */
-	PyObject* GetPyValue() const { return PyValue; }
+	PyObject* GetPythonObject() const { return PyValue; }
 
 	/** Returns a display string representation of the cached value. */
+	UFUNCTION(BlueprintCallable, Category = "WidgetMarkup")
 	FString GetDisplayText() const;
 
 private:

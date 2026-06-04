@@ -150,17 +150,16 @@ void FPythonWidgetMarkupComponent::OnDataRefresh(UObject* Data)
 		return;
 	}
 
-	PyObject* PyValue = ListEntry->GetPyValue();
-	if (!PyValue)
+	PyObject* PythonObject = ListEntry->GetPythonObject();
+	if (!PythonObject)
 	{
 		return;
 	}
 
 #if defined(WITH_PYTHON) && WITH_PYTHON
 	FPythonGILScope GILScope;
-
 	PyObject* PyInstance = reinterpret_cast<PyObject*>(PythonComponentInstance);
-	FPythonAutoRelease PyResult(PyObject_CallMethod(PyInstance, "refresh", "O", PyValue));
+	FPythonAutoRelease PyResult(PyObject_CallMethod(PyInstance, "refresh", "O", PythonObject));
 	if (!PyResult)
 	{
 		PyErr_Print();
