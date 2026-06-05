@@ -12,13 +12,13 @@ TSharedRef<FPropertySetter> FListViewListItemsPropertySetter::Create()
 }
 
 bool FListViewListItemsPropertySetter::SetValue(
-	UObject* InObject,
+	void* InContainer,
 	const FWidgetPropertyPath& InPropertyPath,
 	FProperty* InTargetProperty,
 	void* InTargetValueAddress,
 	const FPropertyBuffer& InPropertyBuffer) const
 {
-	UListView* ListView = Cast<UListView>(InObject);
+	UListView* ListView = Cast<UListView>(static_cast<UObject*>(InContainer));
 	if (!ListView || InPropertyPath.IsEmpty() || !InTargetProperty || !InTargetValueAddress || !InPropertyBuffer.HasValue())
 	{
 		return false;

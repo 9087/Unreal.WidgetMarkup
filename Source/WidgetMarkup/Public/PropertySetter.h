@@ -16,14 +16,14 @@ public:
 	/**
 	 * Applies a prepared property buffer to the resolved target property.
 	 *
-	 * @param InObject The root object that owns the property path.
+	 * @param InContainer The container object/struct that owns the target property.
 	 * @param InPropertyPath Canonical property path used to resolve the target.
 	 * @param InTargetProperty The resolved target property definition.
 	 * @param InTargetValueAddress The resolved writable target value address.
 	 * @param InPropertyBuffer The source value buffer to apply.
 	 */
 	virtual bool SetValue(
-		UObject* InObject,
+		void* InContainer,
 		const FWidgetPropertyPath& InPropertyPath,
 		FProperty* InTargetProperty,
 		void* InTargetValueAddress,

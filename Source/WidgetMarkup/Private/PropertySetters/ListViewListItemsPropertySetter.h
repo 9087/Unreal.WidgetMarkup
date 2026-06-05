@@ -10,7 +10,7 @@ public:
 	static TSharedRef<FPropertySetter> Create();
 
 	virtual bool SetValue(
-		UObject* InObject,
+		void* InContainer,
 		const FWidgetPropertyPath& InPropertyPath,
 		FProperty* InTargetProperty,
 		void* InTargetValueAddress,

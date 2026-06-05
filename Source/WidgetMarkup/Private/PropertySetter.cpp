@@ -6,13 +6,13 @@
 #include "UObject/UnrealType.h"
 
 bool FPropertySetter::SetValue(
-	UObject* InObject,
+	void* InContainer,
 	const FWidgetPropertyPath& InPropertyPath,
 	FProperty* InTargetProperty,
 	void* InTargetValueAddress,
 	const FPropertyBuffer& InPropertyBuffer) const
 {
-	if (!InObject || InPropertyPath.IsEmpty() || !InTargetProperty || !InTargetValueAddress || !InPropertyBuffer.HasValue())
+	if (!InContainer || InPropertyPath.IsEmpty() || !InTargetProperty || !InTargetValueAddress || !InPropertyBuffer.HasValue())
 	{
 		return false;
 	}
@@ -26,7 +26,7 @@ bool FPropertySetter::SetValue(
 	// 1. Try native setter declared via UPROPERTY(Setter=...) metadata.
 	if (InTargetProperty->HasSetter())
 	{
-		InTargetProperty->CallSetter(InObject, InPropertyBuffer.GetValueData());
+		InTargetProperty->CallSetter(InContainer, InPropertyBuffer.GetValueData());
 		return true;
 	}
 

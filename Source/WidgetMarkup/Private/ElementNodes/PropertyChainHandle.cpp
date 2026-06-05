@@ -143,7 +143,9 @@ bool FPropertyChainHandle::SetValue(const FPropertyBuffer& PropertyBuffer) const
 		PropertySetter = MakeShared<FPropertySetter>();
 	}
 
-	return PropertySetter->SetValue(TargetObject, PropertyPath, TailProperty, TailValueAddress, PropertyBuffer);
+	// Pass TailContainer so CallSetter operates on the correct container object
+	// (e.g. UGridSlot for Slot.Row), not the root object (e.g. UButton).
+	return PropertySetter->SetValue(TailContainer, PropertyPath, TailProperty, TailValueAddress, PropertyBuffer);
 }
 
 bool FPropertyChainHandle::SetValue(const FStringView& ValueString) const
