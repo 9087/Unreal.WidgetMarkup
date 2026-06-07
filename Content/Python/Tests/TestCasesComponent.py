@@ -55,17 +55,7 @@ class TestCasesComponent(WidgetMarkupComponent):
         self._test11_basic_array()
 
         unreal.log(f"=== SUMMARY: {self._passed} PASS, {self._failed} FAIL ===")
-
-        # Shutdown the program after tests complete
-        try:
-            if widget_markup:
-                widget_markup.request_shutdown()
-                unreal.log("[INFO] Shutdown requested via widget_markup")
-            else:
-                unreal.log("[WARN] widget_markup module not available, trying fallback")
-                unreal.SystemLibrary.execute_console_command(None, "quit")
-        except Exception as ex:
-            unreal.log(f"[WARN] Shutdown failed: {ex}")
+        widget_markup.request_shutdown()
 
     # =========================================================================
     # Variable tests (Blueprint CDO)

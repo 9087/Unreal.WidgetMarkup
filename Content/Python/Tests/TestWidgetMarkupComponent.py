@@ -1,6 +1,6 @@
 import unittest
 
-from _support import DemoWidgetMarkupComponent, WidgetMarkupComponent
+from Tests._support import DemoWidgetMarkupComponent, WidgetMarkupComponent
 
 
 class WidgetMarkupComponentTests(unittest.TestCase):

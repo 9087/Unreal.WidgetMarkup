@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-在Unreal引擎中利用XML语言搭建UMG控件树。
+在 Unreal 引擎中利用 XML 搭建 UMG 控件树、创建蓝图，并结合 Python 实现响应式 UI。
 
 ![](Documents/WidgetMarkup.gif)
 
@@ -18,39 +18,91 @@ WidgetMarkup.Show /Game/WidgetMarkup/Example
 
 4. 预览窗口会打开，并在源文件变化时自动刷新。
 
-## 用法
+## XML 语法
 
-在Unreal引擎编辑器的CMD输入栏中输入：
-
-```txt
-WidgetMarkup.Show <包路径>
-```
-
-`包路径`需要使用 Unreal 资源路径格式，例如：
-
-```txt
-/Game/WidgetMarkup/Example
-```
-
-它对应同一路径下的 `Example.unrealwidgetmarkup` 源文件。
-
-不要传入磁盘文件路径，也不要带 `.unrealwidgetmarkup` 扩展名。
-
-文件内容如下：
+### 控件蓝图
 
 ```xml
-<WidgetBlueprint>
+<WidgetBlueprint Script="Samples.MyComponent">
   <WidgetTree>
     <CanvasPanel>
-      <TextBlock Text="Text Block in Canvas Panel" Slot.LayoutData.Anchors.Minimum="0.5,0.5" Slot.LayoutData.Anchors.Maximum="0.5,0.5" Slot.bAutoSize="True" Slot.LayoutData.Alignment="0.5,0.5" />
+      <TextBlock Text="Hello" Slot.bAutoSize="True"
+        Slot.LayoutData.Anchors.Minimum="0.5,0.5"
+        Slot.LayoutData.Anchors.Maximum="0.5,0.5"
+        Slot.LayoutData.Alignment="0.5,0.5" />
     </CanvasPanel>
   </WidgetTree>
 </WidgetBlueprint>
 ```
 
-将会打开一个实时预览对应界面内容的窗口：
+- `Script` — Python 组件模块路径。
+- `Super` — 父类（控件蓝图默认为 `UWidgetMarkupUserWidget`）。
+- `Implements` — 逗号分隔的 UInterface 名称。
+
+### 普通蓝图与变量
+
+```xml
+<Blueprint Super="Actor">
+  <Variable Name="Health" Type="Float" Default="100.0" />
+  <Variable Name="Name" Type="String" Default="Player" />
+</Blueprint>
+```
+
+变量类型使用 PascalCase：`Boolean`、`Integer`、`Float`、`Double`、`String`、`Text`、`Name`。
+容器：`Array(Float)`、`Set(String)`、`Map(String,Integer)`。
+对象引用：`Object(Actor)`、`Class(Actor)`、`SoftObject(Texture2D)`。
+
+### Python 组件
+
+```python
+from WidgetMarkupComponent import WidgetMarkupComponent, reactive
+
+class MyComponent(WidgetMarkupComponent):
+    @reactive
+    def count(self):
+        return 0
+
+    def on_button_clicked(self):
+        self.count += 1
+```
+
+通过 `{属性名}` 将响应式属性绑定到控件：
+
+```xml
+<TextBlock Text="{count}" />
+<Button OnClicked="on_button_clicked"><TextBlock Text="+" /></Button>
+```
+
+## 用法
+
+```txt
+WidgetMarkup.Show <包路径>
+```
+
+例：`/Game/WidgetMarkup/Example` → `Example.unrealwidgetmarkup`。
+
+实时预览窗口：
 
 ![Text Block in Canvas Panel](Documents/TextBlockInCanvasPanel.png)
+
+## 测试
+
+在项目根目录运行测试套件：
+
+```bat
+Game\Plugins\WidgetMarkup\Content\Tests\RunTests.bat [Game/YourProject.uproject]
+```
+
+未指定项目时默认使用 `Game/Game.uproject`。
+
+**所有修改必须通过测试后方可合入。**
+
+测试套件包括：
+
+| 步骤 | 包路径 | 说明 |
+|------|--------|------|
+| 1 | `/WidgetMarkup/Tests/UnitTests` | Python 单元测试（响应式、组件、集合） |
+| 2 | `/WidgetMarkup/Tests/TestCases` | XML 编译与变量集成测试 |
 
 ## 语法插件
 
