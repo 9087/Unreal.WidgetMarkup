@@ -1,6 +1,6 @@
 import unittest
 
-from _support import ListComponent
+from Tests._support import ListComponent
 
 
 class ObservableCollectionTests(unittest.TestCase):

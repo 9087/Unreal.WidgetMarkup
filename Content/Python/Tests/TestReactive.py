@@ -1,6 +1,6 @@
 import unittest
 
-from _support import (
+from Tests._support import (
     CyclicComponent,
     DemoComponent,
     InitConfiguredComponent,

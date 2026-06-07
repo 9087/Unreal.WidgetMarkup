@@ -1,0 +1,5 @@
+<WidgetBlueprint Script="Tests.RunTestsComponent">
+  <WidgetTree>
+    <CanvasPanel />
+  </WidgetTree>
+</WidgetBlueprint>

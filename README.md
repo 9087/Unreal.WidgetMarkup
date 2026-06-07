@@ -2,7 +2,7 @@
 
 **English** | [简体中文](README.zh-cn.md)
 
-Build UMG widget trees with XML in Unreal Engine.
+Build UMG widget trees, Blueprints, and reactive UI with XML and Python in Unreal Engine.
 
 ![](Documents/WidgetMarkup.gif)
 
@@ -18,39 +18,91 @@ WidgetMarkup.Show /Game/WidgetMarkup/Example
 
 4. The preview window opens and updates when the source file changes.
 
-## Usage
+## XML Syntax
 
-In the Unreal Editor, enter the following in the CMD input bar:
-
-```txt
-WidgetMarkup.Show <Package Path>
-```
-
-`Package Path` must be in Unreal asset path format, for example:
-
-```txt
-/Game/WidgetMarkup/Example
-```
-
-It points to the `Example.unrealwidgetmarkup` source file under the same logical path.
-
-Do not pass a disk file path or extension such as `.unrealwidgetmarkup`.
-
-Example file content:
+### Widget Blueprint
 
 ```xml
-<WidgetBlueprint>
+<WidgetBlueprint Script="Samples.MyComponent">
   <WidgetTree>
     <CanvasPanel>
-      <TextBlock Text="Text Block in Canvas Panel" Slot.LayoutData.Anchors.Minimum="0.5,0.5" Slot.LayoutData.Anchors.Maximum="0.5,0.5" Slot.bAutoSize="True" Slot.LayoutData.Alignment="0.5,0.5" />
+      <TextBlock Text="Hello" Slot.bAutoSize="True"
+        Slot.LayoutData.Anchors.Minimum="0.5,0.5"
+        Slot.LayoutData.Anchors.Maximum="0.5,0.5"
+        Slot.LayoutData.Alignment="0.5,0.5" />
     </CanvasPanel>
   </WidgetTree>
 </WidgetBlueprint>
 ```
 
-A window will open with a live preview of the corresponding UI:
+- `Script` — Python component module path.
+- `Super` — parent class (defaults to `UWidgetMarkupUserWidget` for widget blueprints).
+- `Implements` — comma-separated UInterface names.
+
+### Regular Blueprint with Variables
+
+```xml
+<Blueprint Super="Actor">
+  <Variable Name="Health" Type="Float" Default="100.0" />
+  <Variable Name="Name" Type="String" Default="Player" />
+</Blueprint>
+```
+
+Variable types use PascalCase: `Boolean`, `Integer`, `Float`, `Double`, `String`, `Text`, `Name`.
+Containers: `Array(Float)`, `Set(String)`, `Map(String,Integer)`.
+Object refs: `Object(Actor)`, `Class(Actor)`, `SoftObject(Texture2D)`.
+
+### Python Component
+
+```python
+from WidgetMarkupComponent import WidgetMarkupComponent, reactive
+
+class MyComponent(WidgetMarkupComponent):
+    @reactive
+    def count(self):
+        return 0
+
+    def on_button_clicked(self):
+        self.count += 1
+```
+
+Bind reactive properties to widget attributes with `{property_name}`:
+
+```xml
+<TextBlock Text="{count}" />
+<Button OnClicked="on_button_clicked"><TextBlock Text="+" /></Button>
+```
+
+## Usage
+
+```txt
+WidgetMarkup.Show <Package Path>
+```
+
+Example: `/Game/WidgetMarkup/Example` → `Example.unrealwidgetmarkup`.
+
+Window with live preview:
 
 ![Text Block in Canvas Panel](Documents/TextBlockInCanvasPanel.png)
+
+## Tests
+
+Run the test suite from the project root:
+
+```bat
+Game\Plugins\WidgetMarkup\Content\Tests\RunTests.bat [Game/YourProject.uproject]
+```
+
+If no project is specified, defaults to `Game/Game.uproject`.
+
+**All changes must pass these tests before merging.**
+
+The suite runs:
+
+| Step | Package | Description |
+|------|---------|-------------|
+| 1 | `/WidgetMarkup/Tests/UnitTests` | Python unit tests (reactive, component, collections) |
+| 2 | `/WidgetMarkup/Tests/TestCases` | XML compilation and variable integration tests |
 
 ## Language Extension
 
