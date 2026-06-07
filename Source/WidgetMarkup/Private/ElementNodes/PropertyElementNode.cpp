@@ -2,6 +2,7 @@
 
 #include "PropertyElementNode.h"
 
+#include "BasicTypeElementNode.h"
 #include "ObjectElementNode.h"
 #include "PropertyBuffer.h"
 #include "ElementNodes/PropertyChainHandle.h"
@@ -36,7 +37,7 @@ FPropertyElementNode::~FPropertyElementNode()
 	}
 }
 
-bool FPropertyElementNode::TryResolvePropertyPathFromContext(
+bool FPropertyElementNode::TryResolvePropertyPath(
 	const FContext& Context,
 	const FStringView& PropertyName,
 	bool& bInOutUseBufferedWrite,
@@ -122,7 +123,7 @@ FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UOb
 	PropertyPath.Reset();
 	BufferedPropertyContext.Reset();
 	FText PropertyPathError;
-	if (!TryResolvePropertyPathFromContext(Context, PropertyName, bUseBufferedWrite, PropertyPath, BufferedPropertyContext, &PropertyPathError))
+	if (!TryResolvePropertyPath(Context, PropertyName, bUseBufferedWrite, PropertyPath, BufferedPropertyContext, &PropertyPathError))
 	{
 		return FResult::Failure().Error(PropertyPathError);
 	}
@@ -138,7 +139,7 @@ FElementNode::FResult FPropertyElementNode::OnBegin(const FContext& Context, UOb
 				FText::FromString(PropertyPath.GetPathName().ToString())));
 		}
 
-		const TSharedPtr<FPropertyBuffer> PropertyBuffer = MakeShared<FPropertyBuffer>(TailProperty);
+		const TSharedPtr<FPropertyBuffer> PropertyBuffer = MakeShared<FPropertyBuffer>(TailProperty, FStringView(PropertyValue));
 		if (!PropertyBuffer->HasValue())
 		{
 			return FResult::Failure().Error(FText::Format(
@@ -291,6 +292,97 @@ FElementNode::FResult FPropertyElementNode::OnAddChild(const TSharedRef<FElement
 			}
 
 			ArrayProperty->Inner->CopyCompleteValue(NewElementPointer, ChildPropertyBuffer->GetValueData());
+		}
+		else if (auto ChildBasicTypeNode = CastElementNode<FBasicTypeElementNode>(Child))
+		{
+			const TSharedPtr<const FPropertyBuffer> ChildBuffer =
+				ChildBasicTypeNode->GetValueBuffer();
+			if (!ChildBuffer.IsValid() || !ChildBuffer->GetValueData())
+			{
+				return FResult::Failure().Error(FText::Format(
+					FText::FromString(TEXT("Failed to add basic-type child to array property path '{0}': value buffer is invalid or uninitialized.")),
+					FText::FromString(PropertyPath.GetPathName().ToString())));
+			}
+
+			FProperty* ChildProperty = ChildBuffer->GetProperty();
+			if (!ChildProperty)
+			{
+				return FResult::Failure().Error(FText::Format(
+					FText::FromString(TEXT("Failed to add basic-type child to array property path '{0}': buffer property is null.")),
+					FText::FromString(PropertyPath.GetPathName().ToString())));
+			}
+
+			if (!ArrayProperty->Inner->SameType(ChildProperty))
+			{
+				return FResult::Failure().Error(FText::Format(
+					FText::FromString(TEXT("Failed to add basic-type child to array property path '{0}': array inner type '{1}' is not compatible with child type '{2}'.")),
+					FText::FromString(PropertyPath.GetPathName().ToString()),
+					FText::FromString(ArrayProperty->Inner->GetClass()->GetName()),
+					FText::FromString(ChildProperty->GetClass()->GetName())));
+			}
+
+			ArrayProperty->Inner->CopyCompleteValue(NewElementPointer, ChildBuffer->GetValueData());
+		}
+	}
+	else if (FObjectPropertyBase* ObjectProperty = CastField<FObjectPropertyBase>(TailProperty))
+	{
+		// Single object property: accept one ObjectElementNode child.
+		if (ElementChildren.Num() > 1)
+		{
+			return FResult::Failure().Error(FText::Format(
+				FText::FromString(TEXT("Failed to add child to object property path '{0}': only one child element is allowed for a non-array object property.")),
+				FText::FromString(PropertyPath.GetPathName().ToString())));
+		}
+
+		if (auto ChildObjectElementNode = CastElementNode<FObjectElementNode>(Child))
+		{
+			UObject* ChildObject = ChildObjectElementNode->GetObject();
+			if (!ChildObject)
+			{
+				return FResult::Failure().Error(FText::Format(
+					FText::FromString(TEXT("Failed to add object child to property path '{0}': object element node returned null object.")),
+					FText::FromString(PropertyPath.GetPathName().ToString())));
+			}
+			if (ObjectProperty->PropertyClass && !ChildObject->IsA(ObjectProperty->PropertyClass))
+			{
+				return FResult::Failure().Error(FText::Format(
+					FText::FromString(TEXT("Failed to add object child to property path '{0}': child class '{1}' is not compatible with '{2}'.")),
+					FText::FromString(PropertyPath.GetPathName().ToString()),
+					FText::FromString(ChildObject->GetClass()->GetName()),
+					FText::FromString(ObjectProperty->PropertyClass->GetName())));
+			}
+			ObjectProperty->SetObjectPropertyValue(TailValueAddress, ChildObject);
+		}
+	}
+	else if (FStructProperty* StructProperty = CastField<FStructProperty>(TailProperty))
+	{
+		// Single struct property: accept one StructElementNode child.
+		if (ElementChildren.Num() > 1)
+		{
+			return FResult::Failure().Error(FText::Format(
+				FText::FromString(TEXT("Failed to add child to struct property path '{0}': only one child element is allowed for a non-array struct property.")),
+				FText::FromString(PropertyPath.GetPathName().ToString())));
+		}
+
+		if (auto ChildStructNode = CastElementNode<FStructElementNode>(Child))
+		{
+			UScriptStruct* ChildStructType = ChildStructNode->GetScriptStruct();
+			void* ChildStructMemory = ChildStructNode->GetStructMemory();
+			if (!ChildStructType || !ChildStructMemory)
+			{
+				return FResult::Failure().Error(FText::Format(
+					FText::FromString(TEXT("Failed to add struct child to property path '{0}': struct child element has no data.")),
+					FText::FromString(PropertyPath.GetPathName().ToString())));
+			}
+			if (!StructProperty->Struct->IsChildOf(ChildStructType) && !ChildStructType->IsChildOf(StructProperty->Struct))
+			{
+				return FResult::Failure().Error(FText::Format(
+					FText::FromString(TEXT("Failed to add struct child to property path '{0}': child struct type '{1}' is not compatible with '{2}'.")),
+					FText::FromString(PropertyPath.GetPathName().ToString()),
+					FText::FromString(ChildStructType->GetName()),
+					FText::FromString(StructProperty->Struct->GetName())));
+			}
+			StructProperty->CopyCompleteValue(TailValueAddress, ChildStructMemory);
 		}
 	}
 

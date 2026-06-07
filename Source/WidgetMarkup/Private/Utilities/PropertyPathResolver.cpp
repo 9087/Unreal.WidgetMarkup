@@ -49,28 +49,41 @@ TSharedPtr<FPropertyPathResolver::FOutput> FPropertyPathResolver::TryResolvePath
 			}
 
 			FScriptArrayHelper ArrayHelper(ArrayProperty, CurrentContainer);
-			if (!ArrayHelper.IsValidIndex(Element.ArrayIndex))
+			if (Element.ArrayIndex == INDEX_NONE)
+			{
+				// Wildcard: resolve inner type only, no specific element.
+				if (!ArrayProperty->Inner)
+				{
+					return nullptr;
+				}
+				CurrentProperty = ArrayProperty->Inner;
+				ValueAddress = nullptr;
+				CurrentContainer = nullptr;
+			}
+			else if (!ArrayHelper.IsValidIndex(Element.ArrayIndex))
 			{
 				return nullptr;
 			}
-
-			void* ElementValueAddress = ArrayHelper.GetRawPtr(Element.ArrayIndex);
-			FProperty* InnerProperty = ArrayProperty->Inner;
-			if (!InnerProperty)
+			else
 			{
-				return nullptr;
-			}
+				void* ElementValueAddress = ArrayHelper.GetRawPtr(Element.ArrayIndex);
+				FProperty* InnerProperty = ArrayProperty->Inner;
+				if (!InnerProperty)
+				{
+					return nullptr;
+				}
 
-			CurrentProperty = InnerProperty;
-			ValueAddress = ElementValueAddress;
-			CurrentContainer = ElementValueAddress;
+				CurrentProperty = InnerProperty;
+				ValueAddress = ElementValueAddress;
+				CurrentContainer = ElementValueAddress;
+			}
 		}
 		else
 		{
 			return nullptr;
 		}
 
-		if (!ValueAddress)
+		if (!ValueAddress && CurrentContainer)
 		{
 			ValueAddress = CurrentProperty->ContainerPtrToValuePtr<void>(CurrentContainer);
 		}
@@ -78,7 +91,7 @@ TSharedPtr<FPropertyPathResolver::FOutput> FPropertyPathResolver::TryResolvePath
 		const bool bIsLastElement = (ElementIndex == Elements.Num() - 1);
 		if (bIsLastElement)
 		{
-			if (!CurrentProperty || !CurrentContainer || !ValueAddress)
+			if (!CurrentProperty)
 			{
 				return nullptr;
 			}

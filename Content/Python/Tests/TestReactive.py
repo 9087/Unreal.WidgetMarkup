@@ -10,7 +10,7 @@ from _support import (
 )
 
 
-class WidgetMarkupComponentReactiveTests(unittest.TestCase):
+class ReactiveTests(unittest.TestCase):
     def _changes_for(self, component, name):
         return [c for c in component.changes if c[0] == name]
 

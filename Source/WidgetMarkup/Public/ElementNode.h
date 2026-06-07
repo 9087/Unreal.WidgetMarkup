@@ -234,6 +234,9 @@ protected:
 	virtual FResult OnEnd() = 0;
 	virtual FResult OnAddChild(const TSharedRef<FElementNode>& Child) = 0;
 	virtual bool HasProperty(const FStringView& AttributeName) = 0;
+
+	/** Receives the text content between open and close tags (ElementData from FastXml). */
+	virtual void SetElementData(const TCHAR* InElementData) {}
 };
 
 /** Injects StaticClass() and GetClass() for safe Cast/IsA. */

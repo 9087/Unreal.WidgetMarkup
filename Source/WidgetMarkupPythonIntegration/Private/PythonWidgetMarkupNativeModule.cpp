@@ -327,11 +327,18 @@ namespace
 		Py_RETURN_NONE;
 	}
 
+	PyObject* PyRequestShutdown(PyObject* /*Self*/, PyObject* /*Args*/)
+	{
+		FPlatformMisc::RequestExit(true);
+		Py_RETURN_NONE;
+	}
+
 	PyMethodDef NativeModuleMethods[] =
 	{
 		{ "apply_property_binding", PyApplyPropertyBinding, METH_VARARGS, "Apply one WidgetMarkup property binding with a Python value." },
 		{ "find_widget_in_user_widget", PyFindWidgetInUserWidget, METH_VARARGS, "Find a widget by name in a UserWidget's WidgetTree." },
 		{ "get_python_object", PyGetPythonObject, METH_VARARGS, "Get the raw Python value from a PythonWidgetMarkupListEntry." },
+		{ "request_shutdown", PyRequestShutdown, METH_NOARGS, "Request engine exit (for standalone programs)." },
 		{ nullptr, nullptr, 0, nullptr }
 	};
 

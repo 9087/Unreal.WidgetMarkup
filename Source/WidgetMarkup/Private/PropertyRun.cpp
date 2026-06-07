@@ -29,7 +29,7 @@ bool TryCreatePropertyBinding(
 	FWidgetPropertyPath TargetPropertyPath;
 	FBufferedPropertyContext BufferedPropertyContext;
 	bool bUseBufferedWrite = false;
-	if (!FPropertyElementNode::TryResolvePropertyPathFromContext(Context, PropertyName, bUseBufferedWrite, TargetPropertyPath, BufferedPropertyContext, &OutError))
+	if (!FPropertyElementNode::TryResolvePropertyPath(Context, PropertyName, bUseBufferedWrite, TargetPropertyPath, BufferedPropertyContext, &OutError))
 	{
 		return false;
 	}

@@ -2,7 +2,11 @@
 
 #include "ElementNodeFactory.h"
 
+#include "EdGraphSchema_K2.h"
 #include "ElementNode.h"
+#include "ElementNodes/BasicTypeElementNode.h"
+#include "ElementNodes/StructElementNode.h"
+#include "Utilities/TypeParser.h"
 
 FElementNodeFactory& FElementNodeFactory::Get()
 {
@@ -65,13 +69,40 @@ UStruct* FElementNodeFactory::ResolveStructByAlias(const FString& ElementName)
 	return nullptr;
 }
 
-TSharedPtr<FElementNode> FElementNodeFactory::CreateElementNode(UObject* Outer, const FString& ElementName, UStruct*& Struct)
+TSharedPtr<FElementNode> FElementNodeFactory::CreateElementNode(UObject* Outer, const FString& ElementName, const TCHAR* ElementData, UStruct*& Struct)
 {
 	Struct = ResolveStructByAlias(ElementName);
 
 	if (Struct == nullptr)
 	{
-		Struct = UClass::TryFindTypeSlow<UStruct>(ElementName, EFindFirstObjectOptions::EnsureIfAmbiguous);
+		// Check basic types before falling through to TryFindTypeSlow,
+		// which would log a warning for names like "float" or "int".
+		// FTypeParser::ToPinCategory is shared with the Variable type system.
+		const FName PinCategory = FTypeParser::ToPinCategory(ElementName);
+		if (PinCategory != NAME_None)
+		{
+			// Struct types (Vector2D, LinearColor, etc.) must NOT be treated as
+			// basic type leaf nodes — they need full StructElementNode handling
+			// so their sub-properties (X, Y, etc.) can be set via child elements.
+			if (PinCategory == UEdGraphSchema_K2::PC_Struct)
+			{
+				Struct = FTypeParser::ResolveStruct(ElementName);
+			}
+			else
+			{
+				auto Node = MakeShared<FBasicTypeElementNode>(FStringView(ElementName));
+				if (ElementData)
+				{
+					Node->SetElementData(ElementData);
+				}
+				return Node;
+			}
+		}
+
+		if (Struct == nullptr)
+		{
+			Struct = UClass::TryFindTypeSlow<UStruct>(ElementName, EFindFirstObjectOptions::EnsureIfAmbiguous);
+		}
 	}
 
 	if (Struct == nullptr)
@@ -97,6 +128,12 @@ TSharedPtr<FElementNode> FElementNodeFactory::CreateElementNode(UObject* Outer, 
 	}
 	if (!OnCreateElementNodePtr)
 	{
+		// No registered delegate matched — if the resolved type is a UScriptStruct,
+		// create a generic StructElementNode (handles Vector2D, LinearColor, etc.).
+		if (Struct->IsA<UScriptStruct>())
+		{
+			return FStructElementNode::Create();
+		}
 		return nullptr;
 	}
 	const FOnCreateElementNode& OnCreateElementNode = *OnCreateElementNodePtr;

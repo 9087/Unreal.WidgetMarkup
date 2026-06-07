@@ -32,7 +32,7 @@ bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* 
 
 	FString ElementNameString(ElementName);
 	ElementNameString.TrimStartAndEndInline();
-	ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, *ElementNameString, Struct);
+	ElementNode = FElementNodeFactory::Get().CreateElementNode(Outer, *ElementNameString, ElementData, Struct);
 
 	if (!ElementNode.IsValid())
 	{
@@ -57,6 +57,10 @@ bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* 
 
 	if (ElementNode)
 	{
+		if (ElementData)
+		{
+			ElementNode->SetElementData(ElementData);
+		}
 		FElementNode::FResult Result = ElementNode->Begin(Context, Outer, Struct);
 		if (!Result)
 		{
@@ -71,6 +75,10 @@ bool FElementTreeBuilder::ProcessElement(const TCHAR* ElementName, const TCHAR* 
 			return false;
 		}
 		TSharedPtr<FElementNode> FallbackObjectNode = MakeShared<FObjectElementNode>();
+		if (ElementData)
+		{
+			FallbackObjectNode->SetElementData(ElementData);
+		}
 		auto FallbackResult = FallbackObjectNode->Begin(Context, Outer, FallbackClass);
 		if (!FallbackResult)
 		{

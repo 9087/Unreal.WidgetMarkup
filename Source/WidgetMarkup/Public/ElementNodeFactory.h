@@ -47,7 +47,7 @@ public:
 		}
 	}
 
-	TSharedPtr<FElementNode> CreateElementNode(UObject* Outer, const FString& ElementName, UStruct*& Struct);
+	TSharedPtr<FElementNode> CreateElementNode(UObject* Outer, const FString& ElementName, const TCHAR* ElementData, UStruct*& Struct);
 
 private:
 	UStruct* ResolveStructByAlias(const FString& ElementName);

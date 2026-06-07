@@ -8,39 +8,14 @@
 
 namespace
 {
-	bool StartsWithNoCase(const FString& Text, const TCHAR* Prefix)
-	{
-		return Text.StartsWith(Prefix, ESearchCase::IgnoreCase);
-	}
-
-	FName ToPinCategory(const FString& TypeToken)
-	{
-		if (TypeToken.Equals(TEXT("Bool"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Boolean;
-		if (TypeToken.Equals(TEXT("Integer"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Int;
-		if (TypeToken.Equals(TEXT("Int64"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Int64;
-		if (TypeToken.Equals(TEXT("Float"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Float;
-		if (TypeToken.Equals(TEXT("Double"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Double;
-		if (TypeToken.Equals(TEXT("Byte"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Byte;
-		if (TypeToken.Equals(TEXT("String"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_String;
-		if (TypeToken.Equals(TEXT("Text"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Text;
-		if (TypeToken.Equals(TEXT("Name"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Name;
-		if (TypeToken.Equals(TEXT("Vector"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Struct;
-		if (TypeToken.Equals(TEXT("Vector2D"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Struct;
-		if (TypeToken.Equals(TEXT("Rotator"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Struct;
-		if (TypeToken.Equals(TEXT("Transform"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Struct;
-		if (TypeToken.Equals(TEXT("Color"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Struct;
-		if (TypeToken.Equals(TEXT("LinearColor"), ESearchCase::IgnoreCase)) return UEdGraphSchema_K2::PC_Struct;
-		return NAME_None;
-	}
-
 	UScriptStruct* ResolveBuiltinStruct(const FString& TypeToken)
 	{
-		if (TypeToken.Equals(TEXT("Vector"), ESearchCase::IgnoreCase)) return TBaseStructure<FVector>::Get();
-		if (TypeToken.Equals(TEXT("Vector2D"), ESearchCase::IgnoreCase)) return TBaseStructure<FVector2D>::Get();
-		if (TypeToken.Equals(TEXT("Rotator"), ESearchCase::IgnoreCase)) return TBaseStructure<FRotator>::Get();
-		if (TypeToken.Equals(TEXT("Transform"), ESearchCase::IgnoreCase)) return TBaseStructure<FTransform>::Get();
-		if (TypeToken.Equals(TEXT("Color"), ESearchCase::IgnoreCase)) return TBaseStructure<FColor>::Get();
-		if (TypeToken.Equals(TEXT("LinearColor"), ESearchCase::IgnoreCase)) return TBaseStructure<FLinearColor>::Get();
+		if (TypeToken.Equals(TEXT("Vector"))) return TBaseStructure<FVector>::Get();
+		if (TypeToken.Equals(TEXT("Vector2D"))) return TBaseStructure<FVector2D>::Get();
+		if (TypeToken.Equals(TEXT("Rotator"))) return TBaseStructure<FRotator>::Get();
+		if (TypeToken.Equals(TEXT("Transform"))) return TBaseStructure<FTransform>::Get();
+		if (TypeToken.Equals(TEXT("Color"))) return TBaseStructure<FColor>::Get();
+		if (TypeToken.Equals(TEXT("LinearColor"))) return TBaseStructure<FLinearColor>::Get();
 		return nullptr;
 	}
 
@@ -48,6 +23,26 @@ namespace
 	{
 		return FEdGraphTerminalType::FromPinType(InPinType);
 	}
+}
+
+FName FTypeParser::ToPinCategory(const FString& TypeToken)
+{
+	if (TypeToken.Equals(TEXT("Boolean"))) return UEdGraphSchema_K2::PC_Boolean;
+	if (TypeToken.Equals(TEXT("Integer"))) return UEdGraphSchema_K2::PC_Int;
+	if (TypeToken.Equals(TEXT("Integer64"))) return UEdGraphSchema_K2::PC_Int64;
+	if (TypeToken.Equals(TEXT("Float"))) return UEdGraphSchema_K2::PC_Float;
+	if (TypeToken.Equals(TEXT("Double"))) return UEdGraphSchema_K2::PC_Double;
+	if (TypeToken.Equals(TEXT("Byte"))) return UEdGraphSchema_K2::PC_Byte;
+	if (TypeToken.Equals(TEXT("String"))) return UEdGraphSchema_K2::PC_String;
+	if (TypeToken.Equals(TEXT("Text"))) return UEdGraphSchema_K2::PC_Text;
+	if (TypeToken.Equals(TEXT("Name"))) return UEdGraphSchema_K2::PC_Name;
+	if (TypeToken.Equals(TEXT("Vector"))) return UEdGraphSchema_K2::PC_Struct;
+	if (TypeToken.Equals(TEXT("Vector2D"))) return UEdGraphSchema_K2::PC_Struct;
+	if (TypeToken.Equals(TEXT("Rotator"))) return UEdGraphSchema_K2::PC_Struct;
+	if (TypeToken.Equals(TEXT("Transform"))) return UEdGraphSchema_K2::PC_Struct;
+	if (TypeToken.Equals(TEXT("Color"))) return UEdGraphSchema_K2::PC_Struct;
+	if (TypeToken.Equals(TEXT("LinearColor"))) return UEdGraphSchema_K2::PC_Struct;
+	return NAME_None;
 }
 
 bool FTypeParser::ParseType(const FString& InTypeText, FEdGraphPinType& OutPinType, FString& OutError)
@@ -204,7 +199,7 @@ bool FTypeParser::ParseTypeInternal(const FString& InTypeText, FEdGraphPinType& 
 			return false;
 		}
 
-		if (ContainerName.Equals(TEXT("Array"), ESearchCase::IgnoreCase) || ContainerName.Equals(TEXT("Set"), ESearchCase::IgnoreCase))
+		if (ContainerName.Equals(TEXT("Array")) || ContainerName.Equals(TEXT("Set")))
 		{
 			FEdGraphPinType InnerPinType;
 			if (!ParseTypeInternal(InnerText, InnerPinType, OutError, false))
@@ -212,13 +207,13 @@ bool FTypeParser::ParseTypeInternal(const FString& InTypeText, FEdGraphPinType& 
 				return false;
 			}
 			OutPinType = InnerPinType;
-			OutPinType.ContainerType = ContainerName.Equals(TEXT("Array"), ESearchCase::IgnoreCase)
+			OutPinType.ContainerType = ContainerName.Equals(TEXT("Array"))
 				? EPinContainerType::Array
 				: EPinContainerType::Set;
 			return true;
 		}
 
-		if (ContainerName.Equals(TEXT("Map"), ESearchCase::IgnoreCase))
+		if (ContainerName.Equals(TEXT("Map")))
 		{
 			FString KeyText;
 			FString ValueText;
@@ -265,71 +260,35 @@ bool FTypeParser::ParseTypeInternal(const FString& InTypeText, FEdGraphPinType& 
 
 	OutError.Empty();
 
-	if (StartsWithNoCase(TypeText, TEXT("Enum:")))
+	// Parse type-qualifier prefixes: Object(Texture2D), Class(...), SoftObject(...), etc.
+	auto TryParsePrefixed = [&](const TCHAR* PrefixName, int32 PrefixLen, const FName& PinCategory) -> bool
 	{
-		const FString EnumText = NormalizeToken(TypeText.RightChop(5));
-		if (UEnum* Enum = ResolveEnum(EnumText))
+		if (!TypeText.StartsWith(PrefixName) || TypeText[PrefixLen] != TCHAR('(') || !TypeText.EndsWith(TEXT(")")))
 		{
-			OutPinType.PinCategory = UEdGraphSchema_K2::PC_Enum;
-			OutPinType.PinSubCategoryObject = Enum;
-			return true;
-		}
-		OutError = FString::Printf(TEXT("Failed to resolve enum type '%s'."), *EnumText);
-		return false;
-	}
-
-	if (StartsWithNoCase(TypeText, TEXT("Object:")) || StartsWithNoCase(TypeText, TEXT("Class:")) || StartsWithNoCase(TypeText, TEXT("SoftObject:")) || StartsWithNoCase(TypeText, TEXT("SoftClass:")))
-	{
-		FString Prefix;
-		FString ClassText;
-		if (StartsWithNoCase(TypeText, TEXT("Object:")))
-		{
-			Prefix = TEXT("Object");
-			ClassText = NormalizeToken(TypeText.RightChop(7));
-		}
-		else if (StartsWithNoCase(TypeText, TEXT("Class:")))
-		{
-			Prefix = TEXT("Class");
-			ClassText = NormalizeToken(TypeText.RightChop(6));
-		}
-		else if (StartsWithNoCase(TypeText, TEXT("SoftObject:")))
-		{
-			Prefix = TEXT("SoftObject");
-			ClassText = NormalizeToken(TypeText.RightChop(11));
-		}
-		else
-		{
-			Prefix = TEXT("SoftClass");
-			ClassText = NormalizeToken(TypeText.RightChop(10));
-		}
-
-		UClass* Class = ResolveClass(ClassText);
-		if (!Class)
-		{
-			OutError = FString::Printf(TEXT("Failed to resolve class type '%s'."), *ClassText);
 			return false;
 		}
+		const FString ValueText = NormalizeToken(TypeText.Mid(PrefixLen + 1, TypeText.Len() - PrefixLen - 2));
 
-		if (Prefix.Equals(TEXT("Object"), ESearchCase::IgnoreCase))
+		if (ValueText.IsEmpty())
 		{
-			OutPinType.PinCategory = UEdGraphSchema_K2::PC_Object;
-		}
-		else if (Prefix.Equals(TEXT("Class"), ESearchCase::IgnoreCase))
-		{
-			OutPinType.PinCategory = UEdGraphSchema_K2::PC_Class;
-		}
-		else if (Prefix.Equals(TEXT("SoftObject"), ESearchCase::IgnoreCase))
-		{
-			OutPinType.PinCategory = UEdGraphSchema_K2::PC_SoftObject;
-		}
-		else
-		{
-			OutPinType.PinCategory = UEdGraphSchema_K2::PC_SoftClass;
+			OutError = FString::Printf(TEXT("Empty type name after '%s' prefix."), PrefixName);
+			return true;
 		}
 
-		OutPinType.PinSubCategoryObject = Class;
+		OutPinType.PinCategory = PinCategory;
+		if (UClass* Class = ResolveClass(ValueText))
+		{
+			OutPinType.PinSubCategoryObject = Class;
+			return true;
+		}
+		OutError = FString::Printf(TEXT("Failed to resolve class type '%s'."), *ValueText);
 		return true;
-	}
+	};
+
+	if (TryParsePrefixed(TEXT("Object"), 6, UEdGraphSchema_K2::PC_Object)) { return !OutError.IsEmpty() ? false : true; }
+	if (TryParsePrefixed(TEXT("Class"), 5, UEdGraphSchema_K2::PC_Class)) { return !OutError.IsEmpty() ? false : true; }
+	if (TryParsePrefixed(TEXT("SoftObject"), 10, UEdGraphSchema_K2::PC_SoftObject)) { return !OutError.IsEmpty() ? false : true; }
+	if (TryParsePrefixed(TEXT("SoftClass"), 9, UEdGraphSchema_K2::PC_SoftClass)) { return !OutError.IsEmpty() ? false : true; }
 
 	if (const FName PinCategory = ToPinCategory(TypeText); PinCategory != NAME_None)
 	{
@@ -359,6 +318,15 @@ bool FTypeParser::ParseTypeInternal(const FString& InTypeText, FEdGraphPinType& 
 		return true;
 	}
 
+	// Auto-detect UClass: if nothing above matched, try resolving as a class.
+	// This allows Type="Texture2D" without the Object: prefix.
+	if (UClass* Class = ResolveClass(TypeText))
+	{
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Object;
+		OutPinType.PinSubCategoryObject = Class;
+		return true;
+	}
+
 	OutError = FString::Printf(TEXT("Unsupported variable Type '%s'."), *TypeText);
 	return false;
 }
@@ -369,22 +337,23 @@ bool FTypeParser::ParseContainer(const FString& InTypeText, FString& OutContaine
 	OutInnerText.Empty();
 	OutError.Empty();
 
-	const int32 LtIndex = InTypeText.Find(TEXT("<"));
-	if (LtIndex == INDEX_NONE)
+	// Container syntax: Array(InnerType), Map(KeyType,ValueType), Set(InnerType).
+	const int32 OpenIndex = InTypeText.Find(TEXT("("));
+	if (OpenIndex == INDEX_NONE)
 	{
-		return false;
+		return false; // Not a container — no error.
 	}
-	if (!InTypeText.EndsWith(TEXT(">")))
+	if (!InTypeText.EndsWith(TEXT(")")))
 	{
-		OutError = FString::Printf(TEXT("Invalid container type syntax '%s'."), *InTypeText);
+		OutError = FString::Printf(TEXT("Invalid container type syntax '%s': missing closing ')'."), *InTypeText);
 		return false;
 	}
 
-	OutContainerName = NormalizeToken(InTypeText.Left(LtIndex));
-	OutInnerText = NormalizeToken(InTypeText.Mid(LtIndex + 1, InTypeText.Len() - LtIndex - 2));
+	OutContainerName = NormalizeToken(InTypeText.Left(OpenIndex));
+	OutInnerText = NormalizeToken(InTypeText.Mid(OpenIndex + 1, InTypeText.Len() - OpenIndex - 2));
 	if (OutContainerName.IsEmpty() || OutInnerText.IsEmpty())
 	{
-		OutError = FString::Printf(TEXT("Invalid container type syntax '%s'."), *InTypeText);
+		OutError = FString::Printf(TEXT("Invalid container type syntax '%s': empty container name or inner type."), *InTypeText);
 		return false;
 	}
 	return true;

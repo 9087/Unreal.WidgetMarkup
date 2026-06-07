@@ -20,4 +20,5 @@ protected:
 
 private:
 	TWeakObjectPtr<UBlueprint> ParentBlueprint;
+	TArray<TSharedRef<FElementNode>> DefaultValueChildren;
 };

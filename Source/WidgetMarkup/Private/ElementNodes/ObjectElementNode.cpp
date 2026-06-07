@@ -4,6 +4,7 @@
 
 #include "ElementNodes/PropertyChainHandle.h"
 #include "PropertyElementNode.h"
+#include "UObject/UObjectGlobals.h"
 
 IMPLEMENT_ELEMENT_NODE(FObjectElementNode, FElementNode)
 
@@ -27,6 +28,14 @@ FString FObjectElementNode::GetReferencerName() const
 	return TEXT("ObjectElementNode");
 }
 
+void FObjectElementNode::SetElementData(const TCHAR* InElementData)
+{
+	if (InElementData)
+	{
+		ObjectPath = FString(InElementData).TrimStartAndEnd();
+	}
+}
+
 FElementNode::FResult FObjectElementNode::OnBegin(const FContext& Context, UObject* Outer, UStruct* Struct)
 {
 	if (!ensure(Struct->IsA<UClass>()))
@@ -34,7 +43,24 @@ FElementNode::FResult FObjectElementNode::OnBegin(const FContext& Context, UObje
 		return FResult::Failure().Error(FText::FromString(TEXT("ObjectElementNode: struct type must be a UClass when creating an object.")));
 	}
 	auto Class = CastChecked<UClass>(Struct);
-	Object = NewObject<UObject>(Outer, Class);
+
+	if (!ObjectPath.IsEmpty())
+	{
+		// Path-reference mode: load existing asset.
+		Object = StaticLoadObject(Class, Outer, *ObjectPath);
+		if (!Object)
+		{
+			return FResult::Failure().Error(FText::Format(
+				FText::FromString(TEXT("ObjectElementNode: failed to load object of class '{0}' from path '{1}'.")),
+				FText::FromString(Class->GetName()),
+				FText::FromString(ObjectPath)));
+		}
+	}
+	else
+	{
+		// Inline-definition mode: create new instance.
+		Object = NewObject<UObject>(Outer, Class);
+	}
 	return FResult::Success();
 }
 

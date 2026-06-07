@@ -3,6 +3,7 @@
 #pragma once
 
 #include "ElementNodes/BufferedPropertyContext.h"
+#include "ElementNodes/PropertyChainHandle.h"
 
 #include "ElementNode.h"
 
@@ -11,22 +12,38 @@ class FPropertyChainHandle;
 class FProperty;
 struct FPropertyBuffer;
 
+// ---- Container-element resolver traits (add Set/Map resolvers here as needed) ----
+
+struct FArrayElementResolver
+{
+	static bool CanResolve(const FPropertyChainHandle& Chain) { return Chain.IsArrayProperty(); }
+	static FWidgetPropertyPath AppendTo(const FWidgetPropertyPath& Base, int32 Index) { return Base.WithAppendedArrayIndex(Index); }
+};
+
 class FPropertyElementNode : public FElementNode, public FGCObject
 {
 	DECLARE_ELEMENT_NODE(FPropertyElementNode, FElementNode)
 
 	friend class FElementTreeBuilder;
 	friend class FPropertyRun;
+	template<typename> friend bool TryResolveContainerElementPath(const FElementNode::FContext&, int32, FWidgetPropertyPath&, FBufferedPropertyContext&, FText*);
 
 public:
 	static TSharedRef<FElementNode> Create(const FStringView& InPropertyName, const FStringView& InPropertyValue);
-	static bool TryResolvePropertyPathFromContext(
+	static bool TryResolvePropertyPath(
 		const FContext& Context,
 		const FStringView& PropertyName,
 		bool& bInOutUseBufferedWrite,
 		FWidgetPropertyPath& OutPropertyPath,
 		FBufferedPropertyContext& OutBufferedPropertyContext,
 		FText* OutError = nullptr);
+
+	/** Resolve an array-element path (e.g. "ColumnFill[0]") from the parent context. */
+	static bool TryResolveArrayElementPath(
+		const FContext& Context,
+		int32 ArrayIndex,
+		FWidgetPropertyPath& OutPropertyPath,
+		FBufferedPropertyContext& OutBufferedPropertyContext);
 
 	/** Attribute form: (name, value). Element form: (element name, ElementData). */
 	FPropertyElementNode(const FStringView& InPropertyName, const FStringView& InPropertyValue, bool bInUseBufferedWrite = false);
@@ -39,6 +56,7 @@ public:
 	const FString& GetPropertyName() const { return PropertyName; }
 	const FString& GetPropertyValue() const { return PropertyValue; }
 	TSharedPtr<const FPropertyBuffer> GetPropertyBuffer() const { return BufferedPropertyContext.GetPropertyBuffer(); }
+	int32 GetChildCount() const { return ElementChildren.Num(); }
 	void SetPropertyRun(TSharedPtr<IPropertyRun> InPropertyRun);
 
 protected:
@@ -74,3 +92,39 @@ protected:
 
 	TSharedPtr<IPropertyRun> PropertyRun;
 };
+
+template<typename TResolver>
+bool TryResolveContainerElementPath(
+	const FElementNode::FContext& Context,
+	int32 Index,
+	FWidgetPropertyPath& OutPropertyPath,
+	FBufferedPropertyContext& OutBufferedPropertyContext,
+	FText* OutError = nullptr)
+{
+	TSharedPtr<FElementNode> Parent = Context.GetLastNode();
+	OutPropertyPath.Reset();
+	OutBufferedPropertyContext.Reset();
+
+	auto PropertyParent = CastElementNode<FPropertyElementNode>(Parent.Get());
+	if (!PropertyParent || !PropertyParent->PropertyChain.IsValid() || !TResolver::CanResolve(*PropertyParent->PropertyChain))
+	{
+		if (OutError)
+		{
+			*OutError = FText::FromString(TEXT("Parent is not the expected container type."));
+		}
+		return false;
+	}
+
+	OutPropertyPath = TResolver::AppendTo(PropertyParent->PropertyPath, Index);
+	OutBufferedPropertyContext = PropertyParent->BufferedPropertyContext;
+	return true;
+}
+
+inline bool FPropertyElementNode::TryResolveArrayElementPath(
+	const FContext& Context,
+	int32 ArrayIndex,
+	FWidgetPropertyPath& OutPropertyPath,
+	FBufferedPropertyContext& OutBufferedPropertyContext)
+{
+	return TryResolveContainerElementPath<FArrayElementResolver>(Context, ArrayIndex, OutPropertyPath, OutBufferedPropertyContext);
+}
