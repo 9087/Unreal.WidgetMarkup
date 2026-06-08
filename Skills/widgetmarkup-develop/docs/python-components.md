@@ -16,23 +16,32 @@ class MyComponent(WidgetMarkupComponent):
 
 ## Reactive Properties
 
-`@reactive` creates a settable property that automatically pushes changes to bound UMG widgets. Works with `int`, `float`, `str`, `bool`, `list`, and `unreal.SlateColor`.
+`@reactive` wraps a method in `_ReactiveProperty`, a descriptor that stores values in per-instance state. The method body serves as the **default value** — called by `__get__` when no value has been explicitly set.
+
+**The getter should return a plain constant**, not read other attributes. The descriptor itself is the store — `__set__` writes to internal state, `__get__` reads from it. If you need a value derived from other reactive properties, use `@computed` instead.
 
 ```python
 @reactive
-def display(self):
-    return ""          # String: use for TextBlock.Text
+def label(self):
+    return ""          # Plain default — the descriptor IS the store
 
-@reactive
-def progress(self):
-    return 0.0         # Float: use for ProgressBar.Percent
-
-@reactive
-def checked(self):
-    return False       # Bool: use for CheckBox.IsChecked
+# Assignment calls _ReactiveProperty.__set__:
+self.label = "Hello"  # stores in state, triggers notify → apply_property_binding
 ```
 
-When the property changes, `on_property_changed()` triggers `apply_property_binding`. The binding pipeline converts the Python value to the target UMG property type.
+**Important**: `@reactive` does not support the `.setter` decorator pattern. Writing `@label.setter` will crash with `'_ReactiveProperty' object has no attribute 'setter'`. Assign directly: `self.label = value`.
+
+**Anti-pattern** — the getter should not reference instance fields:
+```python
+# Incorrect: this is what @computed is for
+@reactive
+def label(self):
+    return self._label  # depends on another attribute
+```
+
+**Usage tips**:
+- Keep internal state in plain instance attributes (for example `self._state`), not in reactive getters. Update the reactive property via assignment when the UI needs to reflect a change.
+- When the property changes, `on_property_changed()` triggers `apply_property_binding`. The binding pipeline converts the Python value to the target UMG property type.
 
 ## Multi-Property State
 
@@ -109,7 +118,89 @@ label = self._widget_markup_user_widget.get_editor_property('MyLabel')
 
 ---
 
-# ListView & Entry Widgets
+## Property Bindings (XML Syntax)
+
+Reactive properties connect to UMG widgets via the `{propertyName}` binding syntax in XML attributes:
+
+```xml
+<TextBlock Name="Display" Text="{display}" />
+<ProgressBar Name="Progress" Percent="{progress}" />
+<CheckBox IsChecked="{checked}" />
+```
+
+- `{display}` → binding to `self.display` reactive property
+- `"0"` → literal string value, no binding
+- `{}literal` → escape `{` for literal text starting with `{`
+
+Bindings are parsed during `apply_property_bindings()` in `WidgetMarkupComponent.__init__()`. The binding system matches `source_expression` against `@reactive` property names to push updates to target widget properties.
+
+## Handler Dispatch
+
+Button clicks are routed by **method name** on the Python component:
+
+```xml
+<Button OnClicked="on_digit_1"><TextBlock Text="1" /></Button>
+```
+→ calls `component.on_digit_1()`
+
+Each button needs an individual handler method. The framework does not support tag-based dispatch or generic handler routing.
+
+## Init Order
+
+If `@reactive` getters return plain constants (as recommended), `super().__init__()` can go anywhere. The only ordering constraint exists when a getter reads an instance field — set those fields first:
+
+```python
+class MyComponent(WidgetMarkupComponent):
+    @reactive
+    def label(self):
+        return self._data.get("label", "untitled")  # reads instance field
+
+    def __init__(self):
+        self._data = {"label": "Hello"}   # must come before super().__init__()
+        super().__init__()                # triggers apply_property_bindings
+```
+
+Better: avoid this entirely by keeping getters to plain defaults and managing state separately.
+
+## Module Import & Resolve Order
+
+WidgetMarkup resolves `Script="ModuleName"` to a Python module import. `Game/Content/Python/` is on `sys.path`:
+
+```
+File location                    → Script attribute
+Game/Content/Python/MyComponent.py    → Script="MyComponent"
+Plugin/Content/Python/Samples/X  → Script="Samples.X"
+```
+
+Do not wrap the import in try/except — if the import fails, it should crash visibly:
+
+```python
+from WidgetMarkupComponent import WidgetMarkupComponent, reactive
+# Do not:
+# try:
+#     from WidgetMarkupComponent import ...
+# except ImportError:
+#     ...  # silent fallback hides real errors
+```
+
+---
+
+## Common Patterns
+
+### Delegating to Private Helpers
+
+Since each button maps to a named handler, delegate to private methods to reduce boilerplate:
+
+```python
+def on_color_red(self):   self._set_color("red")
+def on_color_blue(self):  self._set_color("blue")
+def on_color_green(self): self._set_color("green")
+
+def _set_color(self, name: str):
+    self.selected_color = name
+```
+
+This pattern is useful whenever multiple buttons share similar logic but need distinct handler names in XML.
 
 ## List View Setup
 
