@@ -9,7 +9,7 @@ Build UMG widget trees, Blueprints, and reactive UI with XML and Python in Unrea
 ## Quick Start
 
 1. Enable the WidgetMarkup plugin in the Unreal Editor.
-2. Prepare a `*.unrealwidgetmarkup` file in your project content source.
+2. Prepare a `*.widgetmarkup` file in your project content source.
 3. In the Editor CMD input bar, run:
 
 ```txt
@@ -79,7 +79,7 @@ Bind reactive properties to widget attributes with `{property_name}`:
 WidgetMarkup.Show <Package Path>
 ```
 
-Example: `/Game/WidgetMarkup/Example` → `Example.unrealwidgetmarkup`.
+Example: `/Game/WidgetMarkup/Example` → `Example.widgetmarkup`.
 
 Window with live preview:
 
@@ -118,6 +118,6 @@ Then configure the `IntelliSense Data Path` in the extension settings:
 
 ![Extension Settings](Documents/ExtensionSettings.png)
 
-Open `*.unrealwidgetmarkup` files in VSCode to use the extension:
+Open `*.widgetmarkup` files in VSCode to use the extension:
 
 ![VSCode Extension](Documents/Extension.png)

@@ -189,16 +189,16 @@ void FWidgetMarkupModule::ShutdownModule()
 // Path helpers: PackagePath (/Game/.../AssetName) <-> absolute disk file path
 // ---------------------------------------------------------------------------
 
-// /Game/WidgetMarkup/Foo  ->  <ContentDir>/WidgetMarkup/Foo.unrealwidgetmarkup
-// /PluginName/Foo         ->  <PluginContentDir>/Foo.unrealwidgetmarkup
+// /Game/WidgetMarkup/Foo  ->  <ContentDir>/WidgetMarkup/Foo.widgetmarkup
+// /PluginName/Foo         ->  <PluginContentDir>/Foo.widgetmarkup
 // Uses FPackageName to support all mounted content roots (project + plugins).
 static bool TryConvertPackagePathToAbsoluteSourceFilePath(const FString& PackagePath, FStringView Extension, FString& OutAbsoluteFilePath)
 {
 	return FPackageName::TryConvertLongPackageNameToFilename(PackagePath, OutAbsoluteFilePath, FString(Extension));
 }
 
-// <ContentDir>/WidgetMarkup/Foo.unrealwidgetmarkup    ->  /Game/WidgetMarkup/Foo
-// <PluginContentDir>/Foo.unrealwidgetmarkup           ->  /PluginName/Foo
+// <ContentDir>/WidgetMarkup/Foo.widgetmarkup    ->  /Game/WidgetMarkup/Foo
+// <PluginContentDir>/Foo.widgetmarkup           ->  /PluginName/Foo
 // Uses FPackageName to support all mounted content roots (project + plugins).
 static bool TryConvertAbsoluteSourceFilePathToPackagePath(const FString& AbsoluteFilePath, FStringView Extension, FString& OutPackagePath)
 {
@@ -466,7 +466,7 @@ UObject* FWidgetMarkupModule::CompileFromPackagePath(const FString& PackagePath)
 	UE_LOG(LogWidgetMarkup, Display, TEXT("Compile Package Path '%s'."), *PackagePath);
 
 	FString AbsoluteFilePath;
-	if (!TryConvertPackagePathToAbsoluteSourceFilePath(PackagePath, TEXT(".unrealwidgetmarkup"), AbsoluteFilePath))
+	if (!TryConvertPackagePathToAbsoluteSourceFilePath(PackagePath, TEXT(".widgetmarkup"), AbsoluteFilePath))
 	{
 		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromPackagePath failed: invalid package path '%s' (expected /Game/... format)."), *PackagePath);
 		return nullptr;
@@ -703,7 +703,7 @@ void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct
 			FPaths::NormalizeFilename(AbsoluteFilePath);
 
 			FString PackagePath;
-			if (!TryConvertAbsoluteSourceFilePathToPackagePath(AbsoluteFilePath, TEXT(".unrealwidgetmarkup"), PackagePath))
+			if (!TryConvertAbsoluteSourceFilePathToPackagePath(AbsoluteFilePath, TEXT(".widgetmarkup"), PackagePath))
 			{
 				UE_LOG(LogWidgetMarkup, Warning, TEXT("Source File Changed: could not convert to package path ('%s')."), *AbsoluteFilePath);
 				break;

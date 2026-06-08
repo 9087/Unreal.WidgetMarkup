@@ -219,7 +219,7 @@ The list (parent) blueprint declares a `ListView` with `ListItems` binding and `
 
 ## Entry Widget
 
-The entry blueprint is a separate `.unrealwidgetmarkup` file:
+The entry blueprint is a separate `.widgetmarkup` file:
 
 ```xml
 <WidgetBlueprint Script="Samples.ListEntryComponent">
