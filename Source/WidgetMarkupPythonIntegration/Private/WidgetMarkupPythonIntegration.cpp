@@ -6,6 +6,7 @@
 #include "Extensions/WidgetMarkupBlueprintGeneratedClassExtension.h"
 #include "Extensions/WidgetMarkupUserWidgetExtension.h"
 #include "IPythonScriptPlugin.h"
+#include "Misc/Paths.h"
 #include "PythonWidgetMarkupComponent.h"
 #include "PythonWidgetMarkupNativeModule.h"
 #include "WidgetMarkupModule.h"
@@ -34,6 +35,19 @@ FWidgetMarkupPythonIntegration::FWidgetMarkupPythonIntegration(FWidgetMarkupModu
 
 void FWidgetMarkupPythonIntegration::HandlePythonInitialized()
 {
+	// Ensure the project's Content/Python directory is on sys.path so top-level
+	// scripts (e.g. ScientificCalculatorComponent) are importable.
+	const FString ProjectPythonPath = FPaths::ProjectContentDir() / TEXT("Python");
+	if (PythonScriptPlugin)
+	{
+		const FString Command = FString::Printf(
+			TEXT("import sys; p = r'%s'; sys.path.insert(0, p) if p not in sys.path else None"),
+			*ProjectPythonPath);
+		PythonScriptPlugin->ExecPythonCommand(*Command);
+		UE_LOG(LogWidgetMarkupPythonIntegration, Display,
+			TEXT("WidgetMarkupPythonIntegration: registered project Python path '%s'."), *ProjectPythonPath);
+	}
+
 	Initialize(true);
 }
 
