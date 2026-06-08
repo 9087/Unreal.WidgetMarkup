@@ -9,7 +9,7 @@
 ## 快速开始
 
 1. 在 Unreal 编辑器中启用 WidgetMarkup 插件。
-2. 在项目内容源中准备一个 `*.unrealwidgetmarkup` 文件。
+2. 在项目内容源中准备一个 `*.widgetmarkup` 文件。
 3. 在编辑器 CMD 输入栏执行：
 
 ```txt
@@ -79,7 +79,7 @@ class MyComponent(WidgetMarkupComponent):
 WidgetMarkup.Show <包路径>
 ```
 
-例：`/Game/WidgetMarkup/Example` → `Example.unrealwidgetmarkup`。
+例：`/Game/WidgetMarkup/Example` → `Example.widgetmarkup`。
 
 实时预览窗口：
 
@@ -119,6 +119,6 @@ WidgetMarkup.GenerateIntellisenseData <智能补全数据文件路径>
 
 ![Extension Settings](Documents/ExtensionSettings.png)
 
-使用VSCode打开*.unrealwidgetmarkup文件即可生效：
+使用VSCode打开*.widgetmarkup文件即可生效：
 
 ![VSCode Extension](Documents/Extension.png)

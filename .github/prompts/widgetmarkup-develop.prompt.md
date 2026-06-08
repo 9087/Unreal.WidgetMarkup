@@ -1,12 +1,12 @@
 ---
 name: widgetmarkup-develop
 user-invocable: true
-description: 'WidgetMarkup is an Unreal Engine 5 plugin providing a declarative XML-based UI framework with Python scripting. Use this skill when the user wants to: write .unrealwidgetmarkup XML files to define UMG widget blueprints; write Python components (WidgetMarkupComponent subclasses) for UI logic; set up reactive data bindings between Python properties and UMG widgets; create ListView/TileView entries with IUserObjectListEntry/IUserListEntry mixins; define style sheets or delegate bindings; debug WidgetMarkup compilation or binding issues. When NOT to use: general UE5 C++ development, Blueprint scripting, standard UMG widget coding outside WidgetMarkup.'
+description: 'WidgetMarkup is an Unreal Engine 5 plugin providing a declarative XML-based UI framework with Python scripting. Use this skill when the user wants to: write .widgetmarkup XML files to define UMG widget blueprints; write Python components (WidgetMarkupComponent subclasses) for UI logic; set up reactive data bindings between Python properties and UMG widgets; create ListView/TileView entries with IUserObjectListEntry/IUserListEntry mixins; define style sheets or delegate bindings; debug WidgetMarkup compilation or binding issues. When NOT to use: general UE5 C++ development, Blueprint scripting, standard UMG widget coding outside WidgetMarkup.'
 ---
 
 # WidgetMarkup Development
 
-## XML Blueprint (*.unrealwidgetmarkup)
+## XML Blueprint (*.widgetmarkup)
 
 ```xml
 <WidgetBlueprint Script="Samples.MyComponent">
