@@ -81,6 +81,8 @@ The `<WidgetTree>` element is required inside `<WidgetBlueprint>`. It contains o
 |---|---|---|
 | `<TextBlock>` | [textblock.md](docs/widgets/textblock.md) | `Text`, `ColorAndOpacity`, `Font.Size`, `Justification` |
 | `<Button>` | [button.md](docs/widgets/button.md) | `OnClicked`, `OnPressed`, `OnReleased`, `OnHovered` |
+| `<Border>` | [border.md](docs/widgets/border.md) | `BrushColor`, `Padding` |
+| `<SizeBox>` | [sizebox.md](docs/widgets/sizebox.md) | `WidthOverride`, `HeightOverride` |
 | `<Image>` | [image.md](docs/widgets/image.md) | `Brush.ResourceObject`, `Brush.ImageSize` |
 | `<ProgressBar>` | [progressbar.md](docs/widgets/progressbar.md) | `Percent`, `FillColorAndOpacity`, `BarFillType` |
 | `<CheckBox>` | [checkbox.md](docs/widgets/checkbox.md) | `IsChecked`, `OnCheckStateChanged` |
@@ -89,19 +91,13 @@ The `<WidgetTree>` element is required inside `<WidgetBlueprint>`. It contains o
 | `<ComboBoxString>` | [combobox-string.md](docs/widgets/combobox-string.md) | `DefaultOptions`, `OnSelectionChanged` |
 | `<ListView>` / `<TileView>` | [listview.md](docs/widgets/listview.md) | `ListItems`, `EntryWidgetClass` |
 | `<Spacer>` | [spacer.md](docs/widgets/spacer.md) | `Size` |
-| `<Border>` | [border.md](docs/widgets/border.md) | `BrushColor`, `Padding` |
-| `<SizeBox>` | [sizebox.md](docs/widgets/sizebox.md) | `WidthOverride`, `HeightOverride` |
-
-**Panel slot reference:** [panels.md](docs/widgets/panels.md)
-
-| Panel | Key child slots |
-|---|---|
-| `<CanvasPanel>` | `Slot.LayoutData.Anchors`, `Slot.LayoutData.Offsets`, `Slot.bAutoSize`, `Slot.ZOrder` |
-| `<VerticalBox>` / `<HorizontalBox>` | `Slot.Size.SizeRule`, `Slot.Size.Value`, `Slot.Padding`, `Slot.HorizontalAlignment` |
-| `<GridPanel>` | `Slot.Row`, `Slot.Column`, `Slot.RowSpan`, `Slot.ColumnSpan` |
-| `<WrapBox>` | `Slot.bFillEmptySpace`, `Slot.bForceNewLine` |
-| `<ScrollBox>` | `Slot.Size.SizeRule`, `Slot.Padding` |
-| `<Overlay>` | `Slot.Padding`, `Slot.HorizontalAlignment` |
+| `<CanvasPanel>` | [canvas-panel.md](docs/widgets/canvas-panel.md) | `LayoutData.Anchors`, `LayoutData.Offsets`, `bAutoSize`, `ZOrder` |
+| `<VerticalBox>` / `<HorizontalBox>` | [vertical-horizontal-box.md](docs/widgets/vertical-horizontal-box.md) | `Size.SizeRule`, `Size.Value`, `Padding`, `Alignment` |
+| `<GridPanel>` | [grid-panel.md](docs/widgets/grid-panel.md) | `Row`, `Column`, `RowSpan`, `ColumnSpan`, `RowFill`, `ColumnFill` |
+| `<UniformGridPanel>` | [uniform-grid-panel.md](docs/widgets/uniform-grid-panel.md) | `Row`, `Column` |
+| `<WrapBox>` | [wrap-box.md](docs/widgets/wrap-box.md) | `bFillEmptySpace`, `bForceNewLine` |
+| `<ScrollBox>` | [scroll-box.md](docs/widgets/scroll-box.md) | `Size.SizeRule`, `Padding` |
+| `<Overlay>` | [overlay.md](docs/widgets/overlay.md) | `Padding`, `Alignment` |
 
 **Struct types:** [docs/structs/](docs/structs/) — [FLinearColor](docs/structs/linear-color.md), [FSlateColor](docs/structs/slate-color.md), [FVector2D](docs/structs/vector2d.md), [FMargin](docs/structs/margin.md), [FSlateBrush](docs/structs/slate-brush.md), [FWidgetTransform](docs/structs/render-transform.md), [FSlateChildSize](docs/structs/slate-child-size.md), [FAnchors](docs/structs/anchors.md), [FAnchorData](docs/structs/anchor-data.md), [FSlateFontInfo](docs/structs/font-info.md), [ESlateVisibility](docs/structs/slate-visibility.md), [Alignment](docs/structs/alignment.md)
 
