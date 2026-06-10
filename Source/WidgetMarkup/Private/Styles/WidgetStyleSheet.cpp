@@ -3,47 +3,30 @@
 #include "Styles/WidgetStyleSheet.h"
 
 #include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetBlueprintGeneratedClass.h"
+#include "Blueprint/WidgetTree.h"
 #include "Components/Widget.h"
 #include "ElementNodes/PropertyChainHandle.h"
-#include "WidgetMarkupModule.h"
+#include "Extensions/WidgetMarkupBlueprintGeneratedClassExtension.h"
 
-bool FWidgetStyleEntry::CanApply(FString* OutErrorMessage) const
+bool FWidgetStyleSetter::ApplyToWidget(UWidget* Widget) const
 {
-	if (WidgetName.IsNone())
-	{
-		if (OutErrorMessage)
-		{
-			*OutErrorMessage = TEXT("WidgetName is not set.");
-		}
-		return false;
-	}
+	if (!Widget || Property.IsEmpty()) return false;
+	if (!Value.HasValue() && RawValue.IsEmpty()) return false;
 
-	if (!PropertyValue.HasValue())
-	{
-		if (OutErrorMessage)
-		{
-			*OutErrorMessage = TEXT("PropertyValue is not initialized.");
-		}
-		return false;
-	}
+	const TSharedPtr<FPropertyChainHandle> Handle = FPropertyChainHandle::Create(Widget, Property);
+	if (!Handle.IsValid()) return false;
 
-	if (PropertyPath.IsEmpty())
-	{
-		if (OutErrorMessage)
-		{
-			*OutErrorMessage = TEXT("PropertyPath is empty.");
-		}
-		return false;
-	}
-
-	return true;
+	return Value.HasValue()
+		? Handle->SetValue(Value)
+		: Handle->SetValue(FStringView(RawValue));
 }
 
-void FWidgetStyleSheetData::AddOrReplaceStyleEntry(const FWidgetStyleEntry& Entry)
+void UWidgetStyleSheet::AddOrReplaceStyleEntry(const FWidgetStyleEntry& Entry)
 {
 	for (FWidgetStyleEntry& Existing : Styles)
 	{
-		if (Existing.WidgetName == Entry.WidgetName && Existing.PropertyPath == Entry.PropertyPath)
+		if (Existing.Name == Entry.Name && Existing.TargetType == Entry.TargetType)
 		{
 			Existing = Entry;
 			return;
@@ -52,54 +35,84 @@ void FWidgetStyleSheetData::AddOrReplaceStyleEntry(const FWidgetStyleEntry& Entr
 	Styles.Add(Entry);
 }
 
-bool FWidgetStyleSheetData::ApplyToUserWidget(UUserWidget* UserWidget) const
+void UWidgetStyleSheet::ResolveComputedStyles()
 {
-	bool bAllSucceeded = true;
-	if (!UserWidget)
+	ComputedStyles.Reset();
+	if (Inherit)
 	{
-		UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: failed to apply styles because UserWidget is null."));
-		return false;
+		Inherit->ResolveComputedStyles();
+		ComputedStyles = Inherit->ComputedStyles;
 	}
-
-	for (int32 StyleIndex = 0; StyleIndex < Styles.Num(); ++StyleIndex)
+	// Merge local Styles into ComputedStyles at the setter level:
+	// - If a matching entry (same Name + TargetType) exists, merge setters:
+	//   local setters override matching inherited ones, non-overridden inherited setters are kept.
+	// - If no matching entry exists, add the whole entry.
+	for (const FWidgetStyleEntry& Entry : Styles)
 	{
-		const FWidgetStyleEntry& Style = Styles[StyleIndex];
-		FString ErrorMessage;
-		if (!Style.CanApply(&ErrorMessage))
-		{
-			bAllSucceeded = false;
-			UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: style [%d] is invalid. Reason: %s"), StyleIndex, *ErrorMessage);
-			continue;
-		}
+		FWidgetStyleEntry* Existing = ComputedStyles.FindByPredicate(
+			[&Entry](const FWidgetStyleEntry& E)
+			{
+				return E.Name == Entry.Name && E.TargetType == Entry.TargetType;
+			});
 
-		UWidget* WidgetNode = UserWidget->GetWidgetFromName(Style.WidgetName);
-		if (!WidgetNode)
+		if (Existing)
 		{
-			bAllSucceeded = false;
-			UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: style [%d] could not find widget '%s'."), StyleIndex, *Style.WidgetName.ToString());
-			continue;
+			// Setter-level merge: local setters override inherited ones by Property path.
+			for (const FWidgetStyleSetter& Setter : Entry.Setters)
+			{
+				const int32 ExistingIndex = Existing->Setters.IndexOfByPredicate(
+					[&Setter](const FWidgetStyleSetter& S) { return S.Property == Setter.Property; });
+				if (ExistingIndex != INDEX_NONE)
+				{
+					Existing->Setters[ExistingIndex] = Setter;
+				}
+				else
+				{
+					Existing->Setters.Add(Setter);
+				}
+			}
 		}
-
-		const TSharedPtr<FPropertyChainHandle> PropertyChainHandle = FPropertyChainHandle::Create(WidgetNode, Style.PropertyPath);
-		if (!PropertyChainHandle.IsValid())
+		else
 		{
-			bAllSucceeded = false;
-			UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: style [%d] failed to resolve property path '%s' on widget '%s'."), StyleIndex, *Style.PropertyPath.GetPathName().ToString(), *Style.WidgetName.ToString());
-			continue;
-		}
-
-		if (!PropertyChainHandle->SetValue(Style.PropertyValue))
-		{
-			bAllSucceeded = false;
-			UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetStyleSheet: style [%d] failed to apply property buffer on widget '%s' path '%s'."), StyleIndex, *Style.WidgetName.ToString(), *Style.PropertyPath.GetPathName().ToString());
-			continue;
+			ComputedStyles.Add(Entry);
 		}
 	}
-
-	return bAllSucceeded;
 }
 
-bool UWidgetStyleSheet::ApplyToUserWidget(UUserWidget* UserWidget) const
+void UWidgetStyleSheet::ApplyToUserWidget(UUserWidget* UserWidget) const
 {
-	return StyleSheet.ApplyToUserWidget(UserWidget);
+	if (!UserWidget) return;
+
+	UWidgetBlueprintGeneratedClass* WidgetClass = Cast<UWidgetBlueprintGeneratedClass>(UserWidget->GetClass());
+	UWidgetMarkupBlueprintGeneratedClassExtension* ClassExtension = WidgetClass
+		? WidgetClass->GetExtension<UWidgetMarkupBlueprintGeneratedClassExtension>() : nullptr;
+	const TMap<FName, FName>& Assignments = ClassExtension
+		? ClassExtension->GetWidgetStyleAssignments() : TMap<FName, FName>();
+
+	const TArray<FWidgetStyleEntry>& EffectiveStyles = ComputedStyles.Num() > 0 ? ComputedStyles : Styles;
+
+	TArray<UWidget*> AllWidgets;
+	UserWidget->WidgetTree->GetAllWidgets(AllWidgets);
+
+	for (const FWidgetStyleEntry& Entry : EffectiveStyles)
+	{
+		if (Entry.TargetType.IsNone()) continue;
+		const bool bIsImplicit = Entry.Name.IsNone();
+
+		for (UWidget* WidgetNode : AllWidgets)
+		{
+			if (!WidgetNode) continue;
+			if (!WidgetNode->IsA(UClass::TryFindTypeSlow<UClass>(Entry.TargetType.ToString()))) continue;
+			if (!bIsImplicit)
+			{
+				const FName* Assigned = Assignments.Find(WidgetNode->GetFName());
+				if (!Assigned || *Assigned != Entry.Name) continue;
+			}
+
+			for (const FWidgetStyleSetter& Setter : Entry.Setters)
+			{
+				Setter.ApplyToWidget(WidgetNode);
+			}
+		}
+	}
 }

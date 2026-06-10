@@ -9,12 +9,20 @@ echo ========================================
 echo WidgetMarkup Test Suite
 echo ========================================
 
-echo [1/2] Unit tests...
-"%APP%" /WidgetMarkup/Tests/UnitTests --project "%UPROJECT%"
+echo [1/4] Python framework tests...
+"%APP%" /WidgetMarkup/Tests/TestPythonFramework --project "%UPROJECT%"
 if %errorlevel% neq 0 goto :fail
 
-echo [2/2] Integration tests...
-"%APP%" /WidgetMarkup/Tests/TestCases --project "%UPROJECT%"
+echo [2/4] Blueprint compilation tests...
+"%APP%" /WidgetMarkup/Tests/TestBlueprintCompilation --project "%UPROJECT%"
+if %errorlevel% neq 0 goto :fail
+
+echo [3/4] Style inline tests...
+"%APP%" /WidgetMarkup/Tests/TestStyleInline --project "%UPROJECT%"
+if %errorlevel% neq 0 goto :fail
+
+echo [4/4] Style override tests...
+"%APP%" /WidgetMarkup/Tests/TestStyleOverride --project "%UPROJECT%"
 if %errorlevel% neq 0 goto :fail
 
 echo.

@@ -1,4 +1,4 @@
-﻿<WidgetBlueprint Script="Tests.TestCasesComponent">
+<WidgetBlueprint Script="Tests.TestBlueprintCompilationComponent">
   <Variable Name="Test1_BasicInline" Type="Integer" Default="42"/>
   <Variable Name="Test2_StringDefault" Type="String" Default="hello"/>
   <Variable Name="Test3_StructInline" Type="Vector2D">

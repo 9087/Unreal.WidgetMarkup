@@ -4,6 +4,8 @@
 
 #include "BlueprintElementNode.h"
 
+class FStyleSheetElementNode;
+
 class FWidgetBlueprintElementNode : public FBlueprintElementNode
 {
 	DECLARE_ELEMENT_NODE(FWidgetBlueprintElementNode, FBlueprintElementNode)
@@ -20,4 +22,5 @@ protected:
 
 private:
 	bool bHasWidgetTree = false;
+	TSharedPtr<FStyleSheetElementNode> StyleSheetNode;
 };

@@ -20,15 +20,15 @@ class WIDGETMARKUP_API UWidgetMarkupBlueprintExtension : public UWidgetBlueprint
 
 
 public:
-	void SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets);
+	/** Get the StyleSheet (created on first access). Used for ListItems etc. */
+	UWidgetStyleSheet* GetStyleSheet();
+
+	/** Apply the resolved ComputedStyles to the given UserWidget. */
+	void ApplyToUserWidget(UUserWidget* UserWidget);
+
 	void SetScript(const FString& InScript);
 	void SetPropertyBindings(const TArray<FWidgetPropertyBinding>& InPropertyBindings);
 	void AddDelegateBinding(const FWidgetDelegateBinding& InDelegateBinding);
-
-	const TArray<FWidgetStyleSheetData>& GetStyleSheets() const
-	{
-		return StyleSheets;
-	}
 
 	const FString& GetScript() const
 	{
@@ -45,10 +45,9 @@ public:
 		return DelegateBindings;
 	}
 
-   /**
-	* Get or create the default StyleSheet entry (StyleSheets[0]).
-	*/
-   FWidgetStyleSheetData& GetOrAddDefaultStyleSheet();
+	/** Record a Style="Name" assignment from widget XML (WidgetName → StyleName). */
+	void AddWidgetStyleAssignment(FName WidgetName, FName StyleName);
+	const TMap<FName, FName>& GetWidgetStyleAssignments() const { return WidgetStyleAssignments; }
 
 protected:
 	virtual void HandleBeginCompilation(FWidgetBlueprintCompilerContext& InCreationContext) override;
@@ -56,8 +55,9 @@ protected:
 	virtual void HandleEndCompilation() override;
 
 private:
-	UPROPERTY(EditAnywhere, Category = "Widget Markup")
-	TArray<FWidgetStyleSheetData> StyleSheets;
+	/** Stylesheet: holds ListItems etc. Its Inherit is set from WidgetBlueprint's <StyleSheet>. */
+	UPROPERTY(EditAnywhere, Instanced, Category = "Widget Markup")
+	TObjectPtr<UWidgetStyleSheet> StyleSheet;
 
 	UPROPERTY(EditAnywhere, Category = "Widget Markup")
 	FString Script;
@@ -67,6 +67,10 @@ private:
 
 	UPROPERTY()
 	TArray<FWidgetDelegateBinding> DelegateBindings;
+
+	/** Widget Style assignments: WidgetName -> StyleName (from Style="..." attribute). */
+	UPROPERTY()
+	TMap<FName, FName> WidgetStyleAssignments;
 
 	FWidgetBlueprintCompilerContext* CurrentCompilerContext = nullptr;
 };
