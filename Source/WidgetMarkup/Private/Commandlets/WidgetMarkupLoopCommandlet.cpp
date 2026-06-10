@@ -80,6 +80,10 @@ int32 UWidgetMarkupLoopCommandlet::Main(const FString& Params)
 	TStrongObjectPtr<UWidgetMarkupWindow> WidgetMarkupWindow;
 	FWidgetMarkupModule& WidgetMarkupModule = FModuleManager::GetModuleChecked<FWidgetMarkupModule>("WidgetMarkup");
 
+	FString ExtraArguments;
+	FParse::Value(*Params, TEXT("ExtraArguments="), ExtraArguments);
+	WidgetMarkupModule.SetExtraArguments(ExtraArguments);
+
 	FModuleManager::Get().LoadModule(TEXT("PythonScriptPlugin"));
 	FModuleManager::Get().LoadModule(TEXT("WidgetMarkupPythonIntegration"));
 

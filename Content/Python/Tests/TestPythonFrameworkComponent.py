@@ -26,4 +26,4 @@ class TestPythonFrameworkComponent(WidgetMarkupComponent):
             else:
                 unreal.log_error("[TestPythonFramework] FAIL: one or more unit tests failed.")
         finally:
-            widget_markup.request_shutdown()
+            if widget_markup.get_extra_arguments() == "test": widget_markup.request_shutdown()

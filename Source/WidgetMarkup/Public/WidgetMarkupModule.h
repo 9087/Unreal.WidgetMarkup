@@ -164,9 +164,13 @@ public:
 	void StartUp(TSharedRef<IWidgetMarkupScriptIntegration> InScriptIntegration);
 	void Shutdown();
 
+	const FString& GetExtraArguments() const { return ExtraArguments; }
+	void SetExtraArguments(const FString& InExtraArguments) { ExtraArguments = InExtraArguments; }
+
 private:
 	FOnInitialized OnInitialized;
 	bool bInitialized = false;
 	TArray<FSimpleDelegate> PendingInitializedCallbacks;
 	TSharedPtr<IWidgetMarkupScriptIntegration> ScriptIntegration;
+	FString ExtraArguments;
 };

@@ -54,7 +54,7 @@ class TestBlueprintCompilationComponent(WidgetMarkupComponent):
             else:
                 unreal.log_error(f"[TestBlueprintCompilation] FAIL: {self._failed} checks failed, {self._passed} passed.")
         finally:
-            widget_markup.request_shutdown()
+            if widget_markup.get_extra_arguments() == "test": widget_markup.request_shutdown()
 
     # =========================================================================
     # Variable tests (Blueprint CDO)
