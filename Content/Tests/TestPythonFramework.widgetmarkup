@@ -1,4 +1,4 @@
-<WidgetBlueprint Script="Tests.RunTestsComponent">
+<WidgetBlueprint Script="Tests.TestPythonFrameworkComponent">
   <WidgetTree>
     <CanvasPanel />
   </WidgetTree>

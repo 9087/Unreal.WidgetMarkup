@@ -9,7 +9,7 @@ from Tests.TestWidgetMarkupComponent import WidgetMarkupComponentTests
 from Tests.TestObservableCollection import ObservableCollectionTests
 
 
-class RunTestsComponent(WidgetMarkupComponent):
+class TestPythonFrameworkComponent(WidgetMarkupComponent):
     def __init__(self):
         super().__init__()
         unreal.log("=== Unit Tests ===")
@@ -21,7 +21,7 @@ class RunTestsComponent(WidgetMarkupComponent):
         runner = unittest.TextTestRunner(verbosity=2)
         result = runner.run(suite)
         if result.wasSuccessful():
-            unreal.log("=== All unit tests passed. ===")
+            unreal.log_warning("[TestPythonFramework] ALL CHECKS PASSED.")
         else:
-            unreal.log_error("=== Unit tests FAILED ===")
+            unreal.log_error("[TestPythonFramework] FAIL: one or more unit tests failed.")
         widget_markup.request_shutdown()

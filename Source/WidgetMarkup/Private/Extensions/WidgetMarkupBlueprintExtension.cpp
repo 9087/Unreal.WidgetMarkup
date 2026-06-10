@@ -2,14 +2,10 @@
 
 #include "Extensions/WidgetMarkupBlueprintExtension.h"
 
+#include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
 #include "Extensions/WidgetMarkupBlueprintGeneratedClassExtension.h"
 #include "WidgetBlueprintCompiler.h"
-
-void UWidgetMarkupBlueprintExtension::SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets)
-{
-	StyleSheets = InStyleSheets;
-}
 
 void UWidgetMarkupBlueprintExtension::SetScript(const FString& InScript)
 {
@@ -26,13 +22,25 @@ void UWidgetMarkupBlueprintExtension::AddDelegateBinding(const FWidgetDelegateBi
 	DelegateBindings.Add(InDelegateBinding);
 }
 
-FWidgetStyleSheetData& UWidgetMarkupBlueprintExtension::GetOrAddDefaultStyleSheet()
+void UWidgetMarkupBlueprintExtension::AddWidgetStyleAssignment(FName WidgetName, FName StyleName)
 {
-	if (StyleSheets.Num() == 0)
+	WidgetStyleAssignments.Add(WidgetName, StyleName);
+}
+
+UWidgetStyleSheet* UWidgetMarkupBlueprintExtension::GetStyleSheet()
+{
+	if (!StyleSheet)
 	{
-		StyleSheets.AddDefaulted(1);
+		StyleSheet = NewObject<UWidgetStyleSheet>(this, NAME_None, RF_Transient | RF_Public);
 	}
-	return StyleSheets[0];
+	return StyleSheet;
+}
+
+void UWidgetMarkupBlueprintExtension::ApplyToUserWidget(UUserWidget* UserWidget)
+{
+	if (!StyleSheet || !UserWidget) return;
+	StyleSheet->ResolveComputedStyles();
+	StyleSheet->ApplyToUserWidget(UserWidget);
 }
 
 void UWidgetMarkupBlueprintExtension::HandleBeginCompilation(FWidgetBlueprintCompilerContext& InCreationContext)
@@ -50,21 +58,24 @@ void UWidgetMarkupBlueprintExtension::HandleFinishCompilingClass(UWidgetBlueprin
 		return;
 	}
 
-	if (UWidgetMarkupBlueprintGeneratedClassExtension* ExistingExtension = Class->GetExtension<UWidgetMarkupBlueprintGeneratedClassExtension>(false))
+	// Resolve the full Inherit chain into ComputedStyles.
+	if (StyleSheet)
 	{
-		ExistingExtension->SetStyleSheets(StyleSheets);
-		ExistingExtension->SetScript(Script);
-		ExistingExtension->SetPropertyBindings(PropertyBindings);
-		ExistingExtension->SetDelegateBindings(DelegateBindings);
-		return;
+		StyleSheet->ResolveComputedStyles();
 	}
 
-	UWidgetMarkupBlueprintGeneratedClassExtension* ClassExtension = NewObject<UWidgetMarkupBlueprintGeneratedClassExtension>(Class);
-	ClassExtension->SetStyleSheets(StyleSheets);
+	UWidgetMarkupBlueprintGeneratedClassExtension* ClassExtension = Class->GetExtension<UWidgetMarkupBlueprintGeneratedClassExtension>(false);
+	if (!ClassExtension)
+	{
+		ClassExtension = NewObject<UWidgetMarkupBlueprintGeneratedClassExtension>(Class);
+		CurrentCompilerContext->AddExtension(Class, ClassExtension);
+	}
+
+	ClassExtension->SetStyleSheet(StyleSheet);
 	ClassExtension->SetScript(Script);
 	ClassExtension->SetPropertyBindings(PropertyBindings);
 	ClassExtension->SetDelegateBindings(DelegateBindings);
-	CurrentCompilerContext->AddExtension(Class, ClassExtension);
+	ClassExtension->SetWidgetStyleAssignments(WidgetStyleAssignments);
 }
 
 void UWidgetMarkupBlueprintExtension::HandleEndCompilation()

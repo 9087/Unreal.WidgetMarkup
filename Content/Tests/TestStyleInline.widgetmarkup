@@ -1,0 +1,27 @@
+<WidgetBlueprint Script='Tests.TestStyleInlineComponent'>
+  <StyleSheet>
+    <Style TargetType='TextBlock'>
+      <Setter Property='Font.Size' RawValue='16' />
+      <Setter Property='ColorAndOpacity' RawValue='0.7,0.7,0.7,1' />
+    </Style>
+    <Style TargetType='TextBlock' Name='Title'>
+      <Setter Property='Font.Size' RawValue='28' />
+      <Setter Property='ColorAndOpacity' RawValue='1,0.8,0.2,1' />
+    </Style>
+  </StyleSheet>
+  <WidgetTree>
+    <CanvasPanel>
+      <TextBlock Name='DefaultText' Text='Implicit (gray 16)'
+                 Slot.LayoutData.Anchors.Minimum='0.1,0.2'
+                 Slot.LayoutData.Anchors.Maximum='0.1,0.2'
+                 Slot.bAutoSize='True'
+                 Slot.LayoutData.Alignment='0,0' />
+      <TextBlock Name='TitleText' Text='Explicit Title'
+                 Style='Title'
+                 Slot.LayoutData.Anchors.Minimum='0.1,0.5'
+                 Slot.LayoutData.Anchors.Maximum='0.1,0.5'
+                 Slot.bAutoSize='True'
+                 Slot.LayoutData.Alignment='0,0' />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>

@@ -30,6 +30,7 @@
 #include "Converters/StringConverter.h"
 #include "Converters/TextConverter.h"
 #include "Converters/VectorConverter.h"
+#include "Converters/WidgetPropertyPathConverter.h"
 #include "ElementNodes/BlueprintElementNode.h"
 #include "ElementNodes/BlueprintVariableElementNode.h"
 #include "ElementNodes/PropertyChainHandle.h"
@@ -39,11 +40,17 @@
 #include "PropertyRuns/BlueprintSuperPropertyRun.h"
 #include "PropertyRuns/ListViewListItemsPropertyRun.h"
 #include "PropertyRuns/ObjectNamePropertyRun.h"
+#include "PropertyRuns/StyleSheetInheritPropertyRun.h"
+#include "PropertyRuns/WidgetStylePropertyRun.h"
 #include "PropertyRuns/WidgetBlueprintScriptPropertyRun.h"
 #include "PropertyRuns/WidgetDelegatePropertyRun.h"
+#include "Styles/WidgetStyleSheet.h"
 #include "Utilities/WidgetPropertyPath.h"
 #include "ElementNodes/ContentWidgetElementNode.h"
 #include "ElementNodes/PanelWidgetElementNode.h"
+#include "ElementNodes/SetterElementNode.h"
+#include "ElementNodes/StyleElementNode.h"
+#include "ElementNodes/StyleSheetElementNode.h"
 #include "ElementNodes/StructElementNode.h"
 #include "ElementNodes/WidgetBlueprintElementNode.h"
 #include "ElementNodes/WidgetElementNode.h"
@@ -99,6 +106,9 @@ void FWidgetMarkupModule::StartupModule()
 	FElementNodeFactory::Get().Register<UBlueprint>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FBlueprintElementNode::Create));
 	FElementNodeFactory::Get().Register<UWidgetBlueprint>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FWidgetBlueprintElementNode::Create));
 	FElementNodeFactory::Get().Register<FWidgetMarkupBlueprintVariable>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FBlueprintVariableElementNode::Create), FElementNodeFactory::FRegisterOptions{FString(TEXT("Variable"))});
+	FElementNodeFactory::Get().Register<UWidgetStyleSheet>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FStyleSheetElementNode::Create), FElementNodeFactory::FRegisterOptions{FString(TEXT("StyleSheet"))});
+	FElementNodeFactory::Get().Register<FWidgetStyleEntry>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FStyleElementNode::Create), FElementNodeFactory::FRegisterOptions{FString(TEXT("Style"))});
+	FElementNodeFactory::Get().Register<FWidgetStyleSetter>(FElementNodeFactory::FOnCreateElementNode::CreateStatic(FSetterElementNode::Create), FElementNodeFactory::FRegisterOptions{FString(TEXT("Setter"))});
 
 	FConverterRegistry::Get().Register(NAME_ByteProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<uint8>::Create));
 	FConverterRegistry::Get().Register(NAME_IntProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(TNumericConverter<int>::Create));
@@ -125,12 +135,15 @@ void FWidgetMarkupModule::StartupModule()
 	FConverterRegistry::Get().Register(FSlateColor::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FSlateColorConverter::Create));
 	FConverterRegistry::Get().Register(NAME_Vector, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector::FReal, 3>::Create));
 	FConverterRegistry::Get().Register(NAME_Vector2D, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector2D::FReal, 2>::Create));
+	FConverterRegistry::Get().Register(FWidgetPropertyPath::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FWidgetPropertyPathConverter::Create));
 	
 	RegisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"), FOnCreatePropertyRun::CreateStatic(&FObjectNamePropertyRun::Create));
 	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"), FOnCreatePropertyRun::CreateStatic(&FBlueprintSuperPropertyRun::Create));
 	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Implements"), FOnCreatePropertyRun::CreateStatic(&FBlueprintImplementsPropertyRun::Create));
 	RegisterCustomPropertyRun(UWidgetBlueprint::StaticClass(), TEXT("Script"), FOnCreatePropertyRun::CreateStatic(&FWidgetBlueprintScriptPropertyRun::Create));
 	RegisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertyRun::CreateStatic(&FListViewListItemsPropertyRun::Create));
+	RegisterCustomPropertyRun(UWidget::StaticClass(), TEXT("Style"), FOnCreatePropertyRun::CreateStatic(&FWidgetStylePropertyRun::Create));
+	RegisterCustomPropertyRun(UWidgetStyleSheet::StaticClass(), TEXT("Inherit"), FOnCreatePropertyRun::CreateStatic(&FStyleSheetInheritPropertyRun::Create));
 	RegisterCustomPropertySetter(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertySetter::CreateStatic(&FListViewListItemsPropertySetter::Create));
 	
 	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FWidgetMarkupModule::OnPostEngineInit);
@@ -145,6 +158,9 @@ void FWidgetMarkupModule::ShutdownModule()
 	FElementNodeFactory::Get().Unregister<UWidgetBlueprint>();
 	FElementNodeFactory::Get().Unregister<UBlueprint>();
 	FElementNodeFactory::Get().Unregister<FWidgetMarkupBlueprintVariable>();
+	FElementNodeFactory::Get().Unregister<UWidgetStyleSheet>();
+	FElementNodeFactory::Get().Unregister<FWidgetStyleEntry>();
+	FElementNodeFactory::Get().Unregister<FWidgetStyleSetter>();
 
 	FConverterRegistry::Get().Unregister(NAME_ByteProperty);
 	FConverterRegistry::Get().Unregister(NAME_IntProperty);
@@ -171,12 +187,15 @@ void FWidgetMarkupModule::ShutdownModule()
 	FConverterRegistry::Get().Unregister(FSlateColor::StaticStruct()->GetFName());
 	FConverterRegistry::Get().Unregister(NAME_Vector);
 	FConverterRegistry::Get().Unregister(NAME_Vector2D);
+	FConverterRegistry::Get().Unregister(FWidgetPropertyPath::StaticStruct()->GetFName());
 
 	UnregisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"));
 	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"));
 	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Implements"));
 	UnregisterCustomPropertyRun(UWidgetBlueprint::StaticClass(), TEXT("Script"));
 	UnregisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"));
+	UnregisterCustomPropertyRun(UWidget::StaticClass(), TEXT("Style"));
+	UnregisterCustomPropertyRun(UWidgetStyleSheet::StaticClass(), TEXT("Inherit"));
 	UnregisterCustomPropertySetter(UListView::StaticClass(), TEXT("ListItems"));
 
 	FCoreDelegates::OnPostEngineInit.RemoveAll(this);

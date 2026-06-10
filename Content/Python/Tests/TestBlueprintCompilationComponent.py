@@ -1,5 +1,5 @@
-﻿"""
-TestCasesComponent - validates object-description scenarios across Variable and WidgetTree contexts.
+"""
+TestBlueprintCompilationComponent - validates object-description scenarios across Variable and WidgetTree contexts.
 
 Test1   Basic inline:      Integer Default
 Test2   String default:    String Default
@@ -12,17 +12,11 @@ Test8   Struct inline:     Font with Size sub-element
 Test9   Basic array:       ColumnFill + RowFill with float children
 """
 import unreal
-try:
-    import widget_markup
-except ImportError:
-    widget_markup = None
-try:
-    from WidgetMarkupComponent import WidgetMarkupComponent
-except ImportError:
-    WidgetMarkupComponent = object
+import widget_markup
+from WidgetMarkupComponent import WidgetMarkupComponent
 
 
-class TestCasesComponent(WidgetMarkupComponent):
+class TestBlueprintCompilationComponent(WidgetMarkupComponent):
 
     def __init__(self) -> None:
         if hasattr(super(), '__init__'):
@@ -54,7 +48,10 @@ class TestCasesComponent(WidgetMarkupComponent):
         self._test10_struct_inline_property()
         self._test11_basic_array()
 
-        unreal.log(f"=== SUMMARY: {self._passed} PASS, {self._failed} FAIL ===")
+        if self._failed == 0:
+            unreal.log_warning("[TestBlueprintCompilation] ALL CHECKS PASSED.")
+        else:
+            unreal.log_error(f"[TestBlueprintCompilation] FAIL: {self._failed} checks failed, {self._passed} passed.")
         widget_markup.request_shutdown()
 
     # =========================================================================
@@ -241,11 +238,10 @@ class TestCasesComponent(WidgetMarkupComponent):
                        f"ColumnFill={len(col_fill) if col_fill else 0}, RowFill={len(row_fill) if row_fill else 0}")
 
     def _pass(self, name, detail):
-        """Log a PASS result."""
-        unreal.log(f"[PASS] {name}: {detail}")
+        """Record a PASS result silently."""
         self._passed += 1
 
     def _fail(self, name, detail):
         """Log a FAIL result."""
-        unreal.log(f"[FAIL] {name}: {detail}")
+        unreal.log_error(f"[TestBlueprintCompilation] FAIL: {name}: {detail}")
         self._failed += 1

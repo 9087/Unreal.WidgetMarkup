@@ -1,0 +1,26 @@
+<WidgetBlueprint Script='Tests.TestStyleOverrideComponent'>
+  <StyleSheet Inherit="/WidgetMarkup/Tests/TestStyleBase">
+    <Style TargetType='TextBlock'>
+      <Setter Property='Font.Size' RawValue='18' />
+    </Style>
+    <Style TargetType='TextBlock' Name='Title'>
+      <Setter Property='Font.Size' RawValue='24' />
+      <Setter Property='ColorAndOpacity' RawValue='1,0.5,0,1' />
+    </Style>
+  </StyleSheet>
+  <WidgetTree>
+    <CanvasPanel>
+      <TextBlock Name='DefaultText' Text='Inherited + Override (18, gray)'
+                 Slot.LayoutData.Anchors.Minimum='0.1,0.2'
+                 Slot.LayoutData.Anchors.Maximum='0.1,0.2'
+                 Slot.bAutoSize='True'
+                 Slot.LayoutData.Alignment='0,0' />
+      <TextBlock Name='TitleText' Text='Inherited Explicit Title'
+                 Style='Title'
+                 Slot.LayoutData.Anchors.Minimum='0.1,0.5'
+                 Slot.LayoutData.Anchors.Maximum='0.1,0.5'
+                 Slot.bAutoSize='True'
+                 Slot.LayoutData.Alignment='0,0' />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>

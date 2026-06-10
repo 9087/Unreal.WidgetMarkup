@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Binding/WidgetPropertyBinding.h"
 #include "Extensions/UserWidgetExtension.h"
-#include "Styles/WidgetStyleSheet.h"
 
 #include "WidgetMarkupUserWidgetExtension.generated.h"
 
@@ -22,7 +21,7 @@ public:
 
 	virtual void Initialize() override;
 
-	void SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets);
+	void ApplyStyleSheet();
 	void SetWidgetMarkupComponent(TSharedPtr<IWidgetMarkupComponent> InWidgetMarkupComponent);
 
 	const TSharedPtr<IWidgetMarkupComponent>& GetWidgetMarkupComponent() const
@@ -31,10 +30,5 @@ public:
 	}
 
 private:
-	void ApplyStyleSheets();
-
-	UPROPERTY(Transient)
-	TArray<FWidgetStyleSheetData> StyleSheets;
-
 	TSharedPtr<IWidgetMarkupComponent> WidgetMarkupComponent;
 };

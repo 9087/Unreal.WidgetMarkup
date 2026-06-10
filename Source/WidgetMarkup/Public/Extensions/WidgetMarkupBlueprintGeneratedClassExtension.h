@@ -29,14 +29,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "WidgetMarkup")
 	TArray<FWidgetDelegateBinding> GetDelegateBindings() const;
 
-	void SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets);
+	void SetStyleSheet(UWidgetStyleSheet* InStyleSheet);
 	void SetScript(const FString& InScript);
 	void SetPropertyBindings(const TArray<FWidgetPropertyBinding>& InPropertyBindings);
 	void SetDelegateBindings(const TArray<FWidgetDelegateBinding>& InDelegateBindings);
+	void SetWidgetStyleAssignments(const TMap<FName, FName>& InAssignments);
+	const TMap<FName, FName>& GetWidgetStyleAssignments() const { return WidgetStyleAssignments; }
 
-	const TArray<FWidgetStyleSheetData>& GetStyleSheets() const
+	const TObjectPtr<UWidgetStyleSheet>& GetStyleSheet() const
 	{
-		return StyleSheets;
+		return StyleSheet;
 	}
 
 	const FString& GetScript() const
@@ -51,7 +53,7 @@ public:
 
 private:
 	UPROPERTY()
-	TArray<FWidgetStyleSheetData> StyleSheets;
+	TObjectPtr<UWidgetStyleSheet> StyleSheet;
 
 	UPROPERTY()
 	FString Script;
@@ -61,4 +63,7 @@ private:
 
 	UPROPERTY()
 	TArray<FWidgetDelegateBinding> DelegateBindings;
+
+	UPROPERTY()
+	TMap<FName, FName> WidgetStyleAssignments;
 };

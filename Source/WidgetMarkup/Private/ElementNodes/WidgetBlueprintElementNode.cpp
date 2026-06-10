@@ -4,6 +4,7 @@
 
 #include "BlueprintElementNode.h"
 #include "Extensions/WidgetMarkupBlueprintExtension.h"
+#include "StyleSheetElementNode.h"
 #include "WidgetBlueprint.h"
 #include "Blueprint/WidgetTree.h"
 #include "WidgetBlueprintExtension.h"
@@ -44,6 +45,20 @@ FElementNode::FResult FWidgetBlueprintElementNode::OnBegin(const FContext& Conte
 
 FElementNode::FResult FWidgetBlueprintElementNode::OnEnd()
 {
+	// Transfer parsed StyleSheet to the blueprint extension before compilation.
+	if (StyleSheetNode.IsValid())
+	{
+		if (UWidgetStyleSheet* ParsedStyleSheet = Cast<UWidgetStyleSheet>(StyleSheetNode->GetObject()))
+		{
+			if (UWidgetMarkupBlueprintExtension* Extension = UWidgetMarkupBlueprintExtension::RequestExtension<UWidgetMarkupBlueprintExtension>(Cast<UWidgetBlueprint>(Object)))
+			{
+				UWidgetStyleSheet* StyleSheet = Extension->GetStyleSheet();
+				StyleSheet->Styles = ParsedStyleSheet->Styles;
+				StyleSheet->Inherit = ParsedStyleSheet->Inherit;
+			}
+		}
+	}
+
 	// Delegate to parent Blueprint compilation (same logic for compiling)
 	return FBlueprintElementNode::OnEnd();
 }
@@ -65,6 +80,17 @@ FElementNode::FResult FWidgetBlueprintElementNode::OnAddChild(const TSharedRef<F
 		}
 		Blueprint->WidgetTree = WidgetTree;
 		bHasWidgetTree = true;
+		return FResult::Success();
+	}
+
+	// Capture StyleSheet child for later transfer to extension.
+	if (auto SSN = CastElementNode<FStyleSheetElementNode>(TSharedPtr<FElementNode>(Child)))
+	{
+		if (StyleSheetNode.IsValid())
+		{
+			return FResult::Failure().Error(FText::FromString(TEXT("WidgetBlueprintElementNode: only one StyleSheet child is allowed.")));
+		}
+		StyleSheetNode = StaticCastSharedPtr<FStyleSheetElementNode>(TSharedPtr<FElementNode>(Child));
 		return FResult::Success();
 	}
 

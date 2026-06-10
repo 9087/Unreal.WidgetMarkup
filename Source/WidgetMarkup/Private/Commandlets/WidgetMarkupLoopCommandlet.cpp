@@ -79,6 +79,10 @@ int32 UWidgetMarkupLoopCommandlet::Main(const FString& Params)
 
 	TStrongObjectPtr<UWidgetMarkupWindow> WidgetMarkupWindow;
 	FWidgetMarkupModule& WidgetMarkupModule = FModuleManager::GetModuleChecked<FWidgetMarkupModule>("WidgetMarkup");
+
+	FModuleManager::Get().LoadModule(TEXT("PythonScriptPlugin"));
+	FModuleManager::Get().LoadModule(TEXT("WidgetMarkupPythonIntegration"));
+
 	WidgetMarkupModule.ExecuteOrRegisterOnInitialized(FSimpleDelegate::CreateLambda([PackagePath, &WidgetMarkupWindow, &ExitCode]()
 	{
 		if (!UWidgetMarkupWindow::CreateAndOpenWidgetMarkupWindow(GetTransientPackage(), PackagePath, WidgetMarkupWindow))
@@ -86,9 +90,6 @@ int32 UWidgetMarkupLoopCommandlet::Main(const FString& Params)
 			ExitCode = ExitShowWindowFailed;
 		}
 	}));
-
-	FModuleManager::Get().LoadModule(TEXT("PythonScriptPlugin"));
-	FModuleManager::Get().LoadModule(TEXT("WidgetMarkupPythonIntegration"));
 
 	double LastTime = FPlatformTime::Seconds();
 	while (!IsEngineExitRequested())

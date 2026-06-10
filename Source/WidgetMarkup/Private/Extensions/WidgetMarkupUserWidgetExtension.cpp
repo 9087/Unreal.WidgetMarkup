@@ -4,6 +4,8 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Components/IWidgetMarkupComponent.h"
+#include "Extensions/WidgetMarkupBlueprintGeneratedClassExtension.h"
+#include "Modules/ModuleManager.h"
 #include "Styles/WidgetStyleSheet.h"
 #include "WidgetMarkupModule.h"
 
@@ -19,18 +21,23 @@ UWidgetMarkupUserWidgetExtension* UWidgetMarkupUserWidgetExtension::GetOrAddExte
 		return ExistingExtension;
 	}
 
-	return UserWidget->AddExtension<UWidgetMarkupUserWidgetExtension>();
+	UWidgetMarkupUserWidgetExtension* Extension = UserWidget->AddExtension<UWidgetMarkupUserWidgetExtension>();
+	return Extension;
 }
 
 void UWidgetMarkupUserWidgetExtension::Initialize()
 {
 	Super::Initialize();
-	ApplyStyleSheets();
-}
+	ApplyStyleSheet();
 
-void UWidgetMarkupUserWidgetExtension::SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets)
-{
-	StyleSheets = InStyleSheets;
+	UUserWidget* UserWidget = GetUserWidget();
+	UWidgetMarkupBlueprintGeneratedClassExtension* ClassExtension =
+		UWidgetMarkupBlueprintGeneratedClassExtension::GetWidgetMarkupExtension(UserWidget);
+	if (UserWidget)
+	{
+		FWidgetMarkupModule& WidgetMarkupModule = FModuleManager::GetModuleChecked<FWidgetMarkupModule>(TEXT("WidgetMarkup"));
+		WidgetMarkupModule.GetOnWidgetMarkupUserWidgetInitialized().Broadcast(UserWidget, ClassExtension);
+	}
 }
 
 void UWidgetMarkupUserWidgetExtension::SetWidgetMarkupComponent(TSharedPtr<IWidgetMarkupComponent> InWidgetMarkupComponent)
@@ -38,20 +45,18 @@ void UWidgetMarkupUserWidgetExtension::SetWidgetMarkupComponent(TSharedPtr<IWidg
 	WidgetMarkupComponent = MoveTemp(InWidgetMarkupComponent);
 }
 
-void UWidgetMarkupUserWidgetExtension::ApplyStyleSheets()
+void UWidgetMarkupUserWidgetExtension::ApplyStyleSheet()
 {
 	UUserWidget* UserWidget = GetUserWidget();
-	if (!UserWidget)
-	{
-		UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetMarkup Style Extension: failed to apply style sheets because UserWidget is null."));
-		return;
-	}
+	if (!UserWidget) return;
 
-	for (int32 StyleSheetIndex = 0; StyleSheetIndex < StyleSheets.Num(); ++StyleSheetIndex)
+	UWidgetMarkupBlueprintGeneratedClassExtension* ClassExtension =
+		UWidgetMarkupBlueprintGeneratedClassExtension::GetWidgetMarkupExtension(UserWidget);
+	if (!ClassExtension) return;
+
+	UWidgetStyleSheet* Sheet = ClassExtension->GetStyleSheet();
+	if (Sheet)
 	{
-		if (!StyleSheets[StyleSheetIndex].ApplyToUserWidget(UserWidget))
-		{
-			UE_LOG(LogWidgetMarkup, Warning, TEXT("WidgetMarkup Style Extension: style sheet [%d] contains one or more failed style applications."), StyleSheetIndex);
-		}
+		Sheet->ApplyToUserWidget(UserWidget);
 	}
 }

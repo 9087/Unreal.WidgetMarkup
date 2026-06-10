@@ -5,8 +5,6 @@
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
 #include "Blueprint/UserWidget.h"
 #include "Extensions/WidgetMarkupUserWidgetExtension.h"
-#include "WidgetMarkupModule.h"
-#include "Modules/ModuleManager.h"
 
 void UWidgetMarkupBlueprintGeneratedClassExtension::Initialize(UUserWidget* UserWidget)
 {
@@ -15,10 +13,7 @@ void UWidgetMarkupBlueprintGeneratedClassExtension::Initialize(UUserWidget* User
 		return;
 	}
 
-	UWidgetMarkupUserWidgetExtension::GetOrAddExtension(UserWidget)->SetStyleSheets(StyleSheets);
-
-	FWidgetMarkupModule& WidgetMarkupModule = FModuleManager::GetModuleChecked<FWidgetMarkupModule>(TEXT("WidgetMarkup"));
-	WidgetMarkupModule.GetOnWidgetMarkupUserWidgetInitialized().Broadcast(UserWidget, this);
+	UWidgetMarkupUserWidgetExtension::GetOrAddExtension(UserWidget);
 }
 
 UWidgetMarkupBlueprintGeneratedClassExtension* UWidgetMarkupBlueprintGeneratedClassExtension::GetWidgetMarkupExtension(UUserWidget* UserWidget)
@@ -37,9 +32,9 @@ TArray<FWidgetPropertyBinding> UWidgetMarkupBlueprintGeneratedClassExtension::Ge
 	return PropertyBindings;
 }
 
-void UWidgetMarkupBlueprintGeneratedClassExtension::SetStyleSheets(const TArray<FWidgetStyleSheetData>& InStyleSheets)
+void UWidgetMarkupBlueprintGeneratedClassExtension::SetStyleSheet(UWidgetStyleSheet* InStyleSheet)
 {
-	StyleSheets = InStyleSheets;
+	StyleSheet = InStyleSheet;
 }
 
 void UWidgetMarkupBlueprintGeneratedClassExtension::SetScript(const FString& InScript)
@@ -60,4 +55,9 @@ TArray<FWidgetDelegateBinding> UWidgetMarkupBlueprintGeneratedClassExtension::Ge
 void UWidgetMarkupBlueprintGeneratedClassExtension::SetDelegateBindings(const TArray<FWidgetDelegateBinding>& InDelegateBindings)
 {
 	DelegateBindings = InDelegateBindings;
+}
+
+void UWidgetMarkupBlueprintGeneratedClassExtension::SetWidgetStyleAssignments(const TMap<FName, FName>& InAssignments)
+{
+	WidgetStyleAssignments = InAssignments;
 }

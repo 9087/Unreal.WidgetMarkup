@@ -140,10 +140,14 @@ FElementNode::FResult FListViewListItemsPropertyRun::OnEnd(FElementNode::FContex
 		if (WidgetMarkupBlueprintExtension)
 		{
 			FWidgetStyleEntry Entry;
-			Entry.WidgetName = ListView->GetFName();
-			Entry.PropertyPath = FWidgetPropertyPath(TEXT("ListItems"));
-			Entry.PropertyValue = *CachedPropertyBuffer;
-			WidgetMarkupBlueprintExtension->GetOrAddDefaultStyleSheet().AddOrReplaceStyleEntry(Entry);
+			Entry.TargetType = UListView::StaticClass()->GetFName();
+			Entry.Name = FName(*FString::Printf(TEXT("ListItemsDeferredSetter_%s"), *ListView->GetName()));
+			FWidgetStyleSetter Setter;
+			Setter.Property = FWidgetPropertyPath(TEXT("ListItems"));
+			Setter.Value = *CachedPropertyBuffer;
+			Entry.Setters.Add(Setter);
+			WidgetMarkupBlueprintExtension->GetStyleSheet()->AddOrReplaceStyleEntry(Entry);
+			WidgetMarkupBlueprintExtension->AddWidgetStyleAssignment(ListView->GetFName(), Entry.Name);
 		}
 	}
 	return FElementNode::FResult::Success();
