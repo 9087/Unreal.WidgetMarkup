@@ -22,7 +22,23 @@ A Widget Blueprint (`.widgetmarkup`) compiles to a `UWidgetBlueprint` with a `Wi
 </WidgetBlueprint>
 ```
 
-The `Script` attribute follows Python import path convention, e.g. `Samples.MyComponent` maps to `Content/Python/Samples/MyComponent.py`.
+The `Script` attribute is a Python import path resolved against the **project's** `Content/Python/` directory:
+
+| Path | Purpose |
+|---|---|
+| `<ProjectDir>/Content/Python/` | **Your Python components** — create/edit files here |
+| `<ProjectDir>/Plugins/WidgetMarkup/Content/Python/` | Framework code (`WidgetMarkupComponent.py`, `ObservableCollection.py`) and test cases — do NOT put your files here |
+
+When the same module name exists in both paths, the project-path copy takes precedence — the plugin copy is silently ignored. For example, `Script="Calculator"` imports `<ProjectDir>/Content/Python/Calculator.py`.
+
+> **Finding the project directory:** The project root is NOT always `Game/`. Look for the `.uproject` file to determine the actual project directory. If you cannot find it, ask the user.
+> ```powershell
+> Get-ChildItem -Recurse -Filter "*.uproject" | Select-Object -First 1 DirectoryName
+> ```
+
+`.widgetmarkup` XML blueprints also live in the **project's** `Content/` directory — not in the plugin. The plugin directory is reserved for samples and test cases (both under the plugin's `Content/`).
+
+> **Path prefix matters:** Project blueprints are referenced with `/Game/` (e.g. `/Game/ScientificCalculator`), while plugin samples use `/WidgetMarkup/` (e.g. `/WidgetMarkup/Samples/Counter`). See [§3.3 Class Path Resolution](#33-class-path-resolution) for details.
 
 The parent class defaults to `UWidgetMarkupUserWidget`. Override with `Super` (must be a subclass of `UWidgetMarkupUserWidget`). Add interfaces with `Implements`:
 ```xml
@@ -71,7 +87,7 @@ The `<WidgetTree>` element is required inside `<WidgetBlueprint>`. It contains o
 
 ### 2.2 Widgets & Slots
 
-> **Any UPROPERTY on the UMG class works as an XML attribute** via UE reflection (`FPropertyChainHandle`).
+> **Any UPROPERTY on the UMG class works as an XML attribute** via `FPropertyChainHandle`, which resolves dot-separated paths through UE's reflection system. Both nested structs (e.g. `Slot.Size.SizeRule`) and object pointers (e.g. `Slot.Row`) are supported — the slot object is created by `OnAddChild` before attributes are processed.\n>\n> **Sub-property syntax:** Dot notation (`Font.Size=\"18\"`) and child-element syntax (`<Font><Size>18</Size></Font>`) both work — they go through the same `FPropertyPathResolver`. Child-element form is preferred for clarity and was validated in test files. For container properties like `ColumnFill` and `RowFill`, child-element syntax is required (these are array properties, not scalar).
 
 **[Shared base properties](docs/widgets/shared-properties.md)** — `Visibility`, `IsEnabled`, `RenderOpacity`, `RenderTransform`, `Cursor`, `ToolTipText` (all widgets).
 
@@ -91,13 +107,25 @@ The `<WidgetTree>` element is required inside `<WidgetBlueprint>`. It contains o
 | `<ComboBoxString>` | [combobox-string.md](docs/widgets/combobox-string.md) | `DefaultOptions`, `OnSelectionChanged` |
 | `<ListView>` / `<TileView>` | [listview.md](docs/widgets/listview.md) | `ListItems`, `EntryWidgetClass` |
 | `<Spacer>` | [spacer.md](docs/widgets/spacer.md) | `Size` |
-| `<CanvasPanel>` | [canvas-panel.md](docs/widgets/canvas-panel.md) | `LayoutData.Anchors`, `LayoutData.Offsets`, `bAutoSize`, `ZOrder` |
-| `<VerticalBox>` / `<HorizontalBox>` | [vertical-horizontal-box.md](docs/widgets/vertical-horizontal-box.md) | `Size.SizeRule`, `Size.Value`, `Padding`, `Alignment` |
-| `<GridPanel>` | [grid-panel.md](docs/widgets/grid-panel.md) | `Row`, `Column`, `RowSpan`, `ColumnSpan`, `RowFill`, `ColumnFill` |
-| `<UniformGridPanel>` | [uniform-grid-panel.md](docs/widgets/uniform-grid-panel.md) | `Row`, `Column` |
-| `<WrapBox>` | [wrap-box.md](docs/widgets/wrap-box.md) | `bFillEmptySpace`, `bForceNewLine` |
-| `<ScrollBox>` | [scroll-box.md](docs/widgets/scroll-box.md) | `Size.SizeRule`, `Padding` |
-| `<Overlay>` | [overlay.md](docs/widgets/overlay.md) | `Padding`, `Alignment` |
+| `<CanvasPanel>` | [canvas-panel.md](docs/widgets/canvas-panel.md) | `Slot.LayoutData.Anchors`, `Slot.LayoutData.Offsets`, `Slot.bAutoSize`, `Slot.ZOrder` |
+| `<VerticalBox>` / `<HorizontalBox>` | [vertical-horizontal-box.md](docs/widgets/vertical-horizontal-box.md) | `Slot.Size.SizeRule`, `Slot.Size.Value`, `Slot.Padding`, `Slot.Alignment` |
+| `<GridPanel>` | [grid-panel.md](docs/widgets/grid-panel.md) | `Slot.Row`, `Slot.Column`, `Slot.RowSpan`, `Slot.ColumnSpan`, `RowFill`, `ColumnFill` |
+| `<UniformGridPanel>` | [uniform-grid-panel.md](docs/widgets/uniform-grid-panel.md) | `Slot.Row`, `Slot.Column` |
+| `<WrapBox>` | [wrap-box.md](docs/widgets/wrap-box.md) | `Slot.bFillEmptySpace`, `Slot.bForceNewLine` |
+| `<ScrollBox>` | [scroll-box.md](docs/widgets/scroll-box.md) | `Slot.Size.SizeRule`, `Slot.Padding` |
+| `<Overlay>` | [overlay.md](docs/widgets/overlay.md) | `Slot.Padding`, `Slot.Alignment` |
+
+> **GridPanel tip:** Use `<GridPanel>` for grid layouts instead of nesting `<HorizontalBox>` inside `<VerticalBox>`. Children **must** use `Slot.Row` and `Slot.Column` (the `Slot.` prefix is required — bare `Row` causes a parse error because attributes are resolved via `FPropertyPathResolver` on the widget, not on the slot). Set `ColumnFill` and `RowFill` as child elements with `<Float>1.0</Float>` entries for equal sizing:
+> ```xml
+> <GridPanel>
+>   <ColumnFill><Float>1.0</Float><Float>1.0</Float></ColumnFill>
+>   <RowFill><Float>1.0</Float><Float>1.0</Float></RowFill>
+>   <Button Slot.Row="0" Slot.Column="0" OnClicked="press_1">...</Button>
+> </GridPanel>
+> ```
+> **Slot property timing:** Slot properties (e.g. `Slot.Row`, `Slot.Size.SizeRule`) are resolved AFTER `OnAddChild` creates the slot object (`UPanelWidget::AddChild`), so they work for any panel-managed widget. Root widgets (direct children of `<WidgetTree>`) have no slot — do NOT set `Slot.*` on them.
+>
+> **Slot vs container properties:** Properties on **child** widgets use `Slot.` prefix (they apply to the slot created by the parent panel). Properties on the **panel itself** (e.g. `RowFill`, `ColumnFill`, `bAutoSize`) use bare names — they belong to the container, not the slot.
 
 **Struct types:** [docs/structs/](docs/structs/) — [FLinearColor](docs/structs/linear-color.md), [FSlateColor](docs/structs/slate-color.md), [FVector2D](docs/structs/vector2d.md), [FMargin](docs/structs/margin.md), [FSlateBrush](docs/structs/slate-brush.md), [FWidgetTransform](docs/structs/render-transform.md), [FSlateChildSize](docs/structs/slate-child-size.md), [FAnchors](docs/structs/anchors.md), [FAnchorData](docs/structs/anchor-data.md), [FSlateFontInfo](docs/structs/font-info.md), [ESlateVisibility](docs/structs/slate-visibility.md), [Alignment](docs/structs/alignment.md)
 
@@ -106,12 +134,14 @@ The `<WidgetTree>` element is required inside `<WidgetBlueprint>`. It contains o
 Use `Name="WidgetName"` only when you need to access the widget from Python via `get_editor_property()`. Most widgets (buttons, labels) don't need names — data binding handles updates automatically.
 
 ```xml
-<!-- Named: accessed from Python -->
-<TextBlock Name="DisplayLabel" Text="{display}" />
-
-<!-- Unnamed: data-bound or purely interactive -->
-<Button OnClicked="on_digit" Text="7" />
+<!-- Name becomes the Blueprint variable name; needed for Python access or style targeting -->
+<TextBlock Name="StatusLabel" Text="{status}" />
+<Button OnClicked="on_submit">
+  <TextBlock Text="Submit" />
+</Button>
 ```
+
+> **Note:** Button labels use a child `<TextBlock>`, not `Text="..."` on the Button itself. Only set `Name` when you need to reference the widget from Python; otherwise let the system auto-generate names.
 
 Prefer data binding over `get_editor_property()` when possible.
 
@@ -127,6 +157,8 @@ Use `{source_expression}` to bind a widget property to a Python `@reactive` prop
 
 When `self.display_value = "new"` is set in Python, the TextBlock's `Text` updates automatically.
 
+> **Important:** The `{expression}` in XML must match the `@reactive` property name **exactly**. Mismatched names cause `'Component' object has no attribute 'xxx'` at runtime.
+
 Flow:
 ```
 Python: self.display_value = "new"
@@ -138,32 +170,49 @@ Python: self.display_value = "new"
 
 ### 3.2 Delegate Binding
 
-Bind UMG widget events to Python methods. Each button can have its own handler:
+Bind UMG widget events to Python methods:
 
 ```xml
-<Button OnClicked="on_add" Text="+" />
-<Button OnClicked="on_subtract" Text="-" />
-<Button OnClicked="on_clear" Text="C" />
+<Button OnClicked="on_confirm">
+  <TextBlock Text="Confirm" />
+</Button>
+<Button OnClicked="on_cancel">
+  <TextBlock Text="Cancel" />
+</Button>
 ```
 
 Python:
 ```python
-def on_add(self):
-    self.operator = "+"
-    self.operand1 = float(self.display)
-    self.display = "0"
+def on_confirm(self):
+    self.status = "Confirmed"
+    self.save_data()
 
-def on_clear(self):
-    self.display = "0"
-    self.operand1 = 0.0
-    self.operator = ""
+def on_cancel(self):
+    self.status = "Cancelled"
+    self.close_panel()
 ```
 
 > **Note:** `@reactive` setters must assign (e.g., `self.display = "0"`), not mutate in-place (no `self.display += "1"`).
 
 ### 3.3 Class Path Resolution
 
-Use `EntryWidgetClass="/WidgetMarkup/Samples/MyEntry"` for referencing other WidgetMarkup blueprints. Paths starting with `/` are resolved via the WidgetMarkup module's object registry and compiled on-demand.
+Paths starting with `/` are long package paths resolved via UE's mount point system:
+
+| Prefix | Resolves to | Use for |
+|---|---|---|
+| `/Game/` | Project `Content/` directory | **Your project blueprints** |
+| `/WidgetMarkup/` | Plugin `Content/` directory | Plugin samples and test cases |
+
+Examples:
+```xml
+<!-- Project blueprint: Game/Content/ScientificCalculator.widgetmarkup -->
+<ListView EntryWidgetClass="/Game/ScientificCalculator" ... />
+
+<!-- Plugin sample: Game/Plugins/WidgetMarkup/Content/Samples/ListEntry.widgetmarkup -->
+<ListView EntryWidgetClass="/WidgetMarkup/Samples/ListEntry" ... />
+```
+
+> **Note:** `/WidgetMarkup/` maps to the plugin's Content directory — for project-level `.widgetmarkup` files, always use `/Game/`.
 
 ### 3.4 Property Value Types
 
@@ -186,6 +235,12 @@ See [docs/python-components.md](docs/python-components.md) for the complete Pyth
 - **ListView/TileView** — entry mixins (`IUserListEntry`, `IUserObjectListEntry`), `on_data_refresh(data)`, delegate binding
 - **Accessing widgets** — prefer data binding over `get_editor_property()`
 
+> **Use `typing.Optional` for nullable types:** Always import `Optional` from `typing` for type hints that can be `None`:
+> ```python
+> from typing import Optional
+> def evaluate(expr: str) -> Optional[float]: ...
+> ```
+
 ## 5. Style Sheets
 
 Style sheets apply runtime property overrides to named widgets. Defined inline or as standalone assets, stored in `UWidgetMarkupBlueprintExtension`.
@@ -206,20 +261,24 @@ Style sheets apply runtime property overrides to named widgets. Defined inline o
 cd C:\PROJECTS\UnrealEngine
 .\Engine\Build\BatchFiles\Build.bat WidgetMarkupApp Win64 Development -Project=Game/Game.uproject
 
-# Run a sample
+# Run a plugin sample (mounted at /WidgetMarkup/)
 .\Game\Binaries\Win64\WidgetMarkupApp.exe /WidgetMarkup/Samples/Counter --project Game/Game.uproject
 
-# Clear Python cache before testing
-Get-ChildItem Game/Plugins/WidgetMarkup/Content/Python -Recurse -Dir __pycache__ | Remove-Item -Recurse -Force
+# Run a project blueprint (mounted at /Game/ — project Content/ directory)
+.\Game\Binaries\Win64\WidgetMarkupApp.exe /Game/ScientificCalculator --project Game/Game.uproject
+
+# Clear Python cache before testing (clears BOTH project and plugin paths)
+Get-ChildItem <ProjectDir> -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
 ```
+
+> Always clear caches before testing — stale `.pyc` files can silently load old code.
 
 ## 7. Samples
 
 Sample `.widgetmarkup` blueprints and Python components are in the plugin directory:
 
 ```
-Game/Plugins/WidgetMarkup/Content/WidgetMarkup/Samples/
+Game/Plugins/WidgetMarkup/Content/Samples/
 ```
 
 Includes: Counter (increment/decrement), ListView with color-cycled entries, and more. See the samples for complete working examples of all concepts covered in this document.
-
