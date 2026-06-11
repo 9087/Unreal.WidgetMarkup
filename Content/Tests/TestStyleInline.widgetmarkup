@@ -70,6 +70,21 @@
       <Setter Property='Padding.Right' RawValue='16' />
       <Setter Property='Padding.Bottom' RawValue='12' />
     </Style>
+
+    <!-- Image: cyan tint overlay -->
+    <Style TargetType='Image' Name='TintedImage'>
+      <Setter Property='ColorAndOpacity' RawValue='0.2,0.7,0.9,1' />
+    </Style>
+
+    <!-- Button: blue background -->
+    <Style TargetType='Button' Name='PrimaryButton'>
+      <Setter Property='ColorAndOpacity' RawValue='0.15,0.5,0.9,1' />
+    </Style>
+
+    <!-- ProgressBar: green fill -->
+    <Style TargetType='ProgressBar' Name='ColoredBar'>
+      <Setter Property='FillColorAndOpacity' RawValue='0.1,0.8,0.3,1' />
+    </Style>
   </StyleSheet>
   <WidgetTree>
     <ScrollBox>
@@ -159,6 +174,28 @@
                    Slot.Row='14' Slot.Column='0' />
         <Border Name='PreviewAccentCard' Style='AccentCard'
                 Slot.Row='14' Slot.Column='1' />
+
+        <!-- ===== Common widgets section ===== -->
+        <TextBlock Text='Common Widgets' Style='Subtitle'
+                   Slot.Row='15' Slot.Column='0' Slot.ColumnSpan='2' />
+
+        <!-- Row: Image -->
+        <TextBlock Name='LabelImage' Text='Image' Style='TableLabel'
+                   Slot.Row='16' Slot.Column='0' />
+        <Image Name='PreviewImage' Style='TintedImage'
+               Slot.Row='16' Slot.Column='1' />
+
+        <!-- Row: Button -->
+        <TextBlock Name='LabelButton' Text='Button' Style='TableLabel'
+                   Slot.Row='17' Slot.Column='0' />
+        <Button Name='PreviewButton' Style='PrimaryButton'
+                Slot.Row='17' Slot.Column='1' />
+
+        <!-- Row: ProgressBar -->
+        <TextBlock Name='LabelProgressBar' Text='ProgressBar' Style='TableLabel'
+                   Slot.Row='18' Slot.Column='0' />
+        <ProgressBar Name='PreviewProgressBar' Style='ColoredBar'
+                     Slot.Row='18' Slot.Column='1' />
       </GridPanel>
     </ScrollBox>
   </WidgetTree>
