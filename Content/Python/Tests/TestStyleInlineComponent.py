@@ -108,6 +108,29 @@ class TestStyleInlineComponent(WidgetMarkupComponent):
             else:
                 fail("PreviewAccentCard widget not found")
 
+            # --- Image tint style (ColorAndOpacity is FLinearColor, not FSlateColor) ---
+            w = uw.get_editor_property("PreviewImage")
+            if w:
+                c = w.get_editor_property("ColorAndOpacity")
+                if abs(c.b - 0.9) > 0.05:
+                    fail(f"Image.Color.B expected 0.9, got {c.b:.2f}")
+            else:
+                fail("PreviewImage widget not found")
+
+            # --- Button color style (ColorAndOpacity is FLinearColor) ---
+            w = uw.get_editor_property("PreviewButton")
+            if w:
+                c = w.get_editor_property("ColorAndOpacity")
+                if abs(c.b - 0.9) > 0.05:
+                    fail(f"Button.Color.B expected 0.9, got {c.b:.2f}")
+            else:
+                fail("PreviewButton widget not found")
+
+            # --- ProgressBar fill style ---
+            w = uw.get_editor_property("PreviewProgressBar")
+            if not w:
+                fail("PreviewProgressBar widget not found")
+
             if errors:
                 for e in errors:
                     unreal.log_error(f"[TestStyleInline] FAIL: {e}")
