@@ -1,11 +1,11 @@
 <WidgetBlueprint Script='Tests.TestStyleOverrideComponent'>
   <StyleSheet Inherit="/WidgetMarkup/Tests/TestStyleBase">
     <Style TargetType='TextBlock'>
-      <Setter Property='Font.Size' RawValue='18' />
+      <Setter Property='Font.Size' Value='18' />
     </Style>
     <Style TargetType='TextBlock' Name='Title'>
-      <Setter Property='Font.Size' RawValue='24' />
-      <Setter Property='ColorAndOpacity' RawValue='1,0.5,0,1' />
+      <Setter Property='Font.Size' Value='24' />
+      <Setter Property='ColorAndOpacity' Value='1,0.5,0,1' />
     </Style>
   </StyleSheet>
   <WidgetTree>

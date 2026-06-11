@@ -144,7 +144,7 @@ FElementNode::FResult FListViewListItemsPropertyRun::OnEnd(FElementNode::FContex
 			Entry.Name = FName(*FString::Printf(TEXT("ListItemsDeferredSetter_%s"), *ListView->GetName()));
 			FWidgetStyleSetter Setter;
 			Setter.Property = FWidgetPropertyPath(TEXT("ListItems"));
-			Setter.Value = *CachedPropertyBuffer;
+			Setter.Buffer = *CachedPropertyBuffer;
 			Entry.Setters.Add(Setter);
 			WidgetMarkupBlueprintExtension->GetStyleSheet()->AddOrReplaceStyleEntry(Entry);
 			WidgetMarkupBlueprintExtension->AddWidgetStyleAssignment(ListView->GetFName(), Entry.Name);
