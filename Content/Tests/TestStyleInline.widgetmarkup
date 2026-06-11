@@ -142,7 +142,7 @@
         <!-- Row: Link -->
         <TextBlock Name='LabelLink' Text='Link' Style='TableLabel'
                    Slot.Row='9' Slot.Column='0' />
-        <TextBlock Name='PreviewLink' Text='â†?View documentation'
+        <TextBlock Name='PreviewLink' Text='ï¿½?View documentation'
                    Style='Link'
                    Slot.Row='9' Slot.Column='1' />
 
@@ -155,7 +155,7 @@
         <!-- Row: Warning -->
         <TextBlock Name='LabelWarning' Text='Warning' Style='TableLabel'
                    Slot.Row='11' Slot.Column='0' />
-        <TextBlock Name='PreviewWarning' Text='âš?Configuration requires attention'
+        <TextBlock Name='PreviewWarning' Text='ï¿½?Configuration requires attention'
                    Style='Warning'
                    Slot.Row='11' Slot.Column='1' />
 
