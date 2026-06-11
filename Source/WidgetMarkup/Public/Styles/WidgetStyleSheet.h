@@ -20,12 +20,13 @@ struct FWidgetStyleSetter
 	UPROPERTY(EditAnywhere, Category = "Style")
 	FWidgetPropertyPath Property;
 
+	/** Pre-parsed buffer set via child elements. */
 	UPROPERTY(EditAnywhere, Category = "Style")
-	FPropertyBuffer Value;
+	FPropertyBuffer Buffer;
 
-	/** Raw value string for deferred property resolution. */
+	/** String value set via attribute, converted at apply time. */
 	UPROPERTY(EditAnywhere, Category = "Style")
-	FString RawValue;
+	FString Value;
 
 	bool ApplyToWidget(UWidget* Widget) const;
 };

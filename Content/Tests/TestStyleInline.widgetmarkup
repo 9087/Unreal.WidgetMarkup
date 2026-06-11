@@ -2,88 +2,88 @@
   <StyleSheet>
     <!-- Implicit TextBlock style: all TextBlocks get this by default -->
     <Style TargetType='TextBlock'>
-      <Setter Property='Font.Size' RawValue='14' />
-      <Setter Property='ColorAndOpacity' RawValue='0.78,0.78,0.78,1' />
+      <Setter Property='Font.Size' Value='14' />
+      <Setter Property='ColorAndOpacity' Value='0.78,0.78,0.78,1' />
     </Style>
 
     <!-- Table label column style -->
     <Style TargetType='TextBlock' Name='TableLabel'>
-      <Setter Property='Font.Size' RawValue='12' />
-      <Setter Property='ColorAndOpacity' RawValue='0.5,0.6,0.7,1' />
+      <Setter Property='Font.Size' Value='12' />
+      <Setter Property='ColorAndOpacity' Value='0.5,0.6,0.7,1' />
     </Style>
 
     <!-- Header: large, bold-appearing, strong white -->
     <Style TargetType='TextBlock' Name='Header'>
-      <Setter Property='Font.Size' RawValue='26' />
-      <Setter Property='ColorAndOpacity' RawValue='1,1,1,1' />
+      <Setter Property='Font.Size' Value='26' />
+      <Setter Property='ColorAndOpacity' Value='1,1,1,1' />
     </Style>
 
     <!-- Subtitle: medium, blue-tinted -->
     <Style TargetType='TextBlock' Name='Subtitle'>
-      <Setter Property='Font.Size' RawValue='18' />
-      <Setter Property='ColorAndOpacity' RawValue='0.6,0.8,1,1' />
+      <Setter Property='Font.Size' Value='18' />
+      <Setter Property='ColorAndOpacity' Value='0.6,0.8,1,1' />
     </Style>
 
     <!-- Body: same size as implicit but higher contrast -->
     <Style TargetType='TextBlock' Name='Body'>
-      <Setter Property='ColorAndOpacity' RawValue='0.95,0.95,0.95,1' />
+      <Setter Property='ColorAndOpacity' Value='0.95,0.95,0.95,1' />
     </Style>
 
     <!-- Caption: very small, subdued -->
     <Style TargetType='TextBlock' Name='Caption'>
-      <Setter Property='Font.Size' RawValue='10' />
-      <Setter Property='ColorAndOpacity' RawValue='0.45,0.45,0.45,1' />
+      <Setter Property='Font.Size' Value='10' />
+      <Setter Property='ColorAndOpacity' Value='0.45,0.45,0.45,1' />
     </Style>
 
     <!-- Link: blue, clickable appearance -->
     <Style TargetType='TextBlock' Name='Link'>
-      <Setter Property='Font.Size' RawValue='14' />
-      <Setter Property='ColorAndOpacity' RawValue='0.3,0.7,1,1' />
+      <Setter Property='Font.Size' Value='14' />
+      <Setter Property='ColorAndOpacity' Value='0.3,0.7,1,1' />
     </Style>
 
     <!-- Badge: small green label -->
     <Style TargetType='TextBlock' Name='Badge'>
-      <Setter Property='Font.Size' RawValue='11' />
-      <Setter Property='ColorAndOpacity' RawValue='0.1,0.9,0.4,1' />
+      <Setter Property='Font.Size' Value='11' />
+      <Setter Property='ColorAndOpacity' Value='0.1,0.9,0.4,1' />
     </Style>
 
     <!-- Warning: orange alert text -->
     <Style TargetType='TextBlock' Name='Warning'>
-      <Setter Property='Font.Size' RawValue='14' />
-      <Setter Property='ColorAndOpacity' RawValue='1,0.65,0.15,1' />
+      <Setter Property='Font.Size' Value='14' />
+      <Setter Property='ColorAndOpacity' Value='1,0.65,0.15,1' />
     </Style>
 
     <!-- Card: dark bordered panel -->
     <Style TargetType='Border' Name='Card'>
-      <Setter Property='BrushColor' RawValue='0.12,0.12,0.14,1' />
-      <Setter Property='Padding.Left' RawValue='12' />
-      <Setter Property='Padding.Top' RawValue='8' />
-      <Setter Property='Padding.Right' RawValue='12' />
-      <Setter Property='Padding.Bottom' RawValue='8' />
+      <Setter Property='BrushColor' Value='0.12,0.12,0.14,1' />
+      <Setter Property='Padding.Left' Value='12' />
+      <Setter Property='Padding.Top' Value='8' />
+      <Setter Property='Padding.Right' Value='12' />
+      <Setter Property='Padding.Bottom' Value='8' />
     </Style>
 
     <!-- AccentCard: blue-tinted panel -->
     <Style TargetType='Border' Name='AccentCard'>
-      <Setter Property='BrushColor' RawValue='0.08,0.14,0.22,1' />
-      <Setter Property='Padding.Left' RawValue='16' />
-      <Setter Property='Padding.Top' RawValue='12' />
-      <Setter Property='Padding.Right' RawValue='16' />
-      <Setter Property='Padding.Bottom' RawValue='12' />
+      <Setter Property='BrushColor' Value='0.08,0.14,0.22,1' />
+      <Setter Property='Padding.Left' Value='16' />
+      <Setter Property='Padding.Top' Value='12' />
+      <Setter Property='Padding.Right' Value='16' />
+      <Setter Property='Padding.Bottom' Value='12' />
     </Style>
 
     <!-- Image: cyan tint overlay -->
     <Style TargetType='Image' Name='TintedImage'>
-      <Setter Property='ColorAndOpacity' RawValue='0.2,0.7,0.9,1' />
+      <Setter Property='ColorAndOpacity' Value='0.2,0.7,0.9,1' />
     </Style>
 
     <!-- Button: blue background -->
     <Style TargetType='Button' Name='PrimaryButton'>
-      <Setter Property='ColorAndOpacity' RawValue='0.15,0.5,0.9,1' />
+      <Setter Property='ColorAndOpacity' Value='0.15,0.5,0.9,1' />
     </Style>
 
     <!-- ProgressBar: green fill -->
     <Style TargetType='ProgressBar' Name='ColoredBar'>
-      <Setter Property='FillColorAndOpacity' RawValue='0.1,0.8,0.3,1' />
+      <Setter Property='FillColorAndOpacity' Value='0.1,0.8,0.3,1' />
     </Style>
   </StyleSheet>
   <WidgetTree>
@@ -142,7 +142,7 @@
         <!-- Row: Link -->
         <TextBlock Name='LabelLink' Text='Link' Style='TableLabel'
                    Slot.Row='9' Slot.Column='0' />
-        <TextBlock Name='PreviewLink' Text='â†’ View documentation'
+        <TextBlock Name='PreviewLink' Text='â†?View documentation'
                    Style='Link'
                    Slot.Row='9' Slot.Column='1' />
 
@@ -155,7 +155,7 @@
         <!-- Row: Warning -->
         <TextBlock Name='LabelWarning' Text='Warning' Style='TableLabel'
                    Slot.Row='11' Slot.Column='0' />
-        <TextBlock Name='PreviewWarning' Text='âš  Configuration requires attention'
+        <TextBlock Name='PreviewWarning' Text='âš?Configuration requires attention'
                    Style='Warning'
                    Slot.Row='11' Slot.Column='1' />
 

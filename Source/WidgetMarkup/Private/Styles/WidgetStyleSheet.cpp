@@ -12,14 +12,14 @@
 bool FWidgetStyleSetter::ApplyToWidget(UWidget* Widget) const
 {
 	if (!Widget || Property.IsEmpty()) return false;
-	if (!Value.HasValue() && RawValue.IsEmpty()) return false;
+	if (!Buffer.HasValue() && Value.IsEmpty()) return false;
 
 	const TSharedPtr<FPropertyChainHandle> Handle = FPropertyChainHandle::Create(Widget, Property);
 	if (!Handle.IsValid()) return false;
 
-	return Value.HasValue()
-		? Handle->SetValue(Value)
-		: Handle->SetValue(FStringView(RawValue));
+	return Buffer.HasValue()
+		? Handle->SetValue(Buffer)
+		: Handle->SetValue(FStringView(Value));
 }
 
 void UWidgetStyleSheet::AddOrReplaceStyleEntry(const FWidgetStyleEntry& Entry)
