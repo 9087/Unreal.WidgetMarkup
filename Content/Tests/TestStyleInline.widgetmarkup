@@ -85,6 +85,17 @@
     <Style TargetType='ProgressBar' Name='ColoredBar'>
       <Setter Property='FillColorAndOpacity' Value='0.1,0.8,0.3,1' />
     </Style>
+    <!-- System font test: Segoe UI Symbol -->
+    <Style TargetType='TextBlock' Name='SymbolFont'>
+      <Setter Property='Font.FontObject' Value='seguisym' />
+      <Setter Property='Font.Size' Value='20' />
+      <Setter Property='ColorAndOpacity' Value='0.3,0.85,1,1' />
+    </Style>
+    <Style TargetType='TextBlock' Name='SymbolFontLabel'>
+      <Setter Property='Font.FontObject' Value='seguisym' />
+      <Setter Property='Font.Size' Value='22' />
+      <Setter Property='ColorAndOpacity' Value='1,0.8,0.2,1' />
+    </Style>
   </StyleSheet>
   <WidgetTree>
     <ScrollBox>
@@ -196,6 +207,38 @@
                    Slot.Row='18' Slot.Column='0' />
         <ProgressBar Name='PreviewProgressBar' Style='ColoredBar'
                      Slot.Row='18' Slot.Column='1' />
+
+        <!-- ===== System Font section ===== -->
+        <TextBlock Text='System Font (arial)' Style='Subtitle'
+                   Slot.Row='19' Slot.Column='0' Slot.ColumnSpan='2' />
+
+        <!-- Row: Math symbols -->
+        <TextBlock Name='LabelSymbols' Text='Math' Style='TableLabel'
+                   Slot.Row='20' Slot.Column='0' />
+        <TextBlock Name='PreviewSymbols' Text='∑ ∫ √ ∞ π ∂ ∇ ∈ ∉ ∩ ∪ ⊂ ⊃'
+                   Style='SymbolFont'
+                   Slot.Row='20' Slot.Column='1' />
+
+        <!-- Row: Arrows -->
+        <TextBlock Name='LabelArrows' Text='Arrows' Style='TableLabel'
+                   Slot.Row='21' Slot.Column='0' />
+        <TextBlock Name='PreviewArrows' Text='← → ↑ ↓ ↔ ⇐ ⇒ ⇑ ⇓ ⇔'
+                   Style='SymbolFont'
+                   Slot.Row='21' Slot.Column='1' />
+
+        <!-- Row: Operators -->
+        <TextBlock Name='LabelOperators' Text='Operators' Style='TableLabel'
+                   Slot.Row='22' Slot.Column='0' />
+        <TextBlock Name='PreviewOperators' Text='× ÷ ± ∓ ⊗ ⊕ ⊙ ⊛ ⊞ ⊟'
+                   Style='SymbolFont'
+                   Slot.Row='22' Slot.Column='1' />
+
+        <!-- Row: Dingbats -->
+        <TextBlock Name='LabelDingbats' Text='Dingbats' Style='TableLabel'
+                   Slot.Row='23' Slot.Column='0' />
+        <TextBlock Name='PreviewDingbats' Text='✔ ✘ ⚠ ⚡ ★ ☆ ☀ ☁ ♥ ♦ ♠ ♣'
+                   Style='SymbolFontLabel'
+                   Slot.Row='23' Slot.Column='1' />
       </GridPanel>
     </ScrollBox>
   </WidgetTree>
