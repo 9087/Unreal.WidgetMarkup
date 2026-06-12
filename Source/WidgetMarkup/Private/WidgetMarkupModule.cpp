@@ -15,12 +15,14 @@
 #include "Components/ContentWidget.h"
 #include "Components/Image.h"
 #include "Components/ListView.h"
+#include "Components/TextBlock.h"
 #include "Components/Widget.h"
 #include "Components/SlateWrapperTypes.h"
 #include "Converters/BooleanConverter.h"
 #include "Converters/ClassConverter.h"
 #include "Converters/ColorConverter.h"
 #include "Converters/EnumConverter.h"
+#include "Converters/ObjectConverter.h"
 #include "Converters/LinearColorConverter.h"
 #include "Converters/MarginConverter.h"
 #include "Converters/NameConverter.h"
@@ -136,6 +138,7 @@ void FWidgetMarkupModule::StartupModule()
 	FConverterRegistry::Get().Register(NAME_Vector, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector::FReal, 3>::Create));
 	FConverterRegistry::Get().Register(NAME_Vector2D, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector2D::FReal, 2>::Create));
 	FConverterRegistry::Get().Register(FWidgetPropertyPath::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FWidgetPropertyPathConverter::Create));
+	FConverterRegistry::Get().Register(NAME_ObjectProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(FObjectConverter::Create));
 	
 	RegisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"), FOnCreatePropertyRun::CreateStatic(&FObjectNamePropertyRun::Create));
 	RegisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"), FOnCreatePropertyRun::CreateStatic(&FBlueprintSuperPropertyRun::Create));
@@ -188,6 +191,7 @@ void FWidgetMarkupModule::ShutdownModule()
 	FConverterRegistry::Get().Unregister(NAME_Vector);
 	FConverterRegistry::Get().Unregister(NAME_Vector2D);
 	FConverterRegistry::Get().Unregister(FWidgetPropertyPath::StaticStruct()->GetFName());
+	FConverterRegistry::Get().Unregister(NAME_ObjectProperty);
 
 	UnregisterCustomPropertyRun(UObject::StaticClass(), TEXT("Name"));
 	UnregisterCustomPropertyRun(UBlueprint::StaticClass(), TEXT("Super"));

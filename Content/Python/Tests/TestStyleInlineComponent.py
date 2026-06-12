@@ -131,6 +131,20 @@ class TestStyleInlineComponent(WidgetMarkupComponent):
             if not w:
                 fail("PreviewProgressBar widget not found")
 
+            # --- System font style ---
+            for name in ("PreviewSymbols", "PreviewArrows", "PreviewOperators", "PreviewDingbats"):
+                w = uw.get_editor_property(name)
+                if not w:
+                    fail(f"{name} widget not found")
+                else:
+                    font = w.get_editor_property("Font")
+                    if font is None:
+                        fail(f"{name}: Font is None")
+                    else:
+                        font_size = font.size
+                        if font_size <= 0:
+                            fail(f"{name}: Font.size is {font_size}")
+
             if errors:
                 for e in errors:
                     unreal.log_error(f"[TestStyleInline] FAIL: {e}")
