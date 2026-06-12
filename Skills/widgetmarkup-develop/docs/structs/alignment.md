@@ -1,27 +1,27 @@
 # EHorizontalAlignment / EVerticalAlignment
 
-Control how content aligns within its slot.
+Control how content aligns within its slot. Use the **UE enum entry names** (case-sensitive), not editor display names.
 
 **EHorizontalAlignment:**
 
 | Value | Description |
 |---|---|
-| `Left` | Align to left edge |
-| `Center` | Center horizontally |
-| `Right` | Align to right edge |
-| `Fill` | Stretch to fill width |
+| `HAlign_Left` | Align to left edge |
+| `HAlign_Center` | Center horizontally |
+| `HAlign_Right` | Align to right edge |
+| `HAlign_Fill` | Stretch to fill width |
 
 **EVerticalAlignment:**
 
 | Value | Description |
 |---|---|
-| `Top` | Align to top edge |
-| `Center` | Center vertically |
-| `Bottom` | Align to bottom edge |
-| `Fill` | Stretch to fill height |
+| `VAlign_Top` | Align to top edge |
+| `VAlign_Center` | Center vertically |
+| `VAlign_Bottom` | Align to bottom edge |
+| `VAlign_Fill` | Stretch to fill height |
 
 ```xml
 <TextBlock Text="Centered">
-  <Slot HorizontalAlignment="Center" VerticalAlignment="Center" />
+  <Slot HorizontalAlignment="HAlign_Center" VerticalAlignment="VAlign_Center" />
 </TextBlock>
 ```

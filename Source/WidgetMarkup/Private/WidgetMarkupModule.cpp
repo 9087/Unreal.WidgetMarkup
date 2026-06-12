@@ -299,13 +299,13 @@ TSharedRef<IPropertyRun> FWidgetMarkupModule::CreatePropertyRun(UStruct* InStruc
 		return CustomPropertyRun.ToSharedRef();
 	}
 
-	// Auto-detect delegate properties: any multicast delegate attribute on a widget
-	// is treated as a delegate binding and forwarded to FWidgetDelegatePropertyRun.
+	// Auto-detect delegate properties: multicast and single-cast dynamic delegate
+	// attributes on a widget are forwarded to FWidgetDelegatePropertyRun.
 	if (InStruct && InStruct->IsChildOf<UWidget>())
 	{
 		if (FProperty* Property = InStruct->FindPropertyByName(InPropertyPath))
 		{
-			if (Property->IsA<FMulticastDelegateProperty>())
+			if (Property->IsA<FMulticastDelegateProperty>() || Property->IsA<FDelegateProperty>())
 			{
 				return FWidgetDelegatePropertyRun::Create();
 			}

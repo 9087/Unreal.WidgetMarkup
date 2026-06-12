@@ -24,7 +24,7 @@ FElementNode::FResult FWidgetDelegatePropertyRun::OnBegin(FElementNode::FContext
 	// Verify the property is actually a delegate on this widget type.
 	const FName PropName(PropertyName);
 	FProperty* Property = Widget->GetClass()->FindPropertyByName(PropName);
-	if (!Property || !Property->IsA<FMulticastDelegateProperty>())
+	if (!Property || (!Property->IsA<FMulticastDelegateProperty>() && !Property->IsA<FDelegateProperty>()))
 	{
 		return FElementNode::FResult::Failure().Error(FText::Format(
 			FText::FromString(TEXT("'{0}' is not a valid delegate property on '{1}'.")),

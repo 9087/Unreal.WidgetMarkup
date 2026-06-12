@@ -231,6 +231,8 @@ Literal (non-binding) values are converted by UE's property system:
 
 See [docs/python-components.md](docs/python-components.md) for the complete Python component development guide and ListView setup.
 
+> **Critical — WidgetMarkupApp `unreal` API:** Python runs in WidgetMarkupApp, not the full Editor. Library names use UE `ScriptName` (`unreal.InputLibrary`, not `KismetInputLibrary`; `unreal.WidgetLibrary`, not `WidgetBlueprintLibrary`). `unreal.PointerEvent` has **no** readable `effecting_button` field — use `unreal.InputLibrary.pointer_event_get_effecting_button(mouse_event)`. See [docs/unreal-python-api.md](docs/unreal-python-api.md).
+
 - **`@reactive`** — settable properties (int, float, str, bool, list) that auto-push to bound widgets
 - **`@computed`** — read-only derived properties with automatic dependency tracking
 - **`ObservableCollection`** — reactive lists; `append`/`pop`/`clear` auto-trigger ListView refresh
