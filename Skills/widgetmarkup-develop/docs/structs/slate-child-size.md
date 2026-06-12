@@ -20,4 +20,4 @@ Controls how much space a slot occupies in the direction of its parent panel. Us
 </VerticalBox>
 ```
 
-> **XML nesting:** TODO. Nested `<Size SizeRule="Automatic" />` as a child element is not supported. Use dotted attributes (`Size.SizeRule="Automatic"`).
+> **XML nesting:** Child-element syntax (`<Size><SizeRule>Automatic</SizeRule></Size>`) is supported via `FPropertyPathResolver`. Dotted attributes (`Size.SizeRule="Automatic"`) are typically more concise.

@@ -18,4 +18,4 @@ Applies a 2D transform to any widget. Available on all widgets via `RenderTransf
 
 > **Note:** `RenderTransform` is purely visual — it does not affect layout. The widget's slot still occupies its original position.
 
-> **XML nesting:** TODO. Nested `<RenderTransform Translation="10,0" />` as a child element is not supported. Use dotted attributes (`RenderTransform.Translation="10,0"`).
+> **XML nesting:** Child-element syntax (`<RenderTransform><Translation>10,0</Translation></RenderTransform>`) is supported via `FPropertyPathResolver`. Dotted attributes are typically more concise.

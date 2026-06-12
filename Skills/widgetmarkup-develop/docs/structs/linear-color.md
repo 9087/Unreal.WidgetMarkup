@@ -12,4 +12,4 @@ RGBA color with float components (0–1). Used by most color properties.
 
 **Python:** Use `unreal.LinearColor(r, g, b, a)`.
 
-> **XML nesting:** TODO. Nested `<ColorAndOpacity R="1" G="0" B="0" A="1" />` is not yet supported. Use the `"R,G,B,A"` string format instead.
+> **XML nesting:** Child-element syntax (`<ColorAndOpacity><R>1</R><G>0</G><B>0</B><A>1</A></ColorAndOpacity>`) is supported via `FPropertyPathResolver`.

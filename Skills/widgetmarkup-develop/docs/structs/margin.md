@@ -12,4 +12,4 @@
 
 Also used as `FAnchorData.Offsets` on CanvasPanel slots, where values represent Position X, Y, Width, Height instead of margins.
 
-> **XML nesting:** TODO. Nested `<Padding Left="4" Top="4" Right="4" Bottom="4" />` is not yet supported. Use the `"L,T,R,B"` string format.
+> **XML nesting:** Child-element syntax (`<Padding><Left>4</Left><Top>4</Top><Right>4</Right><Bottom>4</Bottom></Padding>`) is supported via `FPropertyPathResolver`. The `"L,T,R,B"` string format is typically more concise.

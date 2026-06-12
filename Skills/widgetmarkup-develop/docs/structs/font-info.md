@@ -14,4 +14,4 @@ Font configuration for text widgets.
 
 Used by: [TextBlock](../widgets/textblock.md)
 
-> **Partial XML nesting:** Dotted attributes like `Font.Size="24"` work. Nested `<Font Size="24" />` as a child element is TODO.
+> **XML nesting:** Child-element syntax (`<Font><Size>18</Size></Font>`) is supported via `FPropertyPathResolver`.

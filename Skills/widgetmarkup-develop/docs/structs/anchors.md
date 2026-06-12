@@ -18,4 +18,4 @@ When Min == Max, the slot has a fixed anchor point. When Min ≠ Max, the slot s
 
 See also: [FAnchorData](anchor-data.md), [CanvasPanel](../widgets/panels.md#canvaspanel)
 
-> **XML nesting:** TODO. Nested `<Anchors Minimum="0,0" Maximum="1,1" />` is not supported. Use dotted attributes (`LayoutData.Anchors.Minimum="0,0"`).
+> **XML nesting:** Child-element syntax (`<LayoutData.Anchors><Minimum>0,0</Minimum><Maximum>1,1</Maximum></LayoutData.Anchors>`) is supported via `FPropertyPathResolver`. Dotted attributes (`LayoutData.Anchors.Minimum="0,0"`) are typically more concise.

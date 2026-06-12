@@ -20,4 +20,4 @@ Describes how to draw a widget background/image: what texture/material, how to s
 
 Used by: [Image](../widgets/image.md) (`Brush`), [Border](../widgets/border.md) (`Background`).
 
-> **XML nesting:** TODO. Nested `<Brush><ResourceObject>...</ResourceObject></Brush>` is not supported. Use dotted attributes (`Brush.ResourceObject="..."`).
+> **XML nesting:** Child-element syntax (`<Brush><ResourceObject>/Game/Textures/Icon</ResourceObject></Brush>`) is supported via `FPropertyPathResolver`. Dotted attributes (`Brush.ResourceObject="..."`) are typically more concise.
