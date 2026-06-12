@@ -1,6 +1,7 @@
 // Copyright 2025 Wu Zhiwei. All Rights Reserved.
 
 #include "WidgetMarkupFontProvider.h"
+#include "WidgetMarkupModule.h"
 #include "Fonts/CompositeFont.h"
 #include "Fonts/SlateFontInfo.h"
 #include "HAL/FileManager.h"

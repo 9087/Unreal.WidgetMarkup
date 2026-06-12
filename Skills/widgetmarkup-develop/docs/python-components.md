@@ -1,5 +1,7 @@
 # Python Components
 
+> **WidgetMarkupApp `unreal` API:** See [unreal-python-api.md](unreal-python-api.md) for `ScriptName` mappings (`InputLibrary`, `WidgetLibrary`), `PointerEvent` / mouse-button handling, and common pitfalls.
+
 ## Basic Component
 
 ```python

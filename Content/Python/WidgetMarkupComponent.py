@@ -351,7 +351,14 @@ class WidgetMarkupComponent:
             unreal.log_warning(f"WidgetMarkup: delegate '{delegate_name}' not found on '{target_name}', tried: {', '.join(tried_names)}")
             return
 
-        delegate_attr.add_callable(python_method)
+        if hasattr(delegate_attr, "bind_callable"):
+            delegate_attr.bind_callable(python_method)
+        elif hasattr(delegate_attr, "add_callable"):
+            delegate_attr.add_callable(python_method)
+        else:
+            unreal.log_warning(
+                f"WidgetMarkup: delegate '{delegate_name}' on '{target_name}' does not support bind_callable or add_callable"
+            )
 
     def prime_computed_dependencies(self) -> None:
         """Warm up computed dependencies after the owner finishes initialization.

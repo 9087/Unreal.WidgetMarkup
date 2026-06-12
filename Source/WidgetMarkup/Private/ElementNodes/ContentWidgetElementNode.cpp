@@ -3,6 +3,7 @@
 #include "ContentWidgetElementNode.h"
 
 #include "Components/ContentWidget.h"
+#include "Components/Widget.h"
 
 #define LOCTEXT_NAMESPACE "WidgetMarkup"
 
@@ -20,6 +21,14 @@ FElementNode::FResult FContentWidgetElementNode::OnAddChild(const TSharedRef<FEl
 	{
 		return FResult::Failure().Error(FText::FromString(TEXT("ContentWidgetElementNode: underlying object is not a valid UContentWidget instance.")));
 	}
+
+	// A content widget accepts multiple logical element nodes (properties, structs, scalars)
+	// but only one widget child in its content slot.
+	if (!Cast<UWidget>(Child->GetObject()))
+	{
+		return FResult::Success();
+	}
+
 	if (ContentWidget->GetContent() != nullptr)
 	{
 		return FResult::Failure().Error(FText::Format(FText::FromString(TEXT("{0} instance only allows one child.")), Object->GetClass()->GetDisplayNameText()));
