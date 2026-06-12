@@ -12,4 +12,4 @@
 
 **Python:** `unreal.Vector2D(x, y)`
 
-> **Partial XML nesting:** Dotted attributes like `RenderTransform.Translation="10,0"` work. Nested `<ShadowOffset X="2" Y="2" />` as a child element is TODO.
+> **XML nesting:** Child-element syntax (`<ShadowOffset><X>2</X><Y>2</Y></ShadowOffset>`) is supported via `FPropertyPathResolver`.

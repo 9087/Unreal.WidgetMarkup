@@ -221,9 +221,11 @@ Literal (non-binding) values are converted by UE's property system:
 - `"True"` / `"False"` → bool
 - `"3.14"` → float/double
 - `"42"` → int32/int64/byte
-- `"/Path/To/Class"` → UClass/UObject reference
+- `"/Path/To/Class"` → UClass/UObject reference (via `StaticLoadObject`)
 - Colors: `"1,0,0,1"` → FLinearColor; use `unreal.SlateColor()` in Python bindings
 - Structs: `"0,0,100"` → FVector; `"4,4,4,4"` → FMargin
+
+> **ObjectProperty asset path conversion:** Properties of type `ObjectProperty` (e.g., `Brush.ResourceObject`, `Font.FontObject`) accept asset paths like `"/Game/Textures/MyIcon"` which are loaded via `StaticLoadObject`. If the path fails, and the property is `Font.FontObject` on `FSlateFontInfo`, the system falls back to loading a system font by name (e.g., `Font.FontObject='seguisym'`).
 
 ## 4. Python & ListView
 
@@ -243,16 +245,154 @@ See [docs/python-components.md](docs/python-components.md) for the complete Pyth
 
 ## 5. Style Sheets
 
-Style sheets apply runtime property overrides to named widgets. Defined inline or as standalone assets, stored in `UWidgetMarkupBlueprintExtension`.
+Style sheets apply runtime property overrides to widgets by type and/or name. They are defined inline inside `<WidgetBlueprint>` or as standalone `.widgetmarkup` files. Styles are stored in `UWidgetMarkupBlueprintExtension` and resolved via `UWidgetStyleSheet::ResolveComputedStyles`.
+
+### 5.1 Style Sheet Forms
+
+**Inline** — `<StyleSheet>` as a child of `<WidgetBlueprint>` (before `<WidgetTree>`):
 
 ```xml
-<WidgetBlueprint Script="Samples.MyComponent">
+<WidgetBlueprint Script="MyApp.MyComponent">
+  <StyleSheet>
+    <Style TargetType="TextBlock">
+      <Setter Property="Font.Size" Value="14" />
+      <Setter Property="ColorAndOpacity" Value="0.78,0.78,0.78,1" />
+    </Style>
+  </StyleSheet>
   <WidgetTree>
-    <TextBlock Name="Title" Text="Default" />
+    <TextBlock Text="Hello" />
   </WidgetTree>
-  <!-- Style overrides are applied after widget construction -->
 </WidgetBlueprint>
 ```
+
+**Standalone** — root element is `<StyleSheet>`, no `<WidgetTree>`:
+
+```xml
+<StyleSheet>
+  <Style TargetType="TextBlock">
+    <Setter Property="Font.Size" Value="12" />
+    <Setter Property="ColorAndOpacity" Value="0.5,0.5,0.5,1" />
+  </Style>
+</StyleSheet>
+```
+
+Standalone stylesheets can be inherited by other stylesheets (see §5.2).
+
+### 5.2 Style Inheritance
+
+Use `Inherit="/Path/To/Base"` on `<StyleSheet>` to merge styles from a base stylesheet. The base is loaded first, then the current sheet's styles are merged on top — same `(TargetType, Name)` pairs replace the base entry.
+
+```xml
+<!-- BaseStyles.widgetmarkup: base implicit TextBlock style -->
+<StyleSheet>
+  <Style TargetType="TextBlock">
+    <Setter Property="Font.Size" Value="12" />
+    <Setter Property="ColorAndOpacity" Value="0.5,0.5,0.5,1" />
+  </Style>
+</StyleSheet>
+```
+
+```xml
+<!-- Override: inherits base, overrides Font.Size, adds named Title style -->
+<WidgetBlueprint Script="MyApp.MyComponent">
+  <StyleSheet Inherit="/Game/Styles/BaseStyles">
+    <Style TargetType="TextBlock">
+      <Setter Property="Font.Size" Value="18" />
+    </Style>
+    <Style TargetType="TextBlock" Name="Title">
+      <Setter Property="Font.Size" Value="24" />
+      <Setter Property="ColorAndOpacity" Value="1,0.5,0,1" />
+    </Style>
+  </StyleSheet>
+  <WidgetTree>...</WidgetTree>
+</WidgetBlueprint>
+```
+
+### 5.3 Implicit vs Explicit Styles
+
+- **Implicit** (no `Name`): matches ALL widgets of the given `TargetType`. Applied automatically.
+- **Explicit** (`Name="StyleName"`): only applied when a widget has `Style="StyleName"`.
+
+```xml
+<StyleSheet>
+  <!-- Implicit: every TextBlock gets Font.Size=14 -->
+  <Style TargetType="TextBlock">
+    <Setter Property="Font.Size" Value="14" />
+  </Style>
+
+  <!-- Explicit: only TextBlocks with Style="Header" get these overrides -->
+  <Style TargetType="TextBlock" Name="Header">
+    <Setter Property="Font.Size" Value="26" />
+    <Setter Property="ColorAndOpacity" Value="1,1,1,1" />
+  </Style>
+
+  <!-- Explicit on non-TextBlock types -->
+  <Style TargetType="Border" Name="Card">
+    <Setter Property="BrushColor" Value="0.12,0.12,0.14,1" />
+    <Setter Property="Padding.Left" Value="12" />
+    <Setter Property="Padding.Top" Value="8" />
+    <Setter Property="Padding.Right" Value="12" />
+    <Setter Property="Padding.Bottom" Value="8" />
+  </Style>
+
+  <Style TargetType="Button" Name="PrimaryButton">
+    <Setter Property="ColorAndOpacity" Value="0.15,0.5,0.9,1" />
+  </Style>
+</StyleSheet>
+```
+
+Apply explicit styles with the `Style` attribute:
+
+```xml
+<TextBlock Style="Header" Text="Section Title" />
+<Border Style="Card">
+  <TextBlock Text="Card content" />
+</Border>
+<Button Style="PrimaryButton" OnClicked="on_confirm">
+  <TextBlock Text="Confirm" />
+</Button>
+```
+
+### 5.4 Setter Syntax
+
+`<Setter Property="PropertyPath" Value="LiteralValue" />`
+
+The `Property` supports dot-separated sub-property paths (e.g., `Font.Size`, `Padding.Left`). The `Value` is parsed through the same conversion pipeline as XML attributes (see §3.4).
+
+| Setter example | Effect |
+|---|---|
+| `<Setter Property="Font.Size" Value="14" />` | Set nested struct field |
+| `<Setter Property="ColorAndOpacity" Value="1,0,0,1" />` | FLinearColor from CSV string |
+| `<Setter Property="Padding.Left" Value="12" />` | Single margin component |
+| `<Setter Property="BrushColor" Value="0.12,0.12,0.14,1" />` | FLinearColor on Border |
+| `<Setter Property="FillColorAndOpacity" Value="0.1,0.8,0.3,1" />` | Fill color on ProgressBar |
+
+### 5.5 System Fonts via Font.FontObject
+
+`Font.FontObject` accepts a font family name (e.g., `'seguisym'`) to load a system font without requiring a UFont asset:
+
+```xml
+<Style TargetType="TextBlock" Name="IconFont">
+  <Setter Property="Font.FontObject" Value="seguisym" />
+  <Setter Property="Font.Size" Value="20" />
+  <Setter Property="ColorAndOpacity" Value="0.3,0.85,1,1" />
+</Style>
+```
+
+```xml
+<TextBlock Style="IconFont" Text="▲ ▼ ◀ ▶" />
+```
+
+> **How it works:** `FObjectConverter` first tries `StaticLoadObject` on the value as an asset path. If that fails and the property is `FontObject` on `FSlateFontInfo`, `UWidgetMarkupFontProvider::CreateFromFontName` resolves the font file from OS font directories (Windows: `%SystemRoot%/Fonts/`, `%LocalAppData%/Microsoft/Windows/Fonts/`; Mac: `/System/Library/Fonts/`, `/Library/Fonts/`; Linux: `/usr/share/fonts/truetype/`).
+
+### 5.6 Resolution Order
+
+1. Base stylesheet loaded (if `Inherit` specified)
+2. Current sheet's styles merged on top (same `(TargetType, Name)` replaces)
+3. `UWidgetStyleSheet::ResolveComputedStyles` produces flat `ComputedStyles` array
+4. At widget construction, implicit styles apply first, then explicit `Style="Name"` overrides
+
+> **Warning:** Styles are applied at widget construction time. Changing `Style` at runtime has no effect.
 
 ## 6. Build & Run
 
