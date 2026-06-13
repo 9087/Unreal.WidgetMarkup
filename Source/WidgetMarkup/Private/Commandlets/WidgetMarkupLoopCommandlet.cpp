@@ -3,6 +3,8 @@
 #include "Commandlets/WidgetMarkupLoopCommandlet.h"
 
 #include "Containers/Ticker.h"
+#include "DirectoryWatcherModule.h"
+#include "IDirectoryWatcher.h"
 #include "Framework/Application/SlateApplication.h"
 #include "HAL/PlatformProcess.h"
 #include "HAL/ThreadManager.h"
@@ -75,6 +77,9 @@ int32 UWidgetMarkupLoopCommandlet::Main(const FString& Params)
 		return ExitModuleLoadFailed;
 	}
 
+	FModuleManager::Get().LoadModule(TEXT("DirectoryWatcher"));
+	FWidgetMarkupModule::Get().EnsureSourceFileWatching();
+
 	int32 ExitCode = ExitSuccess;
 
 	TStrongObjectPtr<UWidgetMarkupWindow> WidgetMarkupWindow;
@@ -109,6 +114,15 @@ int32 UWidgetMarkupLoopCommandlet::Main(const FString& Params)
 
 		FTaskGraphInterface::Get().ProcessThreadUntilIdle(ENamedThreads::GameThread);
 		FTSTicker::GetCoreTicker().Tick(DeltaSeconds);
+
+		// Tick DirectoryWatcher so source-file hot-reload works in standalone Program targets.
+		if (FModuleManager::Get().IsModuleLoaded("DirectoryWatcher"))
+		{
+			if (auto* DirectoryWatcherModule = FModuleManager::GetModulePtr<FDirectoryWatcherModule>(FName("DirectoryWatcher")))
+			{
+				DirectoryWatcherModule->Get()->Tick(DeltaSeconds);
+			}
+		}
 
 		FSlateApplication::Get().PumpMessages();
 		FSlateApplication::Get().Tick();

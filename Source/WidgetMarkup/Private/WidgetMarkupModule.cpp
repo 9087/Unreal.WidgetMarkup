@@ -637,6 +637,11 @@ void FWidgetMarkupModule::UnregisterCustomPropertySetter(UStruct* InStruct, FNam
 
 void FWidgetMarkupModule::OnPostEngineInit()
 {
+	EnsureSourceFileWatching();
+}
+
+void FWidgetMarkupModule::EnsureSourceFileWatching()
+{
 	for (const FDirectoryPath& DirectoryPath : UWidgetMarkupSettings::Get().SourceFileDirectoryPaths)
 	{
 		StartSourceFileWatching(DirectoryPath);
@@ -658,8 +663,10 @@ void FWidgetMarkupModule::StartSourceFileWatching(const FDirectoryPath& InDirect
 		return;
 	}
 	FPaths::NormalizeDirectoryName(DirectoryPath);
+	DirectoryPath = FPaths::ConvertRelativePathToFull(DirectoryPath);
 	if (!FPaths::DirectoryExists(DirectoryPath))
 	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("StartSourceFileWatching: directory does not exist '%s', skipping."), *DirectoryPath);
 		return;
 	}
 	if (WatchedDirectories.Contains(DirectoryPath))
@@ -707,6 +714,7 @@ void FWidgetMarkupModule::StopSourceFileWatching()
 
 void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct FFileChangeData>& FileChanges, const FString& WatchedDirectory)
 {
+	UE_LOG(LogWidgetMarkup, Display, TEXT("Source File Changed: directory watcher fired with %d change(s) in '%s'."), FileChanges.Num(), *WatchedDirectory);
 	for (const auto& FileChangeData : FileChanges)
 	{
 		switch (FileChangeData.Action)
@@ -715,14 +723,17 @@ void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct
 		case FFileChangeData::FCA_Modified:
 		case FFileChangeData::FCA_RescanRequired:
 		{
-			// FileChangeData.Filename may be relative to the watched directory
 			FString AbsoluteFilePath = FileChangeData.Filename;
 			if (FPaths::IsRelative(AbsoluteFilePath))
 			{
-				AbsoluteFilePath = FPaths::Combine(WatchedDirectory, AbsoluteFilePath);
+				// The DirectoryWatcher may report a path relative to BaseDir()
+				// (e.g. ../../../Game/Content/File.widgetmarkup) instead of
+				// relative to the registered directory. ConvertRelativePathToFull
+				// resolves ../ against FPlatformProcess::BaseDir(), which
+				// produces the correct absolute path for both Engine/Binaries
+				// and Game/Binaries base directories.
+				AbsoluteFilePath = FPaths::ConvertRelativePathToFull(AbsoluteFilePath);
 			}
-			// Convert to fully qualified absolute path, resolving all .. segments
-			AbsoluteFilePath = FPaths::ConvertRelativePathToFull(AbsoluteFilePath);
 			FPaths::NormalizeFilename(AbsoluteFilePath);
 
 			FString PackagePath;
