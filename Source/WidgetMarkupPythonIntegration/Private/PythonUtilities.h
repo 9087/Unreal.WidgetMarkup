@@ -15,12 +15,23 @@ THIRD_PARTY_INCLUDES_END
 
 struct _object;
 typedef _object PyObject;
+struct PyMethodDef;
 
 class FPythonUtilities
 {
 public:
 	static FString PythonObjectToString(PyObject* InObject);
 	static FString ConsumePythonErrorMessage();
+
+#if defined(WITH_PYTHON) && WITH_PYTHON
+	/** Register a static-method-only Python type on a module (e.g. widget_markup.DataBinding). */
+	static bool AddStaticMethodType(
+		PyObject* Module,
+		const char* AttributeName,
+		const char* QualifiedName,
+		PyMethodDef* Methods,
+		const char* Doc);
+#endif
 };
 
 class FPythonAutoRelease

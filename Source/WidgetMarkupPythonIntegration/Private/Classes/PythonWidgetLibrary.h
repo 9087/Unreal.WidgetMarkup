@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 
-class FPythonWidgetMarkupComponent;
-class UUserWidget;
 typedef struct _object PyObject;
 
-bool RegisterWidgetMarkupPythonIntegrationNativeModule();
+bool RegisterPythonWidgetLibraryType(PyObject* Module);

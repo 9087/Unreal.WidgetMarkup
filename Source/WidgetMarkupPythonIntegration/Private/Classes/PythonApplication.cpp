@@ -1,0 +1,41 @@
+// Copyright 2025 Wu Zhiwei. All Rights Reserved.
+
+#include "Classes/PythonApplication.h"
+
+#include "PythonUtilities.h"
+#include "WidgetMarkupModule.h"
+
+#if defined(WITH_PYTHON) && WITH_PYTHON
+
+namespace
+{
+	PyObject* PyRequestShutdown(PyObject* /*Self*/, PyObject* /*Args*/)
+	{
+		FPlatformMisc::RequestExit(true);
+		Py_RETURN_NONE;
+	}
+
+	PyObject* PyGetExtraArguments(PyObject* /*Self*/, PyObject* /*Args*/)
+	{
+		return PyUnicode_FromString(TCHAR_TO_UTF8(*FWidgetMarkupModule::Get().GetExtraArguments()));
+	}
+
+	PyMethodDef ApplicationMethods[] =
+	{
+		{ "get_extra_arguments", PyGetExtraArguments, METH_NOARGS | METH_STATIC, "Get the current WidgetMarkupApp extra arguments string." },
+		{ "request_shutdown", PyRequestShutdown, METH_NOARGS | METH_STATIC, "Request engine exit (for standalone programs)." },
+		{ nullptr, nullptr, 0, nullptr }
+	};
+}
+
+bool RegisterPythonApplicationType(PyObject* Module)
+{
+	return FPythonUtilities::AddStaticMethodType(
+		Module,
+		"Application",
+		"widget_markup.Application",
+		ApplicationMethods,
+		"WidgetMarkupApp application helpers.");
+}
+
+#endif

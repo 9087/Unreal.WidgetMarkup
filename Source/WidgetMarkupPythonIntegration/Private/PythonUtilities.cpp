@@ -53,6 +53,46 @@ FString FPythonUtilities::ConsumePythonErrorMessage()
 #endif
 }
 
+#if defined(WITH_PYTHON) && WITH_PYTHON
+namespace
+{
+	PyObject* CreateStaticMethodType(const char* QualifiedName, PyMethodDef* Methods, const char* Doc)
+	{
+		PyType_Slot TypeSlots[] = {
+			{ Py_tp_methods, Methods },
+			{ Py_tp_doc, const_cast<char*>(Doc) },
+			{ 0, nullptr },
+		};
+
+		PyType_Spec TypeSpec = {
+			QualifiedName,
+			0,
+			0,
+			Py_TPFLAGS_DEFAULT,
+			TypeSlots,
+		};
+
+		return PyType_FromSpec(&TypeSpec);
+	}
+}
+
+bool FPythonUtilities::AddStaticMethodType(
+	PyObject* Module,
+	const char* AttributeName,
+	const char* QualifiedName,
+	PyMethodDef* Methods,
+	const char* Doc)
+{
+	FPythonAutoRelease TypeObject(CreateStaticMethodType(QualifiedName, Methods, Doc));
+	if (!TypeObject)
+	{
+		return false;
+	}
+
+	return PyModule_AddObject(Module, AttributeName, TypeObject.Get()) == 0;
+}
+#endif
+
 FPythonAutoRelease::FPythonAutoRelease(PyObject* InObject)
 	: Object(InObject)
 {
