@@ -1,6 +1,14 @@
-# unreal Python API (WidgetMarkupApp)
+# unreal Python API (WidgetMarkup)
 
-WidgetMarkup components run inside **WidgetMarkupApp**, which exposes a subset of UE's Python bindings. Names and availability differ from the full Editor — do not assume Editor documentation applies verbatim.
+WidgetMarkup components run with UE's Python bindings exposed by the **WidgetMarkup** plugin. The subset of `unreal` types and libraries available at runtime differs from the full Editor — do not assume Editor documentation applies verbatim.
+
+## `widget_markup` vs `unreal`
+
+Most APIs live on **`unreal`**: widget types, delegates, `unreal.WidgetLibrary`, `unreal.SystemLibrary`, and the rest of the UE Python surface. **`widget_markup`** is a thin extension for WidgetMarkup-specific helpers and workarounds.
+
+**Lookup order:** check `widget_markup` only for APIs listed in [widget_markup native module](#widget_markup-native-module) below (or called out elsewhere in this doc). If a function or type is not there, use native **`unreal`** — but confirm names against [ScriptName](#scriptname-vs-c-class-name) rules; WidgetMarkup does not expose the full Editor API.
+
+Examples on `unreal`: `unreal.WidgetLibrary.handled()`, `unreal.UserWidget`, `unreal.SystemLibrary.print_string`. Prefer `widget_markup` only where this doc says so (e.g. `InputLibrary` / `Key` for pointer events in delegate handlers).
 
 ## ScriptName vs C++ class name
 
@@ -12,24 +20,50 @@ Blueprint function libraries are exported under their `ScriptName` meta, **not**
 | `UWidgetBlueprintLibrary` | `unreal.WidgetLibrary` |
 | `UKismetSystemLibrary` | `unreal.SystemLibrary` |
 
-`unreal.KismetInputLibrary` and `unreal.WidgetBlueprintLibrary` are **`None`** in WidgetMarkupApp. `unreal.load_class(None, "/Script/Engine.KismetInputLibrary")` returns a `UClass` but does **not** expose static UFUNCTIONs as Python methods — use the `ScriptName` entry on `unreal` instead.
+`unreal.KismetInputLibrary` and `unreal.WidgetBlueprintLibrary` are **`None`** in WidgetMarkup. `unreal.load_class(None, "/Script/Engine.KismetInputLibrary")` returns a `UClass` but does **not** expose static UFUNCTIONs as Python methods — use the `ScriptName` entry on `unreal` instead.
 
-## PointerEvent — no direct field access
+## PointerEvent — prefer `widget_markup.InputLibrary`
 
 `unreal.PointerEvent` is passed to `OnMouseButtonDownEvent` handlers, but **`effecting_button` is not a readable Python property** (the underlying `FPointerEvent::EffectingButton` member is not exported to reflection).
 
-Use `InputLibrary`:
+In widget delegate handlers, **prefer** `widget_markup.InputLibrary` for reading pointer input:
 
 ```python
-button_key = unreal.InputLibrary.pointer_event_get_effecting_button(mouse_event)
+import widget_markup
+
+button_key = widget_markup.InputLibrary.pointer_event_get_effecting_button(mouse_event)
 button_name = str(button_key.key_name)  # e.g. "LeftMouseButton", "RightMouseButton"
+
+is_right = widget_markup.InputLibrary.pointer_event_is_mouse_button_down(
+    mouse_event, widget_markup.Key.RightMouseButton
+)
 ```
 
-Do **not** use `unreal.KismetInputLibrary`, `widget_markup.pointer_event_get_effecting_button`, or `mouse_event.get_editor_property("effecting_button")`.
+`pointer_event_is_mouse_button_down` accepts an `unreal.Key` instance, a `widget_markup.Key` constant, or a key **name string** (the `FName` used by `EKeys`, e.g. `"LeftMouseButton"`).
 
-## FKey — no `LEFT_MOUSE_BUTTON` constants
+These helpers mirror `unreal.InputLibrary` pointer-event APIs and are tailored for the WidgetMarkup delegate workflow. `mouse_event.get_editor_property("effecting_button")` is also unavailable.
 
-`unreal.Key.LEFT_MOUSE_BUTTON` / `RIGHT_MOUSE_BUTTON` are **not** available in WidgetMarkupApp. Compare the string from `button_key.key_name`, or use `InputLibrary.equal_equal_key_key(a, b)` when you have two `FKey` values.
+## FKey — use `widget_markup.Key` for `EKeys` constants
+
+`unreal.Key` wraps the `FKey` **struct** (`key_name: FName`). C++ defines well-known keys as `EKeys::LeftMouseButton`, `EKeys::RightMouseButton`, and so on — static `FKey` values, **not** a `UENUM`. UE does not export them on `unreal.Key`.
+
+WidgetMarkup provides **`widget_markup.Key`**: a namespace class whose attributes mirror `EKeys` member names. Each value is an `unreal.Key` ready for `InputLibrary` helpers or direct comparison:
+
+```python
+import widget_markup
+
+button_key = widget_markup.InputLibrary.pointer_event_get_effecting_button(mouse_event)
+if button_key == widget_markup.Key.RightMouseButton:
+    self.flag_cell()
+elif button_key == widget_markup.Key.LeftMouseButton:
+    self.reveal_cell()
+
+widget_markup.InputLibrary.pointer_event_is_mouse_button_down(
+    mouse_event, widget_markup.Key.LeftMouseButton
+)
+```
+
+`widget_markup.Key` cannot be instantiated. VR-controller keys from `EKeys` are not exported yet; use a key name string if needed.
 
 ## WidgetLibrary for event replies
 
@@ -57,10 +91,10 @@ Set decorative child text to `Visibility="HitTestInvisible"` so it does not stea
 
 ```python
 def on_item_tile_mouse_down(self, geometry: unreal.Geometry, mouse_event: unreal.PointerEvent):
-    button_name = str(unreal.InputLibrary.pointer_event_get_effecting_button(mouse_event).key_name)
-    if button_name == "RightMouseButton":
+    button_key = widget_markup.InputLibrary.pointer_event_get_effecting_button(mouse_event)
+    if button_key == widget_markup.Key.RightMouseButton:
         self.open_item_context_menu()
-    elif button_name == "LeftMouseButton":
+    elif button_key == widget_markup.Key.LeftMouseButton:
         self.select_item()
     return unreal.WidgetLibrary.handled()
 ```
@@ -69,12 +103,40 @@ def on_item_tile_mouse_down(self, geometry: unreal.Geometry, mouse_event: unreal
 
 ## widget_markup native module
 
-Project-specific helpers only:
+WidgetMarkup-specific helpers on `import widget_markup`. For anything not listed here, use **`unreal`** (see [lookup order](#widget_markup-vs-unreal) above).
 
-| Function | Purpose |
-|---|---|
-| `widget_markup.find_widget_in_user_widget(user_widget, name)` | Find a named widget in the tree |
-| `widget_markup.apply_property_binding(...)` | Internal binding pipeline |
-| `widget_markup.request_shutdown()` | Exit WidgetMarkupApp (tests) |
+### `widget_markup.DataBinding`
 
-Do not add C++ wrappers for APIs already on `unreal.InputLibrary` / `unreal.WidgetLibrary`.
+Internal binding pipeline used by the markup compiler and reactive property updates.
+
+- **`apply_property_binding(user_widget, binding, value)`** — apply a resolved property binding to a widget instance.
+
+### `widget_markup.WidgetLibrary`
+
+Widget tree lookup and list-entry data access.
+
+- **`find_widget_in_user_widget(user_widget, name)`** — find a named widget in the user widget tree.
+- **`get_python_object_from_list_entry(list_entry)`** — get the Python data object from a `PythonWidgetMarkupListEntry`.
+
+### `widget_markup.Application`
+
+WidgetMarkupApp launcher utilities (CLI and process control). Only relevant when running the standalone `.exe`.
+
+- **`get_extra_arguments()`** — extra command-line arguments passed after the blueprint path.
+- **`request_shutdown()`** — request process exit (used by automated tests).
+
+### `widget_markup.Key`
+
+`EKeys` constants as `unreal.Key` class attributes (keyboard, mouse, gamepad, platform). Not instantiable.
+
+- **`LeftMouseButton`**, **`RightMouseButton`**, **`MiddleMouseButton`**, … — mouse buttons
+- **`A`** … **`Z`**, **`Zero`** … **`Nine`**, **`F1`** … **`F12`**, arrow keys, modifiers, … — keyboard
+- **`Gamepad_FaceButton_Bottom`**, **`Gamepad_DPad_Up`**, … — gamepad
+- See `PythonKey.cpp` for the full exported list
+
+### `widget_markup.InputLibrary`
+
+Pointer-event helpers safe to call from widget delegate handlers (see [PointerEvent](#pointerevent--prefer-widget_markupinputlibrary) above).
+
+- **`pointer_event_get_effecting_button(mouse_event)`** — effecting button as `unreal.Key`.
+- **`pointer_event_is_mouse_button_down(mouse_event, key)`** — whether a button is down; `key` is an `unreal.Key`, a `widget_markup.Key` constant, or a key name string.

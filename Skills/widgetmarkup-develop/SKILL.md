@@ -164,7 +164,7 @@ Flow:
 Python: self.display_value = "new"
   → @reactive setter → _notify()
     → on_property_changed("display_value", "new")
-      → widget_markup.apply_property_binding(widget, binding, value)
+      → widget_markup.DataBinding.apply_property_binding(widget, binding, value)
         → C++ applies value to UMG property
 ```
 
@@ -231,7 +231,7 @@ Literal (non-binding) values are converted by UE's property system:
 
 See [docs/python-components.md](docs/python-components.md) for the complete Python component development guide and ListView setup.
 
-> **Critical — WidgetMarkupApp `unreal` API:** Python runs in WidgetMarkupApp, not the full Editor. Library names use UE `ScriptName` (`unreal.InputLibrary`, not `KismetInputLibrary`; `unreal.WidgetLibrary`, not `WidgetBlueprintLibrary`). `unreal.PointerEvent` has **no** readable `effecting_button` field — use `unreal.InputLibrary.pointer_event_get_effecting_button(mouse_event)`. See [docs/unreal-python-api.md](docs/unreal-python-api.md).
+> **WidgetMarkup `unreal` API:** Python runs in WidgetMarkup, not the full Editor. Use native **`unreal`** by default; check **`widget_markup`** only for APIs listed in [unreal-python-api.md](docs/unreal-python-api.md). Library names follow UE `ScriptName` (`unreal.WidgetLibrary`, not `WidgetBlueprintLibrary`). For `PointerEvent` in widget delegates, prefer `widget_markup.InputLibrary`.
 
 - **`@reactive`** — settable properties (int, float, str, bool, list) that auto-push to bound widgets
 - **`@computed`** — read-only derived properties with automatic dependency tracking
@@ -397,6 +397,8 @@ The `Property` supports dot-separated sub-property paths (e.g., `Font.Size`, `Pa
 > **Warning:** Styles are applied at widget construction time. Changing `Style` at runtime has no effect.
 
 ## 6. Build & Run
+
+**WidgetMarkupApp** is only the standalone `.exe` launcher. WidgetMarkup itself is the plugin (markup compiler, Python integration, `widget_markup` module, and so on); those APIs are the same whether you run inside WidgetMarkupApp or another host that loads the plugin.
 
 ```powershell
 # Build

@@ -54,7 +54,7 @@ class TestBlueprintCompilationComponent(WidgetMarkupComponent):
             else:
                 unreal.log_error(f"[TestBlueprintCompilation] FAIL: {self._failed} checks failed, {self._passed} passed.")
         finally:
-            if widget_markup.get_extra_arguments() == "test": widget_markup.request_shutdown()
+            if widget_markup.Application.get_extra_arguments() == "test": widget_markup.Application.request_shutdown()
 
     # =========================================================================
     # Variable tests (Blueprint CDO)
@@ -164,7 +164,7 @@ class TestBlueprintCompilationComponent(WidgetMarkupComponent):
 
     def _find_widget(self, name):
         """Find a widget by name using the native helper."""
-        return widget_markup.find_widget_in_user_widget(self._uw, name)
+        return widget_markup.WidgetLibrary.find_widget_in_user_widget(self._uw, name)
 
     def _pass(self, name, detail):
         """Record a PASS result silently."""

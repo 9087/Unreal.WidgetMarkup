@@ -19,6 +19,8 @@ public class WidgetMarkupPythonIntegration : ModuleRules
 		{
 			"CoreUObject",
 			"Engine",
+			"InputCore",
+			"SlateCore",
 			"UMG",
 			"Python3",
 			"PythonScriptPlugin",

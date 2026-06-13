@@ -8,7 +8,7 @@
 #include "IPythonScriptPlugin.h"
 #include "Misc/Paths.h"
 #include "PythonWidgetMarkupComponent.h"
-#include "PythonWidgetMarkupNativeModule.h"
+#include "Classes/PythonWidgetMarkupModule.h"
 #include "WidgetMarkupModule.h"
 
 FWidgetMarkupPythonIntegration::FWidgetMarkupPythonIntegration(FWidgetMarkupModule& InWidgetMarkupModule)
@@ -68,6 +68,6 @@ void FWidgetMarkupPythonIntegration::HandleWidgetMarkupUserWidgetInitialized(UUs
 
 	UE_LOG(LogWidgetMarkupPythonIntegration, Display, TEXT("WidgetMarkupPythonIntegration: creating Python component for Script '%s' on UserWidget '%s'."), *Script, *GetNameSafe(UserWidget));
 
-	RegisterWidgetMarkupPythonIntegrationNativeModule();
+	RegisterPythonWidgetMarkupModule();
 	UWidgetMarkupUserWidgetExtension::GetOrAddExtension(UserWidget)->SetWidgetMarkupComponent(FPythonWidgetMarkupComponent::Create(UserWidget, Script));
 }

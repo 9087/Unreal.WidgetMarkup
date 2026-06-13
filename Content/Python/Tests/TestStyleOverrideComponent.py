@@ -49,4 +49,4 @@ class TestStyleOverrideComponent(WidgetMarkupComponent):
             else:
                 unreal.log_warning("[TestStyleOverride] ALL CHECKS PASSED.")
         finally:
-            if widget_markup.get_extra_arguments() == "test": widget_markup.request_shutdown()
+            if widget_markup.Application.get_extra_arguments() == "test": widget_markup.Application.request_shutdown()

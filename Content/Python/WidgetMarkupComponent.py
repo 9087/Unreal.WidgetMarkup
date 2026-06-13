@@ -298,7 +298,7 @@ class WidgetMarkupComponent:
             return
 
         value = getattr(self, binding.source_expression)
-        widget_markup.apply_property_binding(user_widget, binding, value)
+        widget_markup.DataBinding.apply_property_binding(user_widget, binding, value)
 
     def apply_delegate_bindings(self) -> None:
         user_widget = getattr(self, _USER_WIDGET_ATTR, None)
@@ -319,12 +319,15 @@ class WidgetMarkupComponent:
         delegate_name = str(binding.delegate_property_name)
 
         # Use C++ helper to bypass protected WidgetTree access in Python.
-        target_widget = widget_markup.find_widget_in_user_widget(user_widget, target_name)
+        target_widget = widget_markup.WidgetLibrary.find_widget_in_user_widget(user_widget, target_name)
         if target_widget is None:
             unreal.log_warning(f"WidgetMarkup: widget '{target_name}' not found in WidgetTree")
             return
 
-        python_method = getattr(self, func_name, None)
+        try:
+            python_method = getattr(self, func_name)
+        except AttributeError:
+            python_method = None
         if python_method is None or not callable(python_method):
             unreal.log_warning(f"WidgetMarkup: method '{func_name}' not found on component")
             return
@@ -381,7 +384,7 @@ class WidgetMarkupComponent:
         bindings = extension.get_property_bindings()
         for binding in bindings:
             if binding.source_expression == property_name:
-                widget_markup.apply_property_binding(user_widget, binding, value)
+                widget_markup.DataBinding.apply_property_binding(user_widget, binding, value)
                 return
 
     def refresh(self, data: Any) -> None:
