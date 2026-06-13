@@ -138,6 +138,7 @@ private:
 
 public:
 	void OnPostEngineInit();
+	void EnsureSourceFileWatching();
 	void StartSourceFileWatching(const FDirectoryPath& InDirectoryPath);
 	void StopSourceFileWatching();
 
