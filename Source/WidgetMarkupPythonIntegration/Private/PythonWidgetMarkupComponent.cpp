@@ -6,7 +6,7 @@
 #include "IPythonScriptPlugin.h"
 #include "PyConversion.h"
 #include "PythonUtilities.h"
-#include "PythonWidgetMarkupListEntry.h"
+#include "PythonWidgetMarkupListItem.h"
 #include "WidgetMarkupPythonIntegration.h"
 
 TSharedPtr<FPythonWidgetMarkupComponent> FPythonWidgetMarkupComponent::Create(UUserWidget* InUserWidget, const FString& InScript)
@@ -144,13 +144,13 @@ void FPythonWidgetMarkupComponent::OnDataRefresh(UObject* Data)
 		return;
 	}
 
-	UPythonWidgetMarkupListEntry* ListEntry = Cast<UPythonWidgetMarkupListEntry>(Data);
-	if (!ListEntry)
+	UPythonWidgetMarkupListItem* ListItem = Cast<UPythonWidgetMarkupListItem>(Data);
+	if (!ListItem)
 	{
 		return;
 	}
 
-	PyObject* PythonObject = ListEntry->GetPythonObject();
+	PyObject* PythonObject = ListItem->GetPythonObject();
 	if (!PythonObject)
 	{
 		return;

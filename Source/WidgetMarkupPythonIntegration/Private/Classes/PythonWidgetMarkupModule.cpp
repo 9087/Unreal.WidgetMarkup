@@ -3,6 +3,7 @@
 #include "Classes/PythonWidgetMarkupModule.h"
 
 #include "Classes/PythonApplication.h"
+#include "Classes/PythonCore.h"
 #include "Classes/PythonDataBinding.h"
 #include "Classes/PythonInputLibrary.h"
 #include "Classes/PythonKey.h"
@@ -64,7 +65,8 @@ bool RegisterPythonWidgetMarkupModule()
 	}
 
 	const bool bRegisteredTypes =
-		RegisterPythonDataBindingType(PyModule.Get())
+		RegisterPythonCoreType(PyModule.Get())
+		&& RegisterPythonDataBindingType(PyModule.Get())
 		&& RegisterPythonWidgetLibraryType(PyModule.Get())
 		&& RegisterPythonApplicationType(PyModule.Get())
 		&& RegisterPythonInputLibraryType(PyModule.Get())
