@@ -116,7 +116,7 @@ Internal binding pipeline used by the markup compiler and reactive property upda
 Widget tree lookup and list-entry data access.
 
 - **`find_widget_in_user_widget(user_widget, name)`** — find a named widget in the user widget tree.
-- **`get_python_object_from_list_entry(list_entry)`** — get the Python data object from a `PythonWidgetMarkupListEntry`.
+- **`get_python_object_from_list_item(list_item)`** — get the Python data object from a `PythonWidgetMarkupListItem`.
 
 ### `widget_markup.Application`
 

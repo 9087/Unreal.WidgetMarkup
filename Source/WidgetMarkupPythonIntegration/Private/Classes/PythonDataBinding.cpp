@@ -11,7 +11,7 @@
 #include "PropertyBuffer.h"
 #include "PyConversion.h"
 #include "PythonUtilities.h"
-#include "PythonWidgetMarkupListEntry.h"
+#include "PythonWidgetMarkupListItem.h"
 #include "Utilities/WidgetPropertyPath.h"
 #include "WidgetMarkupModule.h"
 #include "WidgetMarkupPythonIntegration.h"
@@ -136,8 +136,8 @@ namespace
 					else
 					{
 						PyErr_Clear();
-						UPythonWidgetMarkupListEntry* Entry = UPythonWidgetMarkupListEntry::Create(GetTransientPackage(), PyElement);
-						ObjectProperty->SetObjectPropertyValue(ElementPtr, Entry);
+						UPythonWidgetMarkupListItem* Item = UPythonWidgetMarkupListItem::Create(GetTransientPackage(), PyElement);
+						ObjectProperty->SetObjectPropertyValue(ElementPtr, Item);
 					}
 				}
 				else if (!NativizePythonValueToProperty(PyElement, InnerProperty, ElementPtr))

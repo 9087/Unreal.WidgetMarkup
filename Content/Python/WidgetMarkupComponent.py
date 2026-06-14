@@ -399,3 +399,84 @@ class WidgetMarkupComponent:
         Same data on same component type should produce identical display.
         """
         pass
+
+    # ------------------------------------------------------------------
+    # Child component management
+    # ------------------------------------------------------------------
+
+    def add_child(self, name: str, cls: Any, parent_name: str) -> Any:
+        """Add a child widget component to a parent panel widget.
+
+        Args:
+            name: Unique name for the child widget in the WidgetTree.
+            cls: Widget class. Accepts:
+                - A UClass (e.g., unreal.TextBlock).
+                - A string token (e.g., 'TextBlock', 'Game.WidgetMarkup.MyWidget',
+                  '/Game/MyWidget').
+            parent_name: Name of the parent panel widget in the WidgetTree.
+
+        Returns:
+            The WidgetMarkupComponent of the created child widget, or None if
+            the child widget has no Python component.
+
+        Raises:
+            ValueError: If the class cannot be resolved, the parent is not found,
+                the parent cannot hold children, or the name is a duplicate.
+            TypeError: If the parent is not a panel widget.
+        """
+        user_widget = getattr(self, _USER_WIDGET_ATTR, None)
+        if user_widget is None:
+            raise RuntimeError("Cannot add child: component is not attached to a UserWidget.")
+
+        if isinstance(cls, str):
+            child_widget = widget_markup.WidgetLibrary.add_child_widget(
+                user_widget, parent_name, None, cls, name)
+        else:
+            child_widget = widget_markup.WidgetLibrary.add_child_widget(
+                user_widget, parent_name, cls, None, name)
+
+        if child_widget is None:
+            return None
+        return widget_markup.Core.get_component_by_widget(child_widget)
+
+    def remove_child(self, child: Any) -> bool:
+        """Remove a child widget.
+
+        Args:
+            child: The child widget name (str) or the child UWidget instance.
+
+        Returns:
+            True if the child was found and removed, False otherwise.
+        """
+        user_widget = getattr(self, _USER_WIDGET_ATTR, None)
+        if user_widget is None:
+            return False
+
+        if isinstance(child, str):
+            return widget_markup.WidgetLibrary.remove_child_widget(user_widget, child)
+
+        # Try to extract the UserWidget from a component.
+        child_widget = getattr(child, _USER_WIDGET_ATTR, None)
+        if child_widget is not None:
+            return widget_markup.WidgetLibrary.remove_child_widget(user_widget, child_widget)
+
+        # Assume child is already a UWidget.
+        return widget_markup.WidgetLibrary.remove_child_widget(user_widget, child)
+
+    def get_child(self, name: str) -> Any:
+        """Get a child WidgetMarkupComponent by name.
+
+        Args:
+            name: The child widget name in the WidgetTree.
+
+        Returns:
+            The WidgetMarkupComponent if the child has one, or None if no
+            widget with the given name exists or it has no component.
+        """
+        user_widget = getattr(self, _USER_WIDGET_ATTR, None)
+        if user_widget is None:
+            return None
+        widget = widget_markup.WidgetLibrary.find_widget_in_user_widget(user_widget, name)
+        if widget is None:
+            return None
+        return widget_markup.Core.get_component_by_widget(widget)
