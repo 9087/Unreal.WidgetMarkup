@@ -1,0 +1,294 @@
+<!-- hot-reload test 4 -->
+<WidgetBlueprint Script="Samples.ScientificCalculator">
+  <StyleSheet>
+    <Style TargetType="Border" Name="CalculatorShell">
+      <Setter Property="BrushColor" Value="0.68,0.68,0.70,1" />
+      <Setter Property="Padding.Left" Value="10" />
+      <Setter Property="Padding.Top" Value="10" />
+      <Setter Property="Padding.Right" Value="10" />
+      <Setter Property="Padding.Bottom" Value="10" />
+    </Style>
+
+    <Style TargetType="Border" Name="DisplayPanel">
+      <Setter Property="BrushColor" Value="0.88,0.90,0.86,1" />
+      <Setter Property="Padding.Left" Value="16" />
+      <Setter Property="Padding.Top" Value="12" />
+      <Setter Property="Padding.Right" Value="16" />
+      <Setter Property="Padding.Bottom" Value="12" />
+    </Style>
+
+    <Style TargetType="TextBlock" Name="DisplayText">
+      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.Size" Value="42" />
+      <Setter Property="ColorAndOpacity" Value="0.30,0.30,0.30,1" />
+    </Style>
+
+    <Style TargetType="Button" Name="ButtonWhite">
+      <Setter Property="BackgroundColor" Value="0.97,0.97,0.95,1" />
+      <Setter Property="ColorAndOpacity" Value="1,1,1,1" />
+    </Style>
+
+    <Style TargetType="Button" Name="ButtonMemory">
+      <Setter Property="BackgroundColor" Value="0.38,0.38,0.40,1" />
+      <Setter Property="ColorAndOpacity" Value="1,1,1,1" />
+    </Style>
+
+    <Style TargetType="Button" Name="ButtonOperator">
+      <Setter Property="BackgroundColor" Value="0.65,0.65,0.67,1" />
+      <Setter Property="ColorAndOpacity" Value="1,1,1,1" />
+    </Style>
+
+    <Style TargetType="Button" Name="ButtonEquals">
+      <Setter Property="BackgroundColor" Value="1.0,0.62,0.10,1" />
+      <Setter Property="ColorAndOpacity" Value="1,1,1,1" />
+    </Style>
+
+    <Style TargetType="TextBlock" Name="LabelDark">
+      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.Size" Value="15" />
+      <Setter Property="ColorAndOpacity" Value="0.22,0.22,0.22,1" />
+    </Style>
+
+    <Style TargetType="TextBlock" Name="LabelLight">
+      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.Size" Value="15" />
+      <Setter Property="ColorAndOpacity" Value="1,1,1,1" />
+    </Style>
+
+    <Style TargetType="TextBlock" Name="LabelNumber">
+      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.Size" Value="22" />
+      <Setter Property="ColorAndOpacity" Value="0.18,0.18,0.18,1" />
+    </Style>
+
+    <Style TargetType="TextBlock" Name="LabelOperator">
+      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.Size" Value="26" />
+      <Setter Property="ColorAndOpacity" Value="1,1,1,1" />
+    </Style>
+  </StyleSheet>
+
+  <WidgetTree>
+    <Border Style="CalculatorShell">
+      <VerticalBox>
+        <Border Style="DisplayPanel"
+                Slot.Size.SizeRule="Fill"
+                Slot.Size.Value="1">
+          <TextBlock Text="{display}"
+                     Style="DisplayText"
+                     Justification="Right" />
+        </Border>
+
+        <GridPanel Slot.Size.SizeRule="Fill"
+                   Slot.Size.Value="2">
+          <ColumnFill>
+            <Float>1</Float><Float>1</Float><Float>1</Float><Float>1</Float>
+            <Float>1</Float><Float>1</Float><Float>1</Float><Float>1</Float>
+          </ColumnFill>
+          <RowFill>
+            <Float>1</Float><Float>1</Float><Float>1</Float>
+            <Float>1</Float><Float>1</Float><Float>1</Float>
+          </RowFill>
+
+          <!-- Row 0 -->
+          <Button OnClicked="press_second" Style="ButtonWhite"
+                  Slot.Row="0" Slot.Column="0" Slot.Padding="3,3,3,3">
+            <TextBlock Text="2nd" Style="LabelDark" />
+          </Button>
+          <Button OnClicked="press_left_paren" Style="ButtonWhite"
+                  Slot.Row="0" Slot.Column="1" Slot.Padding="3,3,3,3">
+            <TextBlock Text="(" Style="LabelDark" Font.Size="20" />
+          </Button>
+          <Button OnClicked="press_right_paren" Style="ButtonWhite"
+                  Slot.Row="0" Slot.Column="2" Slot.Padding="3,3,3,3">
+            <TextBlock Text=")" Style="LabelDark" Font.Size="20" />
+          </Button>
+          <Button OnClicked="press_percent" Style="ButtonWhite"
+                  Slot.Row="0" Slot.Column="3" Slot.Padding="3,3,3,3">
+            <TextBlock Text="%" Style="LabelDark" Font.Size="18" />
+          </Button>
+          <Button OnClicked="press_memory_clear" Style="ButtonMemory"
+                  Slot.Row="0" Slot.Column="4" Slot.Padding="3,3,3,3">
+            <TextBlock Text="mc" Style="LabelLight" />
+          </Button>
+          <Button OnClicked="press_memory_add" Style="ButtonMemory"
+                  Slot.Row="0" Slot.Column="5" Slot.Padding="3,3,3,3">
+            <TextBlock Text="m+" Style="LabelLight" />
+          </Button>
+          <Button OnClicked="press_memory_subtract" Style="ButtonMemory"
+                  Slot.Row="0" Slot.Column="6" Slot.Padding="3,3,3,3">
+            <TextBlock Text="m-" Style="LabelLight" />
+          </Button>
+          <Button OnClicked="press_memory_recall" Style="ButtonMemory"
+                  Slot.Row="0" Slot.Column="7" Slot.Padding="3,3,3,3">
+            <TextBlock Text="mr" Style="LabelLight" />
+          </Button>
+
+          <!-- Row 1 -->
+          <Button OnClicked="press_inverse" Style="ButtonWhite"
+                  Slot.Row="1" Slot.Column="0" Slot.Padding="3,3,3,3">
+            <TextBlock Text="x^-1" Style="LabelDark" Font.Size="13" />
+          </Button>
+          <Button OnClicked="press_square" Style="ButtonWhite"
+                  Slot.Row="1" Slot.Column="1" Slot.Padding="3,3,3,3">
+            <TextBlock Text="x^2" Style="LabelDark" Font.Size="14" />
+          </Button>
+          <Button OnClicked="press_cube" Style="ButtonWhite"
+                  Slot.Row="1" Slot.Column="2" Slot.Padding="3,3,3,3">
+            <TextBlock Text="x^3" Style="LabelDark" Font.Size="14" />
+          </Button>
+          <Button OnClicked="press_power" Style="ButtonWhite"
+                  Slot.Row="1" Slot.Column="3" Slot.Padding="3,3,3,3">
+            <TextBlock Text="x^y" Style="LabelDark" Font.Size="14" />
+          </Button>
+          <Button OnClicked="press_clear" Style="ButtonOperator"
+                  Slot.Row="1" Slot.Column="4" Slot.Padding="3,3,3,3">
+            <TextBlock Text="C" Style="LabelOperator" />
+          </Button>
+          <Button OnClicked="press_negate" Style="ButtonOperator"
+                  Slot.Row="1" Slot.Column="5" Slot.Padding="3,3,3,3">
+            <TextBlock Text="+/-" Style="LabelOperator" Font.Size="18" />
+          </Button>
+          <Button OnClicked="press_divide" Style="ButtonOperator"
+                  Slot.Row="1" Slot.Column="6" Slot.Padding="3,3,3,3">
+            <TextBlock Text="/" Style="LabelOperator" />
+          </Button>
+          <Button OnClicked="press_multiply" Style="ButtonOperator"
+                  Slot.Row="1" Slot.Column="7" Slot.Padding="3,3,3,3">
+            <TextBlock Text="x" Style="LabelOperator" />
+          </Button>
+
+          <!-- Row 2 -->
+          <Button OnClicked="press_factorial" Style="ButtonWhite"
+                  Slot.Row="2" Slot.Column="0" Slot.Padding="3,3,3,3">
+            <TextBlock Text="x!" Style="LabelDark" Font.Size="14" />
+          </Button>
+          <Button OnClicked="press_sqrt" Style="ButtonWhite"
+                  Slot.Row="2" Slot.Column="1" Slot.Padding="3,3,3,3">
+            <TextBlock Text="sqrt" Style="LabelDark" Font.Size="12" />
+          </Button>
+          <Button OnClicked="press_nth_root" Style="ButtonWhite"
+                  Slot.Row="2" Slot.Column="2" Slot.Padding="3,3,3,3">
+            <TextBlock Text="yrt" Style="LabelDark" Font.Size="13" />
+          </Button>
+          <Button OnClicked="press_log10" Style="ButtonWhite"
+                  Slot.Row="2" Slot.Column="3" Slot.Padding="3,3,3,3">
+            <TextBlock Text="log" Style="LabelDark" />
+          </Button>
+          <Button OnClicked="press_digit_7" Style="ButtonWhite"
+                  Slot.Row="2" Slot.Column="4" Slot.Padding="3,3,3,3">
+            <TextBlock Text="7" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_digit_8" Style="ButtonWhite"
+                  Slot.Row="2" Slot.Column="5" Slot.Padding="3,3,3,3">
+            <TextBlock Text="8" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_digit_9" Style="ButtonWhite"
+                  Slot.Row="2" Slot.Column="6" Slot.Padding="3,3,3,3">
+            <TextBlock Text="9" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_subtract" Style="ButtonOperator"
+                  Slot.Row="2" Slot.Column="7" Slot.Padding="3,3,3,3">
+            <TextBlock Text="-" Style="LabelOperator" />
+          </Button>
+
+          <!-- Row 3 -->
+          <Button OnClicked="press_sin" Style="ButtonWhite"
+                  Slot.Row="3" Slot.Column="0" Slot.Padding="3,3,3,3">
+            <TextBlock Text="sin" Style="LabelDark" />
+          </Button>
+          <Button OnClicked="press_cos" Style="ButtonWhite"
+                  Slot.Row="3" Slot.Column="1" Slot.Padding="3,3,3,3">
+            <TextBlock Text="cos" Style="LabelDark" />
+          </Button>
+          <Button OnClicked="press_tan" Style="ButtonWhite"
+                  Slot.Row="3" Slot.Column="2" Slot.Padding="3,3,3,3">
+            <TextBlock Text="tan" Style="LabelDark" />
+          </Button>
+          <Button OnClicked="press_ln" Style="ButtonWhite"
+                  Slot.Row="3" Slot.Column="3" Slot.Padding="3,3,3,3">
+            <TextBlock Text="ln" Style="LabelDark" />
+          </Button>
+          <Button OnClicked="press_digit_4" Style="ButtonWhite"
+                  Slot.Row="3" Slot.Column="4" Slot.Padding="3,3,3,3">
+            <TextBlock Text="4" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_digit_5" Style="ButtonWhite"
+                  Slot.Row="3" Slot.Column="5" Slot.Padding="3,3,3,3">
+            <TextBlock Text="5" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_digit_6" Style="ButtonWhite"
+                  Slot.Row="3" Slot.Column="6" Slot.Padding="3,3,3,3">
+            <TextBlock Text="6" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_add" Style="ButtonOperator"
+                  Slot.Row="3" Slot.Column="7" Slot.Padding="3,3,3,3">
+            <TextBlock Text="+" Style="LabelOperator" />
+          </Button>
+
+          <!-- Row 4 -->
+          <Button OnClicked="press_sinh" Style="ButtonWhite"
+                  Slot.Row="4" Slot.Column="0" Slot.Padding="3,3,3,3">
+            <TextBlock Text="sinh" Style="LabelDark" Font.Size="13" />
+          </Button>
+          <Button OnClicked="press_cosh" Style="ButtonWhite"
+                  Slot.Row="4" Slot.Column="1" Slot.Padding="3,3,3,3">
+            <TextBlock Text="cosh" Style="LabelDark" Font.Size="13" />
+          </Button>
+          <Button OnClicked="press_tanh" Style="ButtonWhite"
+                  Slot.Row="4" Slot.Column="2" Slot.Padding="3,3,3,3">
+            <TextBlock Text="tanh" Style="LabelDark" Font.Size="13" />
+          </Button>
+          <Button OnClicked="press_exp" Style="ButtonWhite"
+                  Slot.Row="4" Slot.Column="3" Slot.Padding="3,3,3,3">
+            <TextBlock Text="e^x" Style="LabelDark" Font.Size="14" />
+          </Button>
+          <Button OnClicked="press_digit_1" Style="ButtonWhite"
+                  Slot.Row="4" Slot.Column="4" Slot.Padding="3,3,3,3">
+            <TextBlock Text="1" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_digit_2" Style="ButtonWhite"
+                  Slot.Row="4" Slot.Column="5" Slot.Padding="3,3,3,3">
+            <TextBlock Text="2" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_digit_3" Style="ButtonWhite"
+                  Slot.Row="4" Slot.Column="6" Slot.Padding="3,3,3,3">
+            <TextBlock Text="3" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_equals" Style="ButtonEquals"
+                  Slot.Row="4" Slot.Column="7" Slot.RowSpan="2"
+                  Slot.Padding="3,3,3,3">
+            <TextBlock Text="=" Style="LabelOperator" />
+          </Button>
+
+          <!-- Row 5 -->
+          <Button OnClicked="press_degree" Style="ButtonWhite"
+                  Slot.Row="5" Slot.Column="0" Slot.Padding="3,3,3,3">
+            <TextBlock Text="{angle_mode_label}" Style="LabelDark" Font.Size="13" />
+          </Button>
+          <Button OnClicked="press_pi" Style="ButtonWhite"
+                  Slot.Row="5" Slot.Column="1" Slot.Padding="3,3,3,3">
+            <TextBlock Text="pi" Style="LabelDark" Font.Size="15" />
+          </Button>
+          <Button OnClicked="press_ee" Style="ButtonWhite"
+                  Slot.Row="5" Slot.Column="2" Slot.Padding="3,3,3,3">
+            <TextBlock Text="EE" Style="LabelDark" Font.Size="13" />
+          </Button>
+          <Button OnClicked="press_random" Style="ButtonWhite"
+                  Slot.Row="5" Slot.Column="3" Slot.Padding="3,3,3,3">
+            <TextBlock Text="Rand" Style="LabelDark" Font.Size="13" />
+          </Button>
+          <Button OnClicked="press_digit_0" Style="ButtonWhite"
+                  Slot.Row="5" Slot.Column="4" Slot.ColumnSpan="2"
+                  Slot.Padding="3,3,3,3">
+            <TextBlock Text="0" Style="LabelNumber" />
+          </Button>
+          <Button OnClicked="press_decimal" Style="ButtonWhite"
+                  Slot.Row="5" Slot.Column="6" Slot.Padding="3,3,3,3">
+            <TextBlock Text="." Style="LabelNumber" />
+          </Button>
+        </GridPanel>
+      </VerticalBox>
+    </Border>
+  </WidgetTree>
+</WidgetBlueprint>
