@@ -1,0 +1,8 @@
+<WidgetBlueprint Script="Tests.TestHorizontalBox">
+  <WidgetTree>
+    <HorizontalBox Name="TestHB">
+      <TextBlock Name="HBChild1" Text="A" />
+      <TextBlock Name="HBChild2" Text="B" />
+    </HorizontalBox>
+  </WidgetTree>
+</WidgetBlueprint>

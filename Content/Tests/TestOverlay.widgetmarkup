@@ -1,0 +1,8 @@
+<WidgetBlueprint Script="Tests.TestOverlay">
+  <WidgetTree>
+    <Overlay Name="TestOV">
+      <TextBlock Name="OVChild1" Text="layer1" />
+      <TextBlock Name="OVChild2" Text="layer2" />
+    </Overlay>
+  </WidgetTree>
+</WidgetBlueprint>

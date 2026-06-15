@@ -1,0 +1,6 @@
+<!-- Minimal: empty WidgetBlueprint with only a root canvas. -->
+<WidgetBlueprint Script="Tests.TestEmpty">
+  <WidgetTree>
+    <CanvasPanel />
+  </WidgetTree>
+</WidgetBlueprint>

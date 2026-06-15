@@ -1,0 +1,10 @@
+<WidgetBlueprint Script="Tests.TestTextBlock">
+  <WidgetTree>
+    <CanvasPanel>
+      <TextBlock Name="TestText"
+                 Text="Hello World"
+                 ColorAndOpacity="#FF0000FF"
+                 Font.Size="24" />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>

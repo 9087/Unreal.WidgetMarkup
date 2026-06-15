@@ -1,0 +1,8 @@
+<WidgetBlueprint Script="Tests.TestVerticalBox">
+  <WidgetTree>
+    <VerticalBox Name="TestVB">
+      <TextBlock Name="VBChild1" Text="A" />
+      <TextBlock Name="VBChild2" Text="B" />
+    </VerticalBox>
+  </WidgetTree>
+</WidgetBlueprint>

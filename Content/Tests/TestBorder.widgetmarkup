@@ -1,0 +1,9 @@
+<WidgetBlueprint Script="Tests.TestBorder">
+  <WidgetTree>
+    <CanvasPanel>
+      <Border Name="TestBdr">
+        <TextBlock Name="TestBorderChild" Text="inside border" />
+      </Border>
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>

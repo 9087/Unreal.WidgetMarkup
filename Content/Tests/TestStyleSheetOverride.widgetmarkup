@@ -1,0 +1,11 @@
+<WidgetBlueprint Script="Tests.TestStyleSheetOverride">
+  <StyleSheet>/WidgetMarkup/Tests/TestStyleSheetFile</StyleSheet>
+  <WidgetTree>
+    <CanvasPanel>
+      <TextBlock Name="Overridden" Style="StyledText" Text="color should be orange, size 20 (inherited)" />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>
+
+  </WidgetTree>
+</WidgetBlueprint>

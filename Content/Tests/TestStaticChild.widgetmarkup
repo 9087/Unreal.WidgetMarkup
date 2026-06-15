@@ -1,0 +1,8 @@
+<!-- Uses add_child API to embed TestStaticChildWidget dynamically. -->
+<WidgetBlueprint Script="Tests.TestStaticChild">
+  <WidgetTree>
+    <CanvasPanel Name="RootCanvas">
+      <TextBlock Name="SiblingText" Text="I am a sibling" />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>

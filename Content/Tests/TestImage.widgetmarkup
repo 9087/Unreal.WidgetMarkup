@@ -1,0 +1,7 @@
+<WidgetBlueprint Script="Tests.TestImage">
+  <WidgetTree>
+    <CanvasPanel>
+      <Image Name="TestImg" />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>

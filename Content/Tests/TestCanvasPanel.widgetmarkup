@@ -1,0 +1,8 @@
+<WidgetBlueprint Script="Tests.TestCanvasPanel">
+  <WidgetTree>
+    <CanvasPanel Name="TestCP">
+      <TextBlock Name="CPChild1" Text="child1" />
+      <TextBlock Name="CPChild2" Text="child2" />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>

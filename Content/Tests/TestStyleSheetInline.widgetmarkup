@@ -1,0 +1,15 @@
+<WidgetBlueprint Script="Tests.TestStyleSheetInline">
+  <StyleSheet>
+    <Style TargetType="TextBlock" Name="InlineStyled">
+      <Setter Property="ColorAndOpacity" Value="#00FF00FF" />
+      <Setter Property="Font.Size" Value="18" />
+    </Style>
+  </StyleSheet>
+  <WidgetTree>
+    <CanvasPanel>
+      <TextBlock Name="InlineStyled" Style="InlineStyled" Text="inline styled text" />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>
+  </WidgetTree>
+</WidgetBlueprint>

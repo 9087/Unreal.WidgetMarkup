@@ -1,0 +1,7 @@
+<WidgetBlueprint Script="Tests.TestDynamicChild">
+  <WidgetTree>
+    <CanvasPanel Name="RootCanvas">
+      <TextBlock Name="ExistingChild" Text="I exist from XML" />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>
