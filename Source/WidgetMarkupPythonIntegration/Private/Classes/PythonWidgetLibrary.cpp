@@ -85,7 +85,7 @@ namespace
 		PyObject* PyClass = nullptr;       // UClass object or None (if class_token is used)
 		const char* ClassToken = nullptr;  // string class token (may be nullptr)
 		const char* ChildName = nullptr;
-		if (!PyArg_ParseTuple(Args, "OsOsz:add_child_widget",
+		if (!PyArg_ParseTuple(Args, "OsOzz:add_child_widget",
 			&PyUserWidget, &ParentName, &PyClass, &ClassToken, &ChildName))
 		{
 			return nullptr;
@@ -109,13 +109,13 @@ namespace
 		UClass* WidgetClass = nullptr;
 		if (PyClass && PyClass != Py_None)
 		{
-			UObject* ClassObject = nullptr;
-			if (!PyConversion::NativizeObject(PyClass, ClassObject, UClass::StaticClass()))
+			UClass* ClassObject = nullptr;
+			if (!PyConversion::NativizeClass(PyClass, ClassObject, UWidget::StaticClass()))
 			{
 				PyErr_SetString(PyExc_TypeError, "Class argument must be a UClass.");
 				return nullptr;
 			}
-			WidgetClass = Cast<UClass>(ClassObject);
+			WidgetClass = ClassObject;
 		}
 		else if (ClassToken && ClassToken[0] != '\0')
 		{
