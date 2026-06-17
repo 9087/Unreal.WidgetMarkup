@@ -20,6 +20,11 @@ class TestVerticalBox(TestComponent):
             self.check_not_none(vertical_child1, "VerticalChild1 found")
             if vertical_child1 and vertical_child1.slot:
                 slot1 = vertical_child1.slot
+                size1 = slot1.get_editor_property("Size")
+                self.check_not_none(size1, "VerticalChild1.Size set")
+                if size1:
+                    self.check_true("FILL" in str(size1.get_editor_property("SizeRule")), "VerticalChild1.Size.SizeRule is Fill")
+                    self.check_almost_equal(size1.get_editor_property("Value"), 1.0, 0.001, "VerticalChild1.Size.Value")
                 self.check_true("H_ALIGN_FILL" in str(slot1.get_editor_property("HorizontalAlignment")), "VerticalChild1.HAlign Fill")
                 self.check_true("V_ALIGN_CENTER" in str(slot1.get_editor_property("VerticalAlignment")), "VerticalChild1.VAlign Center")
                 pad1 = slot1.get_editor_property("Padding")
@@ -33,6 +38,10 @@ class TestVerticalBox(TestComponent):
             self.check_not_none(vertical_child2, "VerticalChild2 found")
             if vertical_child2 and vertical_child2.slot:
                 slot2 = vertical_child2.slot
+                size2 = slot2.get_editor_property("Size")
+                self.check_not_none(size2, "VerticalChild2.Size set")
+                if size2:
+                    self.check_true("AUTOMATIC" in str(size2.get_editor_property("SizeRule")), "VerticalChild2.Size.SizeRule is Automatic")
                 self.check_true("H_ALIGN_RIGHT" in str(slot2.get_editor_property("HorizontalAlignment")), "VerticalChild2.HAlign Right")
                 self.check_true("V_ALIGN_BOTTOM" in str(slot2.get_editor_property("VerticalAlignment")), "VerticalChild2.VAlign Bottom")
                 pad2 = slot2.get_editor_property("Padding")
