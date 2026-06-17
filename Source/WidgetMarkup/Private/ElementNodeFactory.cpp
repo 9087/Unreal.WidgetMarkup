@@ -7,6 +7,7 @@
 #include "ElementNodes/BasicTypeElementNode.h"
 #include "ElementNodes/StructElementNode.h"
 #include "Utilities/TypeParser.h"
+#include "Utilities/TypeResolver.h"
 
 FElementNodeFactory& FElementNodeFactory::Get()
 {
@@ -103,6 +104,14 @@ TSharedPtr<FElementNode> FElementNodeFactory::CreateElementNode(UObject* Outer, 
 		{
 			Struct = UClass::TryFindTypeSlow<UStruct>(ElementName, EFindFirstObjectOptions::EnsureIfAmbiguous);
 		}
+	}
+
+	if (Struct == nullptr)
+	{
+		// WidgetMarkup package references (e.g. "WidgetMarkup.Tests.TestEmpty")
+		// are resolved by compiling the referenced .widgetmarkup file and returning
+		// the generated WidgetBlueprint class.
+		Struct = TTypeResolver<UClass>::Resolve(FStringView(ElementName));
 	}
 
 	if (Struct == nullptr)

@@ -117,6 +117,7 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 		TSharedPtr<FElementNode> ObjectNode = Context.GetLastObjectNode();
 		Object = ObjectNode.IsValid() ? ObjectNode->GetObject() : nullptr;
 	}
+
 	TSharedRef<IPropertyRun> PropertyRun = WidgetMarkupModule->CreatePropertyRun(Current->GetPropertyOwnerStruct(), FName(PropertyName));
 	Context.AddMetaData<FWidgetPropertyAttributeValueScope>();
 	auto Result = PropertyRun->OnBegin(Context, Object, PropertyName, PropertyValue);
@@ -124,6 +125,15 @@ bool FElementTreeBuilder::ProcessAttribute(const TCHAR* AttributeName, const TCH
 	{
 		Result = PropertyRun->OnEnd(Context);
 	}
+
+	if (!Result)
+	{
+		UE_LOG(LogWidgetMarkup, Error, TEXT("ProcessAttribute FAILED: '%s'='%s' on class '%s'"),
+			*FString(PropertyName), *FString(PropertyValue),
+			Object ? *Object->GetClass()->GetName() : TEXT("<null>"));
+		Result.PrintOnFailure();
+	}
+
 	Context.RemoveMetaData<FWidgetPropertyAttributeValueScope>();
 	return !!Result;
 }

@@ -50,11 +50,6 @@ bool TryCreatePropertyBinding(
 
 FElementNode::FResult FPropertyRun::OnBegin(FElementNode::FContext& Context, UObject* Outer, const FStringView& PropertyName, const FStringView& PropertyValue)
 {
-	if (!Context.GetLastNode()->HasProperty(PropertyName))
-	{
-		return FElementNode::FResult::Failure();
-	}
-
 	FWidgetPropertyBindingToken BindingToken;
 	if (Context.HasMetaData<FWidgetPropertyAttributeValueScope>()
 		&& TryParseWidgetPropertyBindingToken(PropertyValue, BindingToken))

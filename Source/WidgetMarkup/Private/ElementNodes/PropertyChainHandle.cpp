@@ -48,10 +48,13 @@ TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, c
 	FWidgetPropertyPath PropertyPath;
 	if (!FWidgetPropertyPath::TryParse(PropertyPathString, PropertyPath))
 	{
+		UE_LOG(LogWidgetMarkup, Warning, TEXT("PropertyChainHandle::Create: TryParse FAILED for '%s' on '%s'"),
+			*FString(PropertyPathString), *Object->GetClass()->GetName());
 		return nullptr;
 	}
 
-	return Create(Object, PropertyPath);
+	TSharedPtr<FPropertyChainHandle> Handle = Create(Object, PropertyPath);
+	return Handle;
 }
 
 TSharedPtr<FPropertyChainHandle> FPropertyChainHandle::Create(UObject* Object, const FStringView& PropertyPathString,
@@ -118,11 +121,6 @@ bool FPropertyChainHandle::SetValue(const FPropertyBuffer& PropertyBuffer) const
 
 	FProperty* BufferedProperty = PropertyBuffer.GetProperty();
 	if (!BufferedProperty)
-	{
-		return false;
-	}
-
-	if (!TailProperty->SameType(BufferedProperty))
 	{
 		return false;
 	}

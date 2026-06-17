@@ -49,6 +49,24 @@ TSharedPtr<FConverter> FConverterRegistry::Convert(const FProperty& Property, vo
 	auto OnCreateConverterPtr = CreateConverterDelegateMap.Find(ConverterName);
 	if (!OnCreateConverterPtr)
 	{
+		// Fallback: for USTRUCTs with a super struct (e.g. FDeprecateSlateVector2D → FVector2f),
+		// recursively try super struct's converter.
+		if (const FStructProperty* StructProp = CastField<FStructProperty>(&Property))
+		{
+			for (UScriptStruct* SuperStruct = Cast<UScriptStruct>(StructProp->Struct->GetSuperStruct());
+				 SuperStruct;
+				 SuperStruct = Cast<UScriptStruct>(SuperStruct->GetSuperStruct()))
+			{
+				OnCreateConverterPtr = CreateConverterDelegateMap.Find(SuperStruct->GetFName());
+				if (OnCreateConverterPtr)
+				{
+					break;
+				}
+			}
+		}
+	}
+	if (!OnCreateConverterPtr)
+	{
 		return nullptr;
 	}
 	auto& OnCreateConverter = *OnCreateConverterPtr;

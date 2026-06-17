@@ -47,6 +47,7 @@
 #include "PropertyRuns/WidgetBlueprintScriptPropertyRun.h"
 #include "PropertyRuns/WidgetDelegatePropertyRun.h"
 #include "Styles/WidgetStyleSheet.h"
+#include "Types/SlateVector2.h"
 #include "Utilities/WidgetPropertyPath.h"
 #include "ElementNodes/ContentWidgetElementNode.h"
 #include "ElementNodes/PanelWidgetElementNode.h"
@@ -137,6 +138,7 @@ void FWidgetMarkupModule::StartupModule()
 	FConverterRegistry::Get().Register(FSlateColor::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FSlateColorConverter::Create));
 	FConverterRegistry::Get().Register(NAME_Vector, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector::FReal, 3>::Create));
 	FConverterRegistry::Get().Register(NAME_Vector2D, FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<FVector2D::FReal, 2>::Create));
+	FConverterRegistry::Get().Register(StaticStruct<FDeprecateSlateVector2D>()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(TVectorConverter<decltype(FDeprecateSlateVector2D::X), 2>::Create));
 	FConverterRegistry::Get().Register(FWidgetPropertyPath::StaticStruct()->GetFName(), FConverterRegistry::FOnCreateConverter::CreateStatic(FWidgetPropertyPathConverter::Create));
 	FConverterRegistry::Get().Register(NAME_ObjectProperty, FConverterRegistry::FOnCreateConverter::CreateStatic(FObjectConverter::Create));
 	
@@ -190,6 +192,7 @@ void FWidgetMarkupModule::ShutdownModule()
 	FConverterRegistry::Get().Unregister(FSlateColor::StaticStruct()->GetFName());
 	FConverterRegistry::Get().Unregister(NAME_Vector);
 	FConverterRegistry::Get().Unregister(NAME_Vector2D);
+	FConverterRegistry::Get().Unregister(StaticStruct<FDeprecateSlateVector2D>()->GetFName());
 	FConverterRegistry::Get().Unregister(FWidgetPropertyPath::StaticStruct()->GetFName());
 	FConverterRegistry::Get().Unregister(NAME_ObjectProperty);
 

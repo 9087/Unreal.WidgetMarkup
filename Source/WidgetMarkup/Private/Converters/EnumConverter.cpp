@@ -15,7 +15,21 @@ bool FEnumConverter::Convert(const FStringView& String, UEnum* Enum, int64& OutV
 	{
 		return false;
 	}
-	OutValue = Enum->GetValueByNameString(FString(String), EGetByNameFlags::CaseSensitive);
+	const FString Str(String);
+	OutValue = Enum->GetValueByNameString(Str, EGetByNameFlags::CaseSensitive);
+	if (OutValue == INDEX_NONE)
+	{
+		// Fallback: match by DisplayName metadata (e.g. "Fill" → HAlign_Fill).
+		for (int32 i = 0; i < Enum->NumEnums() - 1; ++i)
+		{
+			const FString& DisplayName = Enum->GetMetaData(TEXT("DisplayName"), i);
+			if (!DisplayName.IsEmpty() && DisplayName.Equals(Str, ESearchCase::IgnoreCase))
+			{
+				OutValue = Enum->GetValueByIndex(i);
+				break;
+			}
+		}
+	}
 	return OutValue != INDEX_NONE;
 }
 

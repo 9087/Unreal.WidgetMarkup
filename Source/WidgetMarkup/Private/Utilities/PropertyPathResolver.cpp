@@ -4,6 +4,7 @@
 
 #include "Templates/SharedPointer.h"
 #include "UObject/UnrealType.h"
+#include "WidgetMarkupModule.h"
 
 TSharedPtr<FPropertyPathResolver::FOutput> FPropertyPathResolver::TryResolvePath(const FInitialState& InitialState, const FWidgetPropertyPath& Path)
 {
@@ -34,9 +35,46 @@ TSharedPtr<FPropertyPathResolver::FOutput> FPropertyPathResolver::TryResolvePath
 		void* ValueAddress = nullptr;
 		if (Element.Type == EWidgetPropertyPathElementType::Property)
 		{
-			CurrentProperty = CurrentStruct ? CurrentStruct->FindPropertyByName(FName(*Element.Name)) : nullptr;
+			const FName PropertyFName(*Element.Name);
+			CurrentProperty = CurrentStruct ? CurrentStruct->FindPropertyByName(PropertyFName) : nullptr;
+
+			// Fallback: TEnumAsByte<> and some deprecated properties may not be found by
+			// FindPropertyByName but exist in the class hierarchy. Use TFieldIterator.
+			if (!CurrentProperty && CurrentStruct)
+			{
+				for (TFieldIterator<FProperty> It(CurrentStruct); It; ++It)
+				{
+					if (It->GetFName() == PropertyFName)
+					{
+						CurrentProperty = *It;
+						break;
+					}
+				}
+			}
+
+			// Fallback: UE bool properties use 'b' prefix (e.g. bIsEnabled), but
+			// XML authors write IsEnabled without the prefix. Only accept if
+			// the matched property is actually a bool.
+			if (!CurrentProperty && CurrentStruct)
+			{
+				const FName BPrefixedName(*(FString(TEXT("b")) + Element.Name));
+				for (TFieldIterator<FProperty> It(CurrentStruct); It; ++It)
+				{
+					if (It->GetFName() == BPrefixedName)
+					{
+						if (It->IsA<FBoolProperty>())
+						{
+							CurrentProperty = *It;
+						}
+						break;
+					}
+				}
+			}
+
 			if (!CurrentProperty)
 			{
+				UE_LOG(LogWidgetMarkup, Warning, TEXT("PropertyPathResolver: FindPropertyByName FAILED for '%s' on struct '%s'"),
+					*Element.Name, CurrentStruct ? *CurrentStruct->GetName() : TEXT("<null>"));
 				return nullptr;
 			}
 		}

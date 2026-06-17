@@ -18,9 +18,23 @@ bool FPropertySetter::SetValue(
 	}
 
 	FProperty* BufferedProperty = InPropertyBuffer.GetProperty();
-	if (!BufferedProperty || !InTargetProperty->SameType(BufferedProperty))
+	if (!BufferedProperty)
 	{
 		return false;
+	}
+
+	// Allow struct inheritance: child structs (e.g. FDeprecateSlateVector2D ← FVector2f) can
+	// be set via the parent converter, since CopyCompleteValue handles the base memory layout.
+	if (!InTargetProperty->SameType(BufferedProperty))
+	{
+		const FStructProperty* TargetStruct = CastField<FStructProperty>(InTargetProperty);
+		const FStructProperty* BufferedStruct = CastField<FStructProperty>(BufferedProperty);
+		if (!TargetStruct || !BufferedStruct ||
+			(!TargetStruct->Struct->IsChildOf(BufferedStruct->Struct) &&
+			 !BufferedStruct->Struct->IsChildOf(TargetStruct->Struct)))
+		{
+			return false;
+		}
 	}
 
 	// 1. Try native setter declared via UPROPERTY(Setter=...) metadata.

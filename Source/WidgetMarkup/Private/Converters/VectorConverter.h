@@ -52,15 +52,13 @@ public:
 protected:
 	virtual bool Convert(const FProperty& Property, void* Data, const FStringView& String) override
 	{
-		check(Property.IsA<FStructProperty>());
-		auto& StructProperty = *CastField<FStructProperty>(&Property);
-		check(StructProperty.Struct == TBaseStructure<FVector>::Get());
+		auto& StructProperty = *CastFieldChecked<FStructProperty>(&Property);
 		FVector Vector;
 		if (!Convert(String, Vector))
 		{
 			return false;
 		}
-		Property.CopyCompleteValue(Data, &Vector);
+		StructProperty.CopyCompleteValue(Data, &Vector);
 		return true;
 	}
 };

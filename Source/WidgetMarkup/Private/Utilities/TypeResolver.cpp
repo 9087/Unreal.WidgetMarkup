@@ -7,6 +7,7 @@
 #include "Misc/PackageName.h"
 #include "Modules/ModuleManager.h"
 #include "UObject/UObjectIterator.h"
+#include "WidgetBlueprint.h"
 #include "WidgetMarkupModule.h"
 
 namespace
@@ -59,6 +60,17 @@ namespace
 		{
 			if (UObject* CompiledObject = WidgetMarkupModule->GetObjectOrCompileFromPackage(PackagePath))
 			{
+				// WidgetMarkup compilation returns a UWidgetBlueprint; extract its GeneratedClass.
+				if constexpr (std::is_same_v<T, UClass>)
+				{
+					if (UWidgetBlueprint* WidgetBP = Cast<UWidgetBlueprint>(CompiledObject))
+					{
+						if (UClass* GeneratedClass = WidgetBP->GeneratedClass)
+						{
+							return GeneratedClass;
+						}
+					}
+				}
 				if (T* CompiledType = Cast<T>(CompiledObject))
 				{
 					return CompiledType;
