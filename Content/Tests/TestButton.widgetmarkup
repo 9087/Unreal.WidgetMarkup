@@ -1,7 +1,21 @@
 <WidgetBlueprint Script="Tests.TestButton">
   <WidgetTree>
     <CanvasPanel>
-      <Button Name="TestBtn" />
+      <Button Name="StyledButton"
+              ColorAndOpacity="1,1,1,1"
+              BackgroundColor="0.2,0.4,0.8,1"
+              ClickMethod="DownAndUp"
+              TouchMethod="DownAndUp"
+              PressMethod="DownAndUp"
+              IsFocusable="True"
+              RenderOpacity="1.0"
+              OnClicked="on_clicked"
+              OnPressed="on_pressed"
+              OnReleased="on_released"
+              OnHovered="on_hovered"
+              OnUnhovered="on_unhovered">
+        <TextBlock Name="ButtonLabel" Text="Click Me" Font.Size="16" />
+      </Button>
     </CanvasPanel>
   </WidgetTree>
 </WidgetBlueprint>

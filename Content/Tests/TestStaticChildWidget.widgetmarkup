@@ -1,9 +1,0 @@
-<!-- Sub-widget blueprint to be statically embedded by TestStaticChild. -->
-<WidgetBlueprint Script="Tests.TestStaticChildWidget">
-  <WidgetTree>
-    <CanvasPanel>
-      <TextBlock Name="SubChildText" Text="I am a static sub-child" />
-      <Button Name="SubChildBtn" />
-    </CanvasPanel>
-  </WidgetTree>
-</WidgetBlueprint>

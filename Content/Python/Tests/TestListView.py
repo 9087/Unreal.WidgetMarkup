@@ -1,37 +1,39 @@
-import unreal
 import widget_markup
 from WidgetMarkupComponent import reactive
-from ObservableCollection import ObservableCollection
 from Tests.TestComponent import TestComponent
 
 
 class TestListView(TestComponent):
+    @reactive
+    def items(self):
+        return list("ABC")
+
     def __init__(self):
         try:
-            super().__init__( "TestListView")
+            super().__init__("TestListView")
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            lv = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "TestLV")
-            self.check_not_none(lv, "ListView found")
+            list_view = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "TestListView")
+            self.check_not_none(list_view, "ListView found")
 
-            # --- ObservableCollection ---
-            items = ObservableCollection(owner=None, property_name="test",
-                                         on_changed=None, initial=list("ABC"))
-            self.check_equal(len(items), 3, "initial length == 3")
-            self.check_equal(items[0], "A", "items[0] == 'A'")
-            self.check_equal(items[1], "B", "items[1] == 'B'")
+            entry_class = list_view.get_editor_property("EntryWidgetClass")
+            self.check_not_none(entry_class, "EntryWidgetClass is set")
 
-            items.append("D")
-            self.check_equal(len(items), 4, "after append length == 4")
-            self.check_equal(items[3], "D", "items[3] == 'D'")
+            self.check_equal(len(self.items), 3, "initial length == 3")
+            self.check_equal(self.items[0], "A", "items[0] == 'A'")
+            self.check_equal(self.items[1], "B", "items[1] == 'B'")
 
-            items.pop(0)
-            self.check_equal(len(items), 3, "after pop(0) length == 3")
-            self.check_equal(items[0], "B", "items[0] == 'B'")
+            self.items.append("D")
+            self.check_equal(len(self.items), 4, "after append length == 4")
+            self.check_equal(self.items[3], "D", "items[3] == 'D'")
 
-            items.clear()
-            self.check_equal(len(items), 0, "after clear length == 0")
+            self.items.pop(0)
+            self.check_equal(len(self.items), 3, "after pop(0) length == 3")
+            self.check_equal(self.items[0], "B", "items[0] == 'B'")
+
+            self.items.clear()
+            self.check_equal(len(self.items), 0, "after clear length == 0")
 
             self.report()
         finally:

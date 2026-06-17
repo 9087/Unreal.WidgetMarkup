@@ -1,7 +1,11 @@
 <WidgetBlueprint Script="Tests.TestImage">
   <WidgetTree>
     <CanvasPanel>
-      <Image Name="TestImg" />
+      <Image Name="StyledImage"
+             ColorAndOpacity="1,1,1,0.8"
+             Brush.DrawAs="Box"
+             Brush.ImageSize="128,128"
+             RenderOpacity="0.9" />
     </CanvasPanel>
   </WidgetTree>
 </WidgetBlueprint>

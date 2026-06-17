@@ -1,8 +1,13 @@
 <WidgetBlueprint Script="Tests.TestCanvasPanel">
   <WidgetTree>
-    <CanvasPanel Name="TestCP">
-      <TextBlock Name="CPChild1" Text="child1" />
-      <TextBlock Name="CPChild2" Text="child2" />
+    <CanvasPanel Name="TestCanvas" Visibility="Visible">
+      <TextBlock Name="CanvasChild1" Text="child1" Slot.ZOrder="0"
+                 Slot.LayoutData.Anchors.Minimum="0,0" Slot.LayoutData.Anchors.Maximum="0.5,0.5"
+                 Slot.LayoutData.Offsets.Left="10" Slot.LayoutData.Offsets.Top="10" />
+      <TextBlock Name="CanvasChild2" Text="child2" Slot.ZOrder="1"
+                 Slot.LayoutData.Anchors.Minimum="0.5,0" Slot.LayoutData.Anchors.Maximum="1.0,0.5"
+                 Slot.LayoutData.Offsets.Right="10" Slot.LayoutData.Offsets.Top="10" />
+      <TextBlock Name="CanvasChild3" Text="child3" Slot.bAutoSize="True" Slot.ZOrder="2" />
     </CanvasPanel>
   </WidgetTree>
 </WidgetBlueprint>

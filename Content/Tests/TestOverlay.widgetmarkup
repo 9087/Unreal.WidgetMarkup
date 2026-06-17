@@ -1,8 +1,14 @@
 <WidgetBlueprint Script="Tests.TestOverlay">
   <WidgetTree>
-    <Overlay Name="TestOV">
-      <TextBlock Name="OVChild1" Text="layer1" />
-      <TextBlock Name="OVChild2" Text="layer2" />
+    <Overlay Name="TestOverlayPanel" Visibility="Visible">
+      <TextBlock Name="OverlayChild1" Text="layer1"
+                 Slot.Padding="4,2"
+                 Slot.HorizontalAlignment="Fill"
+                 Slot.VerticalAlignment="Fill" />
+      <TextBlock Name="OverlayChild2" Text="layer2"
+                 Slot.Padding="8,4"
+                 Slot.HorizontalAlignment="Right"
+                 Slot.VerticalAlignment="Bottom" />
     </Overlay>
   </WidgetTree>
 </WidgetBlueprint>

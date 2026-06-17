@@ -10,24 +10,35 @@ class TestDynamicChild(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            exist = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "ExistingChild")
-            self.check_not_none(exist, "ExistingChild found (static XML child)")
+            # Static XML child: TestChild embedded as WidgetMarkup widget.
+            existing_child = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "ExistingChild")
+            self.check_not_none(existing_child, "ExistingChild found (static TestChild)")
 
-            comp = self.add_child("DynamicText", "TextBlock", "RootCanvas")
-            self.check_true(comp is None, "add_child returns None for plain UMG widget")
+            # get_child on static child (TestChild has a Python component).
+            static_comp = self.get_child("ExistingChild")
+            self.check_not_none(static_comp, "get_child returns component for static TestChild")
 
-            w = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "DynamicText")
-            self.check_not_none(w, "DynamicText in WidgetTree after add_child")
-            if w:
-                self.check_true("TextBlock" in str(w.__class__), "DynamicText is TextBlock")
+            # Dynamic add_child via C++ API with unreal.TextBlock (UClass).
+            child_widget = widget_markup.WidgetLibrary.add_child_widget(
+                uw, "RootCanvas", unreal.TextBlock, None, "DynTextBlock")
+            self.check_not_none(child_widget, "add_child_widget with UClass returns widget")
+            self.check_true(isinstance(child_widget, unreal.TextBlock), "returned widget is TextBlock")
 
-            static = self.get_child("ExistingChild")
-            self.check_true(static is None, "get_child returns None for plain UMG widget (no component)")
+            # Dynamic remove_child
+            result = self.remove_child("DynTextBlock")
+            self.check_true(result, "remove_child(DynTextBlock) returned True")
+            gone = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "DynTextBlock")
+            self.check_true(gone is None, "DynTextBlock gone after remove_child")
 
-            result = self.remove_child("DynamicText")
-            self.check_true(result, "remove_child(name) returned True")
-            gone = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "DynamicText")
-            self.check_true(gone is None, "DynamicText gone after remove")
+            # Python add_child with string path.
+            new_comp = self.add_child("PyChild", "/Script/UMG.TextBlock", "RootCanvas")
+            self.check_not_none(new_comp is None, "add_child returns None for plain UMG widget (no component)")
+            self.remove_child("PyChild")  # cleanup
+
+            # Python add_child returns component for WidgetMarkup widget.
+            new_comp = self.add_child("WmChild", "/WidgetMarkup/Tests/TestChild", "RootCanvas")
+            self.check_not_none(new_comp, "add_child returns component for WidgetMarkup widget")
+            self.remove_child("WmChild")  # cleanup
 
             self.report()
         finally:

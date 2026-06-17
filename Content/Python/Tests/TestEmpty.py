@@ -11,5 +11,8 @@ class TestEmpty(TestComponent):
             self.check_not_none(uw, "user widget is not None")
             self.report()
         finally:
+            # Only request shutdown if this is the root widget (not embedded).
             if widget_markup.Application.get_extra_arguments() == "test":
-                widget_markup.Application.request_shutdown()
+                uw = getattr(self, "_widget_markup_user_widget", None)
+                if uw is not None and uw.get_parent() is None:
+                    widget_markup.Application.request_shutdown()

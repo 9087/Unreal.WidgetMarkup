@@ -1,8 +1,17 @@
 <WidgetBlueprint Script="Tests.TestVerticalBox">
   <WidgetTree>
-    <VerticalBox Name="TestVB">
-      <TextBlock Name="VBChild1" Text="A" />
-      <TextBlock Name="VBChild2" Text="B" />
+    <VerticalBox Name="TestVertical" Visibility="Visible">
+      <TextBlock Name="VerticalChild1" Text="Fill"
+                 Slot.Size.SizeRule="Fill"
+                 Slot.Size.Value="1.0"
+                 Slot.Padding="4,2"
+                 Slot.HorizontalAlignment="Fill"
+                 Slot.VerticalAlignment="Center" />
+      <TextBlock Name="VerticalChild2" Text="Auto"
+                 Slot.Size.SizeRule="Automatic"
+                 Slot.Padding="8,4"
+                 Slot.HorizontalAlignment="Right"
+                 Slot.VerticalAlignment="Bottom" />
     </VerticalBox>
   </WidgetTree>
 </WidgetBlueprint>

@@ -4,7 +4,20 @@
       <TextBlock Name="TestText"
                  Text="Hello World"
                  ColorAndOpacity="#FF0000FF"
-                 Font.Size="24" />
+                 Font.Size="24"
+                 Justification="Center" />
+      <TextBlock Name="SharedText"
+                 Text="Shared"
+                 Visibility="Visible"
+                 RenderOpacity="0.8" />
+      <TextBlock Name="WrappedText"
+                 Text="Long text that wraps"
+                 AutoWrapText="True"
+                 MinDesiredWidth="100.0" />
+      <TextBlock Name="ShadowText"
+                 Text="With Shadow"
+                 ShadowOffset="2,2"
+                 ShadowColorAndOpacity="0,0,0,0.5" />
     </CanvasPanel>
   </WidgetTree>
 </WidgetBlueprint>

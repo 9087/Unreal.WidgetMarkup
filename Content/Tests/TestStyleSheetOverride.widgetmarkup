@@ -2,10 +2,8 @@
   <StyleSheet>/WidgetMarkup/Tests/TestStyleSheetFile</StyleSheet>
   <WidgetTree>
     <CanvasPanel>
-      <TextBlock Name="Overridden" Style="StyledText" Text="color should be orange, size 20 (inherited)" />
+      <TextBlock Name="InheritedStyled" Style="StyledText" Text="inherited style: blue, size 20" />
+      <TextBlock Name="UnstyledRef" Text="no style" />
     </CanvasPanel>
-  </WidgetTree>
-</WidgetBlueprint>
-
   </WidgetTree>
 </WidgetBlueprint>

@@ -1,14 +1,6 @@
-<WidgetBlueprint Script="Tests.TestStyleSheetFile">
-  <StyleSheet>
-    <Style TargetType="TextBlock" Name="StyledText">
-      <Setter Property="ColorAndOpacity" Value="#FF0000FF" />
-      <Setter Property="Font.Size" Value="20" />
-    </Style>
-  </StyleSheet>
-  <WidgetTree>
-    <CanvasPanel>
-      <TextBlock Name="Styled" Style="StyledText" Text="styled via file" />
-      <TextBlock Name="Unstyled" Text="no style" />
-    </CanvasPanel>
-  </WidgetTree>
-</WidgetBlueprint>
+<StyleSheet>
+  <Style TargetType="TextBlock" Name="StyledText">
+    <Setter Property="ColorAndOpacity" Value="#FF0000FF" />
+    <Setter Property="Font.Size" Value="20" />
+  </Style>
+</StyleSheet>

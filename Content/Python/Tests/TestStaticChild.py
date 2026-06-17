@@ -10,22 +10,19 @@ class TestStaticChild(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            # Add a TextBlock dynamically.
-            comp = self.add_child("DynChild", "TextBlock", "RootCanvas")
-            self.check_true(comp is None, "add_child returns None for plain UMG widget")
+            # Static XML child: TestChild embedded as WidgetMarkup widget.
+            child_widget = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "StaticChild")
+            self.check_not_none(child_widget, "StaticChild found in WidgetTree")
 
-            w = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "DynChild")
-            self.check_not_none(w, "DynChild in WidgetTree after add_child")
+            # get_child should return the component since TestChild has a Script.
+            child_comp = self.get_child("StaticChild")
+            self.check_not_none(child_comp, "get_child returns component for static TestChild")
 
-            # get_child on static XML child (plain UMG, no component).
-            child = self.get_child("SiblingText")
-            self.check_true(child is None, "get_child returns None for plain UMG widget")
-
-            # remove_child by name.
-            result = self.remove_child("DynChild")
-            self.check_true(result, "remove_child(name) returned True")
-            gone = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "DynChild")
-            self.check_true(gone is None, "DynChild gone after remove_child")
+            # remove_child on the static child.
+            result = self.remove_child("StaticChild")
+            self.check_true(result, "remove_child(StaticChild) returned True")
+            gone = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "StaticChild")
+            self.check_true(gone is None, "StaticChild gone after remove_child")
 
             self.report()
         finally:

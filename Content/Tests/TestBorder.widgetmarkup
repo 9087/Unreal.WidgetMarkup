@@ -1,8 +1,19 @@
 <WidgetBlueprint Script="Tests.TestBorder">
   <WidgetTree>
     <CanvasPanel>
-      <Border Name="TestBdr">
-        <TextBlock Name="TestBorderChild" Text="inside border" />
+      <Border Name="StyledBorder"
+              BrushColor="0.1,0.1,0.3,1"
+              ContentColorAndOpacity="1.0,0.8,0.8,1.0"
+              Padding="8,8"
+              HorizontalAlignment="Fill"
+              VerticalAlignment="Fill"
+              Visibility="Visible"
+              RenderOpacity="0.95"
+              IsEnabled="True"
+              Background.DrawAs="Box"
+              bShowEffectWhenDisabled="True"
+              DesiredSizeScale="1.0,1.0">
+        <TextBlock Name="BorderChild" Text="inside border" Font.Size="14" />
       </Border>
     </CanvasPanel>
   </WidgetTree>

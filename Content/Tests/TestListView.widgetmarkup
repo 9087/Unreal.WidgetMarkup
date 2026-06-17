@@ -1,7 +1,7 @@
 <WidgetBlueprint Script="Tests.TestListView">
   <WidgetTree>
     <CanvasPanel>
-      <ListView Name="TestLV" />
+      <ListView Name="TestListView" ListItems="{items}" EntryWidgetClass="/WidgetMarkup/Tests/TestChild" />
     </CanvasPanel>
   </WidgetTree>
 </WidgetBlueprint>

@@ -1,0 +1,9 @@
+<!-- Reusable child widget with text and button, usable as static child, dynamic child, or ListView entry. -->
+<WidgetBlueprint Script="Tests.TestChild">
+  <WidgetTree>
+    <CanvasPanel>
+      <TextBlock Name="ChildText" Text="{display_text}" />
+      <Button Name="ChildButton" />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>
