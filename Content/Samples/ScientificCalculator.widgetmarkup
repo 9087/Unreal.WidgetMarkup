@@ -18,7 +18,7 @@
     </Style>
 
     <Style TargetType="TextBlock" Name="DisplayText">
-      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.FontObject" Value="Segoe UI" />
       <Setter Property="Font.Size" Value="42" />
       <Setter Property="ColorAndOpacity" Value="0.30,0.30,0.30,1" />
     </Style>
@@ -44,25 +44,25 @@
     </Style>
 
     <Style TargetType="TextBlock" Name="LabelDark">
-      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.FontObject" Value="Segoe UI" />
       <Setter Property="Font.Size" Value="15" />
       <Setter Property="ColorAndOpacity" Value="0.22,0.22,0.22,1" />
     </Style>
 
     <Style TargetType="TextBlock" Name="LabelLight">
-      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.FontObject" Value="Segoe UI" />
       <Setter Property="Font.Size" Value="15" />
       <Setter Property="ColorAndOpacity" Value="1,1,1,1" />
     </Style>
 
     <Style TargetType="TextBlock" Name="LabelNumber">
-      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.FontObject" Value="Segoe UI" />
       <Setter Property="Font.Size" Value="22" />
       <Setter Property="ColorAndOpacity" Value="0.18,0.18,0.18,1" />
     </Style>
 
     <Style TargetType="TextBlock" Name="LabelOperator">
-      <Setter Property="Font.FontObject" Value="/Engine/EngineFonts/Roboto.Roboto" />
+      <Setter Property="Font.FontObject" Value="Segoe UI" />
       <Setter Property="Font.Size" Value="26" />
       <Setter Property="ColorAndOpacity" Value="1,1,1,1" />
     </Style>
@@ -127,19 +127,19 @@
           <!-- Row 1 -->
           <Button OnClicked="press_inverse" Style="ButtonWhite"
                   Slot.Row="1" Slot.Column="0" Slot.Padding="3,3,3,3">
-            <TextBlock Text="x^-1" Style="LabelDark" Font.Size="13" />
+            <TextBlock Text="x⁻¹" Style="LabelDark" Font.Size="13" />
           </Button>
           <Button OnClicked="press_square" Style="ButtonWhite"
                   Slot.Row="1" Slot.Column="1" Slot.Padding="3,3,3,3">
-            <TextBlock Text="x^2" Style="LabelDark" Font.Size="14" />
+            <TextBlock Text="x²" Style="LabelDark" Font.Size="14" />
           </Button>
           <Button OnClicked="press_cube" Style="ButtonWhite"
                   Slot.Row="1" Slot.Column="2" Slot.Padding="3,3,3,3">
-            <TextBlock Text="x^3" Style="LabelDark" Font.Size="14" />
+            <TextBlock Text="x³" Style="LabelDark" Font.Size="14" />
           </Button>
           <Button OnClicked="press_power" Style="ButtonWhite"
                   Slot.Row="1" Slot.Column="3" Slot.Padding="3,3,3,3">
-            <TextBlock Text="x^y" Style="LabelDark" Font.Size="14" />
+            <TextBlock Text="xʸ" Style="LabelDark" Font.Size="14" />
           </Button>
           <Button OnClicked="press_clear" Style="ButtonOperator"
                   Slot.Row="1" Slot.Column="4" Slot.Padding="3,3,3,3">
@@ -155,7 +155,7 @@
           </Button>
           <Button OnClicked="press_multiply" Style="ButtonOperator"
                   Slot.Row="1" Slot.Column="7" Slot.Padding="3,3,3,3">
-            <TextBlock Text="x" Style="LabelOperator" />
+            <TextBlock Text="×" Style="LabelOperator" />
           </Button>
 
           <!-- Row 2 -->
@@ -165,11 +165,11 @@
           </Button>
           <Button OnClicked="press_sqrt" Style="ButtonWhite"
                   Slot.Row="2" Slot.Column="1" Slot.Padding="3,3,3,3">
-            <TextBlock Text="sqrt" Style="LabelDark" Font.Size="12" />
+            <TextBlock Text="√x" Style="LabelDark" Font.Size="16" />
           </Button>
           <Button OnClicked="press_nth_root" Style="ButtonWhite"
                   Slot.Row="2" Slot.Column="2" Slot.Padding="3,3,3,3">
-            <TextBlock Text="yrt" Style="LabelDark" Font.Size="13" />
+            <TextBlock Text="y√x" Style="LabelDark" Font.Size="13" />
           </Button>
           <Button OnClicked="press_log10" Style="ButtonWhite"
                   Slot.Row="2" Slot.Column="3" Slot.Padding="3,3,3,3">
@@ -241,7 +241,7 @@
           </Button>
           <Button OnClicked="press_exp" Style="ButtonWhite"
                   Slot.Row="4" Slot.Column="3" Slot.Padding="3,3,3,3">
-            <TextBlock Text="e^x" Style="LabelDark" Font.Size="14" />
+            <TextBlock Text="eˣ" Style="LabelDark" Font.Size="14" />
           </Button>
           <Button OnClicked="press_digit_1" Style="ButtonWhite"
                   Slot.Row="4" Slot.Column="4" Slot.Padding="3,3,3,3">
