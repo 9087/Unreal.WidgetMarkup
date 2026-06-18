@@ -97,12 +97,11 @@ Game\Plugins\WidgetMarkup\Content\Tests\RunTests.bat [Game/YourProject.uproject]
 
 **所有修改必须通过测试后方可合入。**
 
-测试套件包括：
+测试套件覆盖控件类型、布局面板、样式表、响应式绑定、计算属性链、列表视图及子组件管理，详见 `Content/Tests/`。
 
-| 步骤 | 包路径 | 说明 |
-|------|--------|------|
-| 1 | `/WidgetMarkup/Tests/UnitTests` | Python 单元测试（响应式、组件、集合） |
-| 2 | `/WidgetMarkup/Tests/TestCases` | XML 编译与变量集成测试 |
+## 示例
+
+`Content/Samples/` 中提供了带 Python 组件的 `.widgetmarkup` 示例文件，包含响应式计数器、待办列表和自定义组件等。
 
 ## 语法插件
 

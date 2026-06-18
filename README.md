@@ -97,12 +97,11 @@ If no project is specified, defaults to `Game/Game.uproject`.
 
 **All changes must pass these tests before merging.**
 
-The suite runs:
+The suite covers widget types, layout panels, stylesheets, reactive bindings, computed chains, list views, and child component management. See `Content/Tests/` for the full list.
 
-| Step | Package | Description |
-|------|---------|-------------|
-| 1 | `/WidgetMarkup/Tests/UnitTests` | Python unit tests (reactive, component, collections) |
-| 2 | `/WidgetMarkup/Tests/TestCases` | XML compilation and variable integration tests |
+## Samples
+
+Example `.widgetmarkup` files with Python components are in `Content/Samples/`, including reactive counters, todo lists, and custom components.
 
 ## Language Extension
 
