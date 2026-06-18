@@ -140,3 +140,64 @@ Pointer-event helpers safe to call from widget delegate handlers (see [PointerEv
 
 - **`pointer_event_get_effecting_button(mouse_event)`** — effecting button as `unreal.Key`.
 - **`pointer_event_is_mouse_button_down(mouse_event, key)`** — whether a button is down; `key` is an `unreal.Key`, a `widget_markup.Key` constant, or a key name string.
+
+## Reading Widget Properties in Python
+
+When reading back properties set via XML, use `get_editor_property()`. The Python access pattern depends on the UE type:
+
+| Type | Read pattern | See |
+|---|---|---|
+| FLinearColor / FSlateColor | `.r`, `.g`, `.b`, `.a` | [linear-color.md](structs/linear-color.md) |
+| FVector2D (double) | `.x`, `.y` (lowercase) | [vector2d.md](structs/vector2d.md) |
+| FVector2f | `.X`, `.Y` (uppercase) | [vector2d.md](structs/vector2d.md) |
+| FDeprecateSlateVector2D | `export_text()` substring match | [vector2d.md](structs/vector2d.md) |
+| FMargin | `.left`, `.top`, `.right`, `.bottom` | [margin.md](structs/margin.md) |
+| bool / float / int | direct value | — |
+| FText | Python string (auto-converted) | — |
+
+### Enum Properties
+
+Compare directly against `unreal.EnumName` values. Note that Python enum members use **UPPER_SNAKE_CASE** (e.g. `H_ALIGN_FILL`), not the C++ name (`HAlign_Fill`):
+
+```python
+# HorizontalAlignment
+self.check_equal(
+    slot.get_editor_property("HorizontalAlignment"),
+    unreal.HorizontalAlignment.H_ALIGN_FILL)
+
+# VerticalAlignment
+self.check_equal(
+    slot.get_editor_property("VerticalAlignment"),
+    unreal.VerticalAlignment.V_ALIGN_CENTER)
+
+# SlateSizeRule (nested in Size struct)
+self.check_equal(
+    size.get_editor_property("SizeRule"),
+    unreal.SlateSizeRule.FILL)
+
+# ButtonClickMethod
+self.check_equal(
+    button.get_editor_property("ClickMethod"),
+    unreal.ButtonClickMethod.DOWN_AND_UP)
+
+# SlateVisibility
+self.check_equal(
+    widget.get_editor_property("Visibility"),
+    unreal.SlateVisibility.VISIBLE)
+```
+
+### Nested Struct Access
+
+Chain `get_editor_property()` for nested structs:
+
+```python
+# Slot → Size → SizeRule
+slot = widget.slot
+size = slot.get_editor_property("Size")
+rule = size.get_editor_property("SizeRule")
+
+# LayoutData → Anchors → Minimum
+layout = slot.get_editor_property("LayoutData")
+min_pt = layout.get_editor_property("Anchors").get_editor_property("Minimum")
+min_pt.x  # FVector2D (double): lowercase
+```

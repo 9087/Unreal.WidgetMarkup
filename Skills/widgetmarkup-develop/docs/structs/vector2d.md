@@ -12,4 +12,8 @@
 
 **Python:** `unreal.Vector2D(x, y)`
 
+> **Python access:** For FVector2D (double), use lowercase `.x`, `.y`. For FVector2f, use uppercase `.X`, `.Y`. See [unreal-python-api.md](../unreal-python-api.md#fvector2d--fvector2f) for details.
+>
+> **FDeprecateSlateVector2D:** This struct inherits from `FVector2f` but its `.X`/`.Y` members are not exposed to Python. To read values (e.g. `Brush.ImageSize`), use `export_text()` and substring-match the result.
+>
 > **XML nesting:** Child-element syntax (`<ShadowOffset><X>2</X><Y>2</Y></ShadowOffset>`) is supported via `FPropertyPathResolver`.

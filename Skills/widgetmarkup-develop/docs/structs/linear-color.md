@@ -12,4 +12,10 @@ RGBA color with float components (0–1). Used by most color properties.
 
 **Python:** Use `unreal.LinearColor(r, g, b, a)`.
 
+> **Reading back in Python:** Access via `.r`, `.g`, `.b`, `.a`:
+> ```python
+> co = widget.get_editor_property("ColorAndOpacity")
+> co.r, co.g, co.b, co.a  # float values
+> ```
+
 > **XML nesting:** Child-element syntax (`<ColorAndOpacity><R>1</R><G>0</G><B>0</B><A>1</A></ColorAndOpacity>`) is supported via `FPropertyPathResolver`.

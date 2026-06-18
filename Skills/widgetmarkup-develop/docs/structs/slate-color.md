@@ -11,4 +11,6 @@ A color that can be either a literal `FLinearColor` or a reference to a color fr
 
 **Python:** Use `unreal.SlateColor(unreal.LinearColor(r, g, b, a))`. Do NOT use bare `unreal.LinearColor` — the binding expects `SlateColor`.
 
+> **Reading back in Python:** Same as [FLinearColor](linear-color.md) — use `.r`, `.g`, `.b`, `.a`.
+
 > **XML nesting:** Child-element syntax (`<ColorAndOpacity><R>1</R><G>0</G><B>0</B><A>1</A></ColorAndOpacity>`) is supported via `FPropertyPathResolver`.

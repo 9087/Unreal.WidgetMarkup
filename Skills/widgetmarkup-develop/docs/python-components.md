@@ -266,3 +266,132 @@ class ListEntryComponent(WidgetMarkupComponent, IUserObjectListEntry):
 `on_data_refresh(data)` is defined in `WidgetMarkupComponent` — override it to receive list item data.
 
 The Python mixin auto-binds to `UWidgetMarkupUserWidget`'s multicast delegates in `__init__`.
+
+> **Entry without IUserObjectListEntry:** For simple entry widgets that only need `on_data_refresh`, inheriting `IUserObjectListEntry` is optional. `on_data_refresh` is on `WidgetMarkupComponent` itself. Only inherit `IUserObjectListEntry` if you need `get_list_item()`, selection/expansion callbacks, or `is_selected()`.
+
+## Property Change Notification
+
+Override `on_property_changed(name, value)` to observe all reactive/computed property changes:
+
+```python
+class MyComponent(WidgetMarkupComponent):
+    def __init__(self):
+        self.changed_names = []
+        super().__init__()
+
+    def on_property_changed(self, name, value):
+        self.changed_names.append(name)
+```
+
+Called for every reactive setter and computed recalculation. The `name` is the Python property name (e.g. `"total"`, `"doubled"`), and `value` is the new value.
+
+## Reactive Property Details
+
+### Default Values
+
+The method body of `@reactive` serves as the default. It runs once on first access:
+
+```python
+@reactive
+def count(self): return 0          # int
+@reactive
+def label(self): return "hello"    # str
+@reactive
+def flag(self): return True        # bool
+@reactive
+def pi(self): return 3.14          # float
+@reactive
+def optional(self): return None    # None — supported, not treated as "uninitialized"
+@reactive
+def items(self): return []         # list — auto-wrapped in ObservableCollection
+```
+
+Setting `None` on a previously-set reactive property works normally: `self.optional = None`.
+
+## Computed Property Chains
+
+`@computed` tracks dependencies through multiple levels. A 3-level chain works correctly:
+
+```python
+@computed
+def total(self): return self.a + self.b          # depends on a, b
+@computed
+def doubled(self): return self.total * 2         # depends on total
+@computed
+def tripled(self): return self.doubled * 3       # depends on doubled
+```
+
+When `b` changes → `total` recalculates → `doubled` recalculates → `tripled` recalculates. All three fire `on_property_changed`.
+
+---
+
+## Child Component Management
+
+WidgetMarkup provides APIs to dynamically add and remove child widgets from a parent component.
+
+### get_child
+
+Retrieve a child WidgetMarkupComponent by its widget name:
+
+```python
+child_comp = self.get_child("ChildName")
+# Returns the WidgetMarkupComponent if the child has one, or None
+```
+
+Works on both statically defined (XML) and dynamically added children. The child widget must have a `Script` attribute to have a component.
+
+### add_child
+
+Dynamically create and add a widget to a parent panel:
+
+```python
+# Add a plain UMG widget (returns None — no Python component):
+self.add_child("MyText", "/Script/UMG.TextBlock", "RootCanvas")
+
+# Add a WidgetMarkup widget (returns its component):
+comp = self.add_child("MyChild", "/WidgetMarkup/Tests/TestChild", "RootCanvas")
+```
+
+Parameters:
+- `name`: Unique widget name in the WidgetTree
+- `cls`: Widget class — accepts string path (`"/Script/UMG.TextBlock"`), dot-notation (`"WidgetMarkup.Tests.TestChild"`), or UClass (`unreal.TextBlock`)
+- `parent_name`: Name of the parent panel widget (must be a `UPanelWidget` like `CanvasPanel`)
+
+The return value is the `WidgetMarkupComponent` if the created widget has a Python component, or `None` for plain UMG widgets.
+
+### remove_child
+
+Remove a child widget by name or reference:
+
+```python
+self.remove_child("MyText")        # by name
+self.remove_child(widget_ref)      # by UWidget reference
+self.remove_child(component_ref)   # by component reference
+```
+
+Returns `True` if the child was found and removed.
+
+## Reusable WidgetMarkup Components
+
+WidgetMarkup blueprints can embed other WidgetMarkup blueprints as children using the `<WidgetMarkup.X.Y>` syntax:
+
+```xml
+<WidgetBlueprint Script="Tests.TestStaticChild">
+  <WidgetTree>
+    <CanvasPanel Name="RootCanvas">
+      <WidgetMarkup.Tests.TestChild Name="StaticChild" />
+    </CanvasPanel>
+  </WidgetTree>
+</WidgetBlueprint>
+```
+
+This compiles `TestChild.widgetmarkup` on demand and embeds the resulting widget tree. The embedded widget's `Script` component is created as usual — `get_child("StaticChild")` returns the TestChild component.
+
+The same `TestChild` can also serve as a ListView entry widget:
+
+```xml
+<ListView ListItems="{items}"
+          EntryWidgetClass="/WidgetMarkup/Tests/TestChild" />
+```
+
+A reusable child widget should not call `request_shutdown()` — that is the responsibility of the root test component only.

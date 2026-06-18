@@ -12,4 +12,10 @@
 
 Also used as `FAnchorData.Offsets` on CanvasPanel slots, where values represent Position X, Y, Width, Height instead of margins.
 
+> **Reading back in Python:** Access via `.left`, `.top`, `.right`, `.bottom`:
+> ```python
+> pad = slot.get_editor_property("Padding")
+> pad.left, pad.top, pad.right, pad.bottom  # float values
+> ```
+
 > **XML nesting:** Child-element syntax (`<Padding><Left>4</Left><Top>4</Top><Right>4</Right><Bottom>4</Bottom></Padding>`) is supported via `FPropertyPathResolver`. The `"L,T,R,B"` string format is typically more concise.

@@ -79,6 +79,8 @@ The `<WidgetTree>` element is required inside `<WidgetBlueprint>`. It contains o
 
 **Widget class resolution:** Element names are resolved via `UClass::TryFindTypeSlow` — any non-abstract, non-UserWidget UMG class works.
 
+> **Embedding WidgetMarkup blueprints:** Use `<WidgetMarkup.X.Y>` dot-notation to embed another `.widgetmarkup` file as a child widget. For example, `<WidgetMarkup.Tests.TestChild Name="MyChild" />` compiles `TestChild.widgetmarkup` on demand and embeds the resulting widget tree. The embedded widget's `Script` component is created as usual — `get_child("MyChild")` returns its component. See [python-components.md § Reusable WidgetMarkup Components](docs/python-components.md#reusable-widgetmarkup-components) for details.
+
 | Constraint | Widgets |
 |---|---|
 | Single child | Button, Border, ScrollBox, SizeBox, ScaleBox |

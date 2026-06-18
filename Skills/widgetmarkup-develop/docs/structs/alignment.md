@@ -25,3 +25,9 @@ Control how content aligns within its slot. Use the **UE enum entry names** (cas
   <Slot HorizontalAlignment="HAlign_Center" VerticalAlignment="VAlign_Center" />
 </TextBlock>
 ```
+
+> **Reading back in Python:** Python enum members use UPPER_SNAKE_CASE:
+> ```python
+> slot.get_editor_property("HorizontalAlignment") == unreal.HorizontalAlignment.H_ALIGN_FILL
+> slot.get_editor_property("VerticalAlignment") == unreal.VerticalAlignment.V_ALIGN_CENTER
+> ```
