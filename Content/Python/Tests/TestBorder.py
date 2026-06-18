@@ -44,19 +44,19 @@ class TestBorder(TestComponent):
                 ha = border.get_editor_property("HorizontalAlignment")
                 self.check_not_none(ha, "HorizontalAlignment set")
                 if ha is not None:
-                    self.check_true("H_ALIGN_FILL" in str(ha), f"HorizontalAlignment is Fill, got {ha}")
+                    self.check_equal(ha, unreal.HorizontalAlignment.H_ALIGN_FILL, f"HorizontalAlignment is Fill, got {ha}")
 
                 # VerticalAlignment = Fill (VAlign_Fill)
                 va = border.get_editor_property("VerticalAlignment")
                 self.check_not_none(va, "VerticalAlignment set")
                 if va is not None:
-                    self.check_true("V_ALIGN_FILL" in str(va), f"VerticalAlignment is Fill, got {va}")
+                    self.check_equal(va, unreal.VerticalAlignment.V_ALIGN_FILL, f"VerticalAlignment is Fill, got {va}")
 
                 # Visibility = Visible
                 vis = border.get_editor_property("Visibility")
                 self.check_not_none(vis, "Visibility set")
                 if vis is not None:
-                    self.check_true("VISIBLE" in str(vis), f"Visibility is Visible, got {vis}")
+                    self.check_equal(vis, unreal.SlateVisibility.VISIBLE, f"Visibility is Visible, got {vis}")
 
                 # bIsEnabled = True (deprecated bitfield; UE5 parent-aware enabled state not initialized in test harness)
                 self.check_not_none(border.get_editor_property("bIsEnabled"), "bIsEnabled property exists")

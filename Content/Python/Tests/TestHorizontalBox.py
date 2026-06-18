@@ -20,8 +20,8 @@ class TestHorizontalBox(TestComponent):
             self.check_not_none(horizontal_child1, "HorizontalChild1 found")
             if horizontal_child1 and horizontal_child1.slot:
                 slot1 = horizontal_child1.slot
-                self.check_true("H_ALIGN_CENTER" in str(slot1.get_editor_property("HorizontalAlignment")), "HorizontalChild1.HAlign Center")
-                self.check_true("V_ALIGN_CENTER" in str(slot1.get_editor_property("VerticalAlignment")), "HorizontalChild1.VAlign Center")
+                self.check_equal(slot1.get_editor_property("HorizontalAlignment"), unreal.HorizontalAlignment.H_ALIGN_CENTER, "HorizontalChild1.HAlign Center")
+                self.check_equal(slot1.get_editor_property("VerticalAlignment"), unreal.VerticalAlignment.V_ALIGN_CENTER, "HorizontalChild1.VAlign Center")
                 pad1 = slot1.get_editor_property("Padding")
                 self.check_not_none(pad1, "HorizontalChild1.Padding set")
                 if pad1:
@@ -33,8 +33,8 @@ class TestHorizontalBox(TestComponent):
             self.check_not_none(horizontal_child2, "HorizontalChild2 found")
             if horizontal_child2 and horizontal_child2.slot:
                 slot2 = horizontal_child2.slot
-                self.check_true("H_ALIGN_LEFT" in str(slot2.get_editor_property("HorizontalAlignment")), "HorizontalChild2.HAlign Left")
-                self.check_true("V_ALIGN_TOP" in str(slot2.get_editor_property("VerticalAlignment")), "HorizontalChild2.VAlign Top")
+                self.check_equal(slot2.get_editor_property("HorizontalAlignment"), unreal.HorizontalAlignment.H_ALIGN_LEFT, "HorizontalChild2.HAlign Left")
+                self.check_equal(slot2.get_editor_property("VerticalAlignment"), unreal.VerticalAlignment.V_ALIGN_TOP, "HorizontalChild2.VAlign Top")
                 pad2 = slot2.get_editor_property("Padding")
                 self.check_not_none(pad2, "HorizontalChild2.Padding set")
                 if pad2:

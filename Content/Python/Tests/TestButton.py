@@ -35,19 +35,19 @@ class TestButton(TestComponent):
                 cm = button.get_editor_property("ClickMethod")
                 self.check_not_none(cm, "ClickMethod set")
                 if cm is not None:
-                    self.check_true("DOWN_AND_UP" in str(cm), f"ClickMethod is DownAndUp, got {cm}")
+                    self.check_equal(cm, unreal.ButtonClickMethod.DOWN_AND_UP, f"ClickMethod is DownAndUp, got {cm}")
 
                 # TouchMethod = DownAndUp
                 tm = button.get_editor_property("TouchMethod")
                 self.check_not_none(tm, "TouchMethod set")
                 if tm is not None:
-                    self.check_true("DOWN_AND_UP" in str(tm), f"TouchMethod is DownAndUp, got {tm}")
+                    self.check_equal(tm, unreal.ButtonTouchMethod.DOWN_AND_UP, f"TouchMethod is DownAndUp, got {tm}")
 
                 # PressMethod = DownAndUp
                 pm = button.get_editor_property("PressMethod")
                 self.check_not_none(pm, "PressMethod set")
                 if pm is not None:
-                    self.check_true("DOWN_AND_UP" in str(pm), f"PressMethod is DownAndUp, got {pm}")
+                    self.check_equal(pm, unreal.ButtonPressMethod.DOWN_AND_UP, f"PressMethod is DownAndUp, got {pm}")
 
                 # IsFocusable = True
                 self.check_equal(button.get_editor_property("IsFocusable"), True, "IsFocusable")
