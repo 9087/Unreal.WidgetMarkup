@@ -4,6 +4,7 @@
 
 #include "PropertyBuffer.h"
 #include "UObject/UnrealType.h"
+#include "WidgetMarkupModule.h"
 
 bool FPropertySetter::SetValue(
 	void* InContainer,

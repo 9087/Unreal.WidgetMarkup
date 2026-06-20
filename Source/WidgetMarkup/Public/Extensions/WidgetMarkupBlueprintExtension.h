@@ -44,10 +44,15 @@ public:
 	{
 		return DelegateBindings;
 	}
+	TArray<FWidgetDelegateBinding>& GetDelegateBindings()
+	{
+		return DelegateBindings;
+	}
 
 	/** Record a Style="Name" assignment from widget XML (WidgetName → StyleName). */
 	void AddWidgetStyleAssignment(FName WidgetName, FName StyleName);
 	const TMap<FName, FName>& GetWidgetStyleAssignments() const { return WidgetStyleAssignments; }
+	TMap<FName, FName>& GetWidgetStyleAssignments() { return WidgetStyleAssignments; }
 
 protected:
 	virtual void HandleBeginCompilation(FWidgetBlueprintCompilerContext& InCreationContext) override;

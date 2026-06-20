@@ -2,9 +2,12 @@
 
 #include "PropertyRuns/ObjectNamePropertyRun.h"
 
+#include "Binding/WidgetDelegateBinding.h"
 #include "Binding/WidgetPropertyBindingCollection.h"
 #include "Binding/WidgetPropertyBindingUtility.h"
 #include "Components/Widget.h"
+#include "Extensions/WidgetMarkupBlueprintExtension.h"
+#include "WidgetBlueprint.h"
 
 namespace
 {
@@ -75,6 +78,30 @@ bool FObjectNamePropertyMetaData::TryApplyWidgetMarkupObjectName(FElementNode::F
 		}
 	}
 
+	// Also update delegate bindings to use the new widget name.
+	if (UWidgetBlueprint* WidgetBlueprint = Context.FindObject<UWidgetBlueprint>())
+	{
+		if (UWidgetMarkupBlueprintExtension* Extension = UWidgetMarkupBlueprintExtension::RequestExtension<UWidgetMarkupBlueprintExtension>(WidgetBlueprint))
+		{
+			for (FWidgetDelegateBinding& DelegateBinding : Extension->GetDelegateBindings())
+			{
+				if (DelegateBinding.TargetWidgetName == PreviousName)
+				{
+					DelegateBinding.TargetWidgetName = Object->GetFName();
+				}
+			}
+
+			// Also update style assignments (Style="...") when widget is renamed.
+			TMap<FName, FName>& StyleAssignments = Extension->GetWidgetStyleAssignments();
+			if (const FName* AssignedStyle = StyleAssignments.Find(PreviousName))
+			{
+				const FName StyleName = *AssignedStyle;
+				StyleAssignments.Remove(PreviousName);
+				StyleAssignments.Add(Object->GetFName(), StyleName);
+			}
+		}
+	}
+
 	if (UWidget* Widget = Cast<UWidget>(Object))
 	{
 		Widget->bIsVariable = true;
@@ -87,14 +114,14 @@ bool FObjectNamePropertyMetaData::TryApplyGeneratedWidgetMarkupObjectName(FEleme
 {
 	for (int32 Index = 0; Index < 10000; ++Index)
 	{
-		const FString Name = FString::Printf(TEXT("__WidgetMarkupBindingTarget_%d"), Index);
+		const FString Name = FString::Printf(TEXT("WidgetMarkupAuto_%d"), Index);
 		if (TryApplyWidgetMarkupObjectName(Context, Object, Name, OutError))
 		{
 			return true;
 		}
 	}
 
-	OutError = FText::FromString(TEXT("Failed to generate a unique WidgetMarkup binding target name."));
+	OutError = FText::FromString(TEXT("Failed to generate a unique WidgetMarkup auto name."));
 	return false;
 }
 
