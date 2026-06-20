@@ -7,6 +7,7 @@
 struct FObjectNamePropertyMetaData : public FElementNode::FContext::TMetaData<FObjectNamePropertyMetaData>
 {
 	TMap<FString, FString> UsedNames;
+	int32 NextAutoNameIndex = 0;
 
 	static bool TryApplyWidgetMarkupObjectName(FElementNode::FContext& Context, UObject* Object, const FString& Name, FText& OutError);
 	static bool TryApplyGeneratedWidgetMarkupObjectName(FElementNode::FContext& Context, UObject* Object, FText& OutError);

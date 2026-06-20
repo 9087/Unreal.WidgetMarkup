@@ -112,9 +112,15 @@ bool FObjectNamePropertyMetaData::TryApplyWidgetMarkupObjectName(FElementNode::F
 
 bool FObjectNamePropertyMetaData::TryApplyGeneratedWidgetMarkupObjectName(FElementNode::FContext& Context, UObject* Object, FText& OutError)
 {
-	for (int32 Index = 0; Index < 10000; ++Index)
+	TSharedRef<FObjectNamePropertyMetaData> MetaData = Context.GetOrAddMetaData<FObjectNamePropertyMetaData>();
+
+	// Monotonic counter ensures we never retry the same name, and avoids
+	// the old O(N²) scan from 0.  The loop still exists because Rename
+	// may fail for reasons outside UsedNames (e.g. name collision with
+	// a widget that was not registered through TryApplyWidgetMarkupObjectName).
+	while (MetaData->NextAutoNameIndex >= 0) // overflow guard
 	{
-		const FString Name = FString::Printf(TEXT("WidgetMarkupAuto_%d"), Index);
+		const FString Name = FString::Printf(TEXT("WidgetMarkupAuto_%d"), MetaData->NextAutoNameIndex++);
 		if (TryApplyWidgetMarkupObjectName(Context, Object, Name, OutError))
 		{
 			return true;
