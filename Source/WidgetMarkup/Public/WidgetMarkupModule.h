@@ -21,6 +21,8 @@ class UWidgetMarkupBlueprintGeneratedClassExtension;
 class WIDGETMARKUP_API FWidgetMarkupModule : public IModuleInterface, public FGCObject
 {
 public:
+	static constexpr const TCHAR* SourceFileExtension = TEXT(".widgetmarkup");
+
 	static FWidgetMarkupModule& Get();
 
 	virtual void StartupModule() override;

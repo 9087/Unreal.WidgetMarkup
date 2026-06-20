@@ -492,7 +492,7 @@ UObject* FWidgetMarkupModule::CompileFromPackagePath(const FString& PackagePath)
 	UE_LOG(LogWidgetMarkup, Display, TEXT("Compile Package Path '%s'."), *PackagePath);
 
 	FString AbsoluteFilePath;
-	if (!TryConvertPackagePathToAbsoluteSourceFilePath(PackagePath, TEXT(".widgetmarkup"), AbsoluteFilePath))
+	if (!TryConvertPackagePathToAbsoluteSourceFilePath(PackagePath, FWidgetMarkupModule::SourceFileExtension, AbsoluteFilePath))
 	{
 		UE_LOG(LogWidgetMarkup, Error, TEXT("CompileFromPackagePath failed: invalid package path '%s' (expected /Game/... format)."), *PackagePath);
 		return nullptr;
@@ -739,8 +739,15 @@ void FWidgetMarkupModule::HandleOnSourceFileDirectoryChanged(const TArray<struct
 			}
 			FPaths::NormalizeFilename(AbsoluteFilePath);
 
+			// Skip non-widgetmarkup files (e.g. __pycache__/*.pyc, *.py) to
+			// avoid spurious "could not convert to package path" warnings.
+			if (!AbsoluteFilePath.EndsWith(FWidgetMarkupModule::SourceFileExtension))
+			{
+				break;
+			}
+
 			FString PackagePath;
-			if (!TryConvertAbsoluteSourceFilePathToPackagePath(AbsoluteFilePath, TEXT(".widgetmarkup"), PackagePath))
+			if (!TryConvertAbsoluteSourceFilePathToPackagePath(AbsoluteFilePath, FWidgetMarkupModule::SourceFileExtension, PackagePath))
 			{
 				UE_LOG(LogWidgetMarkup, Warning, TEXT("Source File Changed: could not convert to package path ('%s')."), *AbsoluteFilePath);
 				break;
