@@ -92,8 +92,9 @@
 
           <!-- Row 0 -->
           <Button OnClicked="press_second" Style="ButtonWhite"
+                  BackgroundColor="{second_button_color}"
                   Slot.Row="0" Slot.Column="0" Slot.Padding="3,3,3,3">
-            <TextBlock Text="2nd" Style="LabelDark" />
+            <TextBlock Text="2nd" Style="LabelDark" ColorAndOpacity="{second_button_text_color}" />
           </Button>
           <Button OnClicked="press_left_paren" Style="ButtonWhite"
                   Slot.Row="0" Slot.Column="1" Slot.Padding="3,3,3,3">

@@ -6,7 +6,9 @@ import operator
 import random
 from typing import Callable
 
-from WidgetMarkupComponent import WidgetMarkupComponent, reactive
+import unreal
+
+from WidgetMarkupComponent import WidgetMarkupComponent, reactive, computed
 
 _BINARY_OPERATORS = {
     ast.Add: operator.add,
@@ -33,11 +35,26 @@ class ScientificCalculator(WidgetMarkupComponent):
     def angle_mode_label(self):
         return "Deg"
 
+    @reactive
+    def second_active(self):
+        return False
+
+    @computed
+    def second_button_color(self):
+        if self.second_active:
+            return unreal.LinearColor(0.55, 0.55, 0.55, 1.0)
+        return unreal.LinearColor(0.97, 0.97, 0.95, 1.0)
+
+    @computed
+    def second_button_text_color(self):
+        if self.second_active:
+            return unreal.SlateColor(unreal.LinearColor(1.0, 1.0, 1.0, 1.0))
+        return unreal.SlateColor(unreal.LinearColor(0.22, 0.22, 0.22, 1.0))
+
     def __init__(self) -> None:
         super().__init__()
         self._expression = ""
         self._memory = 0.0
-        self._second_function = False
         self._use_degrees = True
         self._fresh_entry = True
         self._pending_root = False
@@ -202,8 +219,8 @@ class ScientificCalculator(WidgetMarkupComponent):
         }
 
     def _resolve_function_name(self, primary: str, secondary: str) -> str:
-        if self._second_function:
-            self._second_function = False
+        if self.second_active:
+            self.second_active = False
             return secondary
         return primary
 
@@ -222,7 +239,7 @@ class ScientificCalculator(WidgetMarkupComponent):
             self._fresh_entry = True
 
     def press_second(self) -> None:
-        self._second_function = not self._second_function
+        self.second_active = not self.second_active
 
     def press_left_paren(self) -> None:
         if self.display == "Error":
@@ -334,8 +351,8 @@ class ScientificCalculator(WidgetMarkupComponent):
         self._apply_unary_function("sqrt")
 
     def press_nth_root(self) -> None:
-        if self._second_function:
-            self._second_function = False
+        if self.second_active:
+            self.second_active = False
             self.press_cube()
             return
         if self.display == "Error":
