@@ -102,7 +102,7 @@ TSharedPtr<FElementNode> FElementNodeFactory::CreateElementNode(UObject* Outer, 
 
 		if (Struct == nullptr)
 		{
-			Struct = UClass::TryFindTypeSlow<UStruct>(ElementName, EFindFirstObjectOptions::EnsureIfAmbiguous);
+			Struct = FTypeParser::ResolveStruct(ElementName);
 		}
 	}
 

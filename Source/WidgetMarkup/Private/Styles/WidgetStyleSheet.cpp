@@ -8,6 +8,7 @@
 #include "Components/Widget.h"
 #include "ElementNodes/PropertyChainHandle.h"
 #include "Extensions/WidgetMarkupBlueprintGeneratedClassExtension.h"
+#include "Utilities/TypeParser.h"
 
 bool FWidgetStyleSetter::ApplyToWidget(UWidget* Widget) const
 {
@@ -99,10 +100,15 @@ void UWidgetStyleSheet::ApplyToUserWidget(UUserWidget* UserWidget) const
 		if (Entry.TargetType.IsNone()) continue;
 		const bool bIsImplicit = Entry.Name.IsNone();
 
+		// Resolve TargetType once per entry via FTypeParser to avoid
+		// TryFindTypeSlow short-name warnings for built-in UMG types.
+		UClass* TargetClass = FTypeParser::ResolveClass(Entry.TargetType.ToString());
+		if (!TargetClass) continue;
+
 		for (UWidget* WidgetNode : AllWidgets)
 		{
 			if (!WidgetNode) continue;
-			if (!WidgetNode->IsA(UClass::TryFindTypeSlow<UClass>(Entry.TargetType.ToString()))) continue;
+			if (!WidgetNode->IsA(TargetClass)) continue;
 			if (!bIsImplicit)
 			{
 				const FName* Assigned = Assignments.Find(WidgetNode->GetFName());

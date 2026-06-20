@@ -6,6 +6,37 @@
 #include "UObject/Interface.h"
 #include "UObject/UObjectIterator.h"
 
+template<typename T>
+T* FTypeParser::TryResolveType(const FString& Token)
+{
+	// Cache: each short type name goes through TryFindTypeSlow at most once.
+	// Subsequent lookups hit the cache with zero warnings.
+	static TMap<FName, TWeakObjectPtr<UObject>> Cache;
+
+	const FName Key(*Token);
+	if (const TWeakObjectPtr<UObject>* Cached = Cache.Find(Key))
+	{
+		if (Cached->IsValid())
+		{
+			return Cast<T>(Cached->Get());
+		}
+		Cache.Remove(Key);
+	}
+
+	// TryFindTypeSlow — will warn for unknown types, but only once per name.
+	if (T* Result = UClass::TryFindTypeSlow<T>(Token, EFindFirstObjectOptions::None))
+	{
+		Cache.Add(Key, Result);
+		return Result;
+	}
+	return nullptr;
+}
+
+// Explicit template instantiation for the three types we resolve.
+template UClass* FTypeParser::TryResolveType<UClass>(const FString& Token);
+template UScriptStruct* FTypeParser::TryResolveType<UScriptStruct>(const FString& Token);
+template UEnum* FTypeParser::TryResolveType<UEnum>(const FString& Token);
+
 namespace
 {
 	UScriptStruct* ResolveBuiltinStruct(const FString& TypeToken)
@@ -58,13 +89,13 @@ UClass* FTypeParser::ResolveClass(const FString& InClassText)
 		return nullptr;
 	}
 
-	if (UClass* Class = UClass::TryFindTypeSlow<UClass>(Token, EFindFirstObjectOptions::None))
+	if (UClass* Class = TryResolveType<UClass>(Token))
 	{
 		return Class;
 	}
 
 	const FString PrefixedToken = Token.StartsWith(TEXT("U"), ESearchCase::CaseSensitive) ? Token : FString(TEXT("U")) + Token;
-	if (UClass* Class = UClass::TryFindTypeSlow<UClass>(PrefixedToken, EFindFirstObjectOptions::None))
+	if (UClass* Class = TryResolveType<UClass>(PrefixedToken))
 	{
 		return Class;
 	}
@@ -108,13 +139,13 @@ UScriptStruct* FTypeParser::ResolveStruct(const FString& InStructText)
 		return nullptr;
 	}
 
-	if (UScriptStruct* Struct = UClass::TryFindTypeSlow<UScriptStruct>(Token, EFindFirstObjectOptions::None))
+	if (UScriptStruct* Struct = TryResolveType<UScriptStruct>(Token))
 	{
 		return Struct;
 	}
 
 	const FString PrefixedToken = Token.StartsWith(TEXT("F"), ESearchCase::CaseSensitive) ? Token : FString(TEXT("F")) + Token;
-	if (UScriptStruct* Struct = UClass::TryFindTypeSlow<UScriptStruct>(PrefixedToken, EFindFirstObjectOptions::None))
+	if (UScriptStruct* Struct = TryResolveType<UScriptStruct>(PrefixedToken))
 	{
 		return Struct;
 	}
@@ -148,13 +179,13 @@ UEnum* FTypeParser::ResolveEnum(const FString& InEnumText)
 		return nullptr;
 	}
 
-	if (UEnum* Enum = UClass::TryFindTypeSlow<UEnum>(Token, EFindFirstObjectOptions::None))
+	if (UEnum* Enum = TryResolveType<UEnum>(Token))
 	{
 		return Enum;
 	}
 
 	const FString PrefixedToken = Token.StartsWith(TEXT("E"), ESearchCase::CaseSensitive) ? Token : FString(TEXT("E")) + Token;
-	if (UEnum* Enum = UClass::TryFindTypeSlow<UEnum>(PrefixedToken, EFindFirstObjectOptions::None))
+	if (UEnum* Enum = TryResolveType<UEnum>(PrefixedToken))
 	{
 		return Enum;
 	}

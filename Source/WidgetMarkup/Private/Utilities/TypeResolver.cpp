@@ -116,7 +116,21 @@ T* TTypeResolver<T>::ResolveShortName(const FString& Token)
 		return nullptr;
 	}
 
-	// First try TryFindTypeSlow
+	// Cache: each short name goes through TryFindTypeSlow at most once.
+	// Subsequent lookups hit the cache with zero warnings.
+	static TMap<FName, TWeakObjectPtr<UObject>> Cache;
+
+	const FName Key(*Token);
+	if (const TWeakObjectPtr<UObject>* Cached = Cache.Find(Key))
+	{
+		if (Cached->IsValid())
+		{
+			return Cast<T>(Cached->Get());
+		}
+		Cache.Remove(Key);
+	}
+
+	// TryFindTypeSlow — will warn for unknown types, but only once per name.
 	if (T* Type = UClass::TryFindTypeSlow<T>(Token, EFindFirstObjectOptions::None))
 	{
 		if constexpr (std::is_same_v<T, UStruct>)
@@ -126,10 +140,11 @@ T* TTypeResolver<T>::ResolveShortName(const FString& Token)
 				return nullptr;
 			}
 		}
+		Cache.Add(Key, Type);
 		return Type;
 	}
 
-	// Fall back to iterator with case-sensitive exact match
+	// Fall back to iterator with case-sensitive exact match.
 	for (TObjectIterator<T> It; It; ++It)
 	{
 		T* Type = *It;
@@ -142,6 +157,7 @@ T* TTypeResolver<T>::ResolveShortName(const FString& Token)
 		}
 		if (Type && Type->GetName().Equals(Token, ESearchCase::CaseSensitive))
 		{
+			Cache.Add(Key, Type);
 			return Type;
 		}
 	}
