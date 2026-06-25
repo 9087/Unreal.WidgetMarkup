@@ -46,6 +46,7 @@
 #include "PropertyRuns/WidgetStylePropertyRun.h"
 #include "PropertyRuns/WidgetBlueprintScriptPropertyRun.h"
 #include "PropertyRuns/WidgetDelegatePropertyRun.h"
+#include "PropertyRuns/VariableDefaultPropertyRun.h"
 #include "Styles/WidgetStyleSheet.h"
 #include "Types/SlateVector2.h"
 #include "Utilities/WidgetPropertyPath.h"
@@ -149,6 +150,7 @@ void FWidgetMarkupModule::StartupModule()
 	RegisterCustomPropertyRun(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertyRun::CreateStatic(&FListViewListItemsPropertyRun::Create));
 	RegisterCustomPropertyRun(UWidget::StaticClass(), TEXT("Style"), FOnCreatePropertyRun::CreateStatic(&FWidgetStylePropertyRun::Create));
 	RegisterCustomPropertyRun(UWidgetStyleSheet::StaticClass(), TEXT("Inherit"), FOnCreatePropertyRun::CreateStatic(&FStyleSheetInheritPropertyRun::Create));
+	RegisterCustomPropertyRun(FWidgetMarkupBlueprintVariable::StaticStruct(), TEXT("Default"), FOnCreatePropertyRun::CreateStatic(&FVariableDefaultPropertyRun::Create));
 	RegisterCustomPropertySetter(UListView::StaticClass(), TEXT("ListItems"), FOnCreatePropertySetter::CreateStatic(&FListViewListItemsPropertySetter::Create));
 	
 	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FWidgetMarkupModule::OnPostEngineInit);

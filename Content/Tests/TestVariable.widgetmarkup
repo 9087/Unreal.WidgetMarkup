@@ -1,0 +1,19 @@
+<WidgetBlueprint Script="Tests.TestVariable">
+  <!-- Normal default values -->
+  <Variable Name="Health" Type="Float" Default="100.0" />
+  <Variable Name="PlayerName" Type="String" Default="Unknown" />
+  <Variable Name="IsAlive" Type="Boolean" Default="true" />
+  <Variable Name="Score" Type="Integer" Default="0" />
+
+  <!-- Edge case: values containing {braces} MUST be stored as literal strings -->
+  <Variable Name="LiteralBraces" Type="String" Default="{some text}" />
+  <Variable Name="LooksLikeBinding" Type="String" Default="{x.y.z}" />
+  <Variable Name="BracesInMiddle" Type="String" Default="before {x} after" />
+  <Variable Name="SingleBrace" Type="String" Default="only open {" />
+  <Variable Name="DoubleBraces" Type="String" Default="{{nested}}" />
+  <Variable Name="EmptyDefault" Type="String" Default="" />
+
+  <WidgetTree>
+    <CanvasPanel />
+  </WidgetTree>
+</WidgetBlueprint>
