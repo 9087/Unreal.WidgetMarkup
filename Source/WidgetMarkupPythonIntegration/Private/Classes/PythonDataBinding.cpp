@@ -110,7 +110,30 @@ namespace
 		}
 		if (FStructProperty* StructProperty = CastField<FStructProperty>(Property))
 		{
-			return PyConversion::Internal::NativizeStructInstance(PyValue, StructProperty->Struct, OutData, PyConversion::ESetErrorState::No).Succeeded();
+			// Recursively fill struct fields from Python dict or object attributes.
+			UScriptStruct* Struct = StructProperty->Struct;
+			Struct->InitializeStruct(OutData);
+
+			for (TFieldIterator<FProperty> It(Struct); It; ++It)
+			{
+				FProperty* Field = *It;
+				const char* FieldName = TCHAR_TO_UTF8(*Field->GetName());
+
+				PyObject* PyField = PyDict_Check(PyValue)
+					? PyDict_GetItemString(PyValue, FieldName)       // dict: key lookup
+					: PyObject_GetAttrString(PyValue, FieldName);    // object: getattr
+
+				if (!PyField)
+				{
+					PyErr_Clear();
+					continue;
+				}
+
+				if (!NativizePythonValueToProperty(PyField, Field,
+						Field->ContainerPtrToValuePtr<void>(OutData)))
+					return false;
+			}
+			return true;
 		}
 		if (FArrayProperty* ArrayProperty = CastField<FArrayProperty>(Property))
 		{
@@ -128,17 +151,10 @@ namespace
 
 				if (FObjectPropertyBase* ObjectProperty = CastField<FObjectPropertyBase>(InnerProperty))
 				{
-					UObject* Object = nullptr;
-					if (PyConversion::NativizeObject(PyElement, Object, UObject::StaticClass()))
-					{
-						ObjectProperty->SetObjectPropertyValue(ElementPtr, Object);
-					}
-					else
-					{
-						PyErr_Clear();
-						UPythonWidgetMarkupListItem* Item = UPythonWidgetMarkupListItem::Create(GetTransientPackage(), PyElement);
-						ObjectProperty->SetObjectPropertyValue(ElementPtr, Item);
-					}
+					// Always wrap arbitrary Python objects as list items;
+					// no longer depends on PyConversion::NativizeObject.
+					UPythonWidgetMarkupListItem* Item = UPythonWidgetMarkupListItem::Create(GetTransientPackage(), PyElement);
+					ObjectProperty->SetObjectPropertyValue(ElementPtr, Item);
 				}
 				else if (!NativizePythonValueToProperty(PyElement, InnerProperty, ElementPtr))
 				{

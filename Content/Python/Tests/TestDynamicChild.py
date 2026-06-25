@@ -18,11 +18,15 @@ class TestDynamicChild(TestComponent):
             static_comp = self.get_child("ExistingChild")
             self.check_not_none(static_comp, "get_child returns component for static TestChild")
 
-            # Dynamic add_child via C++ API with unreal.TextBlock (UClass).
-            child_widget = widget_markup.WidgetLibrary.add_child_widget(
-                uw, "RootCanvas", unreal.TextBlock, None, "DynTextBlock")
-            self.check_not_none(child_widget, "add_child_widget with UClass returns widget")
-            self.check_true(isinstance(child_widget, unreal.TextBlock), "returned widget is TextBlock")
+            # Dynamic add_child via C++ API with class token string.
+            child_name = widget_markup.WidgetLibrary.add_child_widget(
+                str(uw.get_path_name()), "RootCanvas", "TextBlock", "DynTextBlock")
+            self.check_not_none(child_name, "add_child_widget returns child name")
+            self.check_true(isinstance(child_name, str), "returned value is string")
+
+            child_widget = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, child_name)
+            self.check_not_none(child_widget, "found DynTextBlock in WidgetTree")
+            self.check_true(isinstance(child_widget, unreal.TextBlock), "DynTextBlock is TextBlock")
 
             # Dynamic remove_child
             result = self.remove_child("DynTextBlock")

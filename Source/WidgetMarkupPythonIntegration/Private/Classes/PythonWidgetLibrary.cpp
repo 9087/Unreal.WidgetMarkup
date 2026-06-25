@@ -53,19 +53,14 @@ namespace
 
 	PyObject* PyGetPythonObjectFromListItem(PyObject* /*Self*/, PyObject* Args)
 	{
-		PyObject* PyItem = nullptr;
-		if (!PyArg_ParseTuple(Args, "O:get_python_object_from_list_item", &PyItem))
+		const char* ItemPath = nullptr;
+		if (!PyArg_ParseTuple(Args, "s:get_python_object_from_list_item", &ItemPath))
 		{
 			return nullptr;
 		}
 
-		UObject* ItemObject = nullptr;
-		if (!PyConversion::NativizeObject(PyItem, ItemObject, UPythonWidgetMarkupListItem::StaticClass()))
-		{
-			Py_RETURN_NONE;
-		}
-
-		UPythonWidgetMarkupListItem* ListItem = Cast<UPythonWidgetMarkupListItem>(ItemObject);
+		UPythonWidgetMarkupListItem* ListItem = FindObject<UPythonWidgetMarkupListItem>(
+			nullptr, UTF8_TO_TCHAR(ItemPath));
 		if (ListItem)
 		{
 			PyObject* PythonObject = ListItem->GetPythonObject();
@@ -80,54 +75,48 @@ namespace
 
 	PyObject* PyAddChildWidget(PyObject* /*Self*/, PyObject* Args)
 	{
-		PyObject* PyUserWidget = nullptr;
-		const char* ParentName = nullptr;
-		PyObject* PyClass = nullptr;       // UClass object or None (if class_token is used)
-		const char* ClassToken = nullptr;  // string class token (may be nullptr)
+		const char* UserWidgetNameOrPath = nullptr;  // UserWidget name or path name
+		const char* ParentNameOrPath = nullptr;      // parent widget name or path name
+		const char* ClassToken = nullptr;            // widget class string token
 		const char* ChildName = nullptr;
-		if (!PyArg_ParseTuple(Args, "OsOzz:add_child_widget",
-			&PyUserWidget, &ParentName, &PyClass, &ClassToken, &ChildName))
+		if (!PyArg_ParseTuple(Args, "ssss:add_child_widget",
+			&UserWidgetNameOrPath, &ParentNameOrPath, &ClassToken, &ChildName))
 		{
 			return nullptr;
 		}
 
 		// --- Resolve owning UserWidget ---
-		UObject* UserWidgetObject = nullptr;
-		if (!PyConversion::NativizeObject(PyUserWidget, UserWidgetObject, UUserWidget::StaticClass()))
+		const FString UserWidgetStr(UTF8_TO_TCHAR(UserWidgetNameOrPath));
+		UUserWidget* UserWidget = nullptr;
+
+		// Try FindObject by path name, then FindWidget by name.
+		UObject* FoundUserWidget = FindObject<UObject>(nullptr, *UserWidgetStr);
+		UserWidget = Cast<UUserWidget>(FoundUserWidget);
+		if (!UserWidget)
 		{
-			PyErr_SetString(PyExc_TypeError, "First argument must be a UserWidget.");
+			// May be a simple name — not supported for UserWidget; require path.
+			PyErr_SetString(PyExc_TypeError, "First argument must be a valid UserWidget path name.");
 			return nullptr;
 		}
-		UUserWidget* UserWidget = Cast<UUserWidget>(UserWidgetObject);
-		if (!UserWidget || !UserWidget->WidgetTree)
+
+		if (!UserWidget->WidgetTree)
 		{
 			PyErr_SetString(PyExc_ValueError, "UserWidget has no WidgetTree.");
 			return nullptr;
 		}
 
 		// --- Resolve widget class ---
-		UClass* WidgetClass = nullptr;
-		if (PyClass && PyClass != Py_None)
+		if (!ClassToken || ClassToken[0] == '\0')
 		{
-			UClass* ClassObject = nullptr;
-			if (!PyConversion::NativizeClass(PyClass, ClassObject, UWidget::StaticClass()))
-			{
-				PyErr_SetString(PyExc_TypeError, "Class argument must be a UClass.");
-				return nullptr;
-			}
-			WidgetClass = ClassObject;
+			PyErr_SetString(PyExc_ValueError, "ClassToken must be a non-empty widget class name.");
+			return nullptr;
 		}
-		else if (ClassToken && ClassToken[0] != '\0')
-		{
-			WidgetClass = FWidgetMarkupCore::ResolveClass(FString(UTF8_TO_TCHAR(ClassToken)));
-		}
-
+		UClass* WidgetClass = FWidgetMarkupCore::ResolveClass(FString(UTF8_TO_TCHAR(ClassToken)));
 		if (!WidgetClass)
 		{
 			PyErr_SetString(PyExc_ValueError, "Could not resolve widget class.");
 			return nullptr;
 		}
-
 		if (!WidgetClass->IsChildOf(UWidget::StaticClass()))
 		{
 			PyErr_SetString(PyExc_TypeError, "Resolved class is not a UWidget subclass.");
@@ -136,19 +125,39 @@ namespace
 
 		const FName ChildFName(UTF8_TO_TCHAR(ChildName));
 
-		// --- Validate parent widget ---
-		const FName ParentFName(UTF8_TO_TCHAR(ParentName));
-		UWidget* ParentWidget = UserWidget->WidgetTree->FindWidget(ParentFName);
+		// --- Resolve parent widget ---
+		const FString ParentStr(UTF8_TO_TCHAR(ParentNameOrPath));
+		UWidget* ParentWidget = nullptr;
+
+		// Try name first, then path.
+		ParentWidget = UserWidget->WidgetTree->FindWidget(FName(*ParentStr));
 		if (!ParentWidget)
 		{
-			PyErr_Format(PyExc_ValueError, "Parent widget '%s' not found in WidgetTree.", ParentName);
+			UObject* Found = FindObject<UObject>(nullptr, *ParentStr);
+			ParentWidget = Cast<UWidget>(Found);
+		}
+
+		// Verify parent lives in this UserWidget's tree.
+		if (ParentWidget)
+		{
+			TArray<UWidget*> AllWidgets;
+			UserWidget->WidgetTree->GetAllWidgets(AllWidgets);
+			if (!AllWidgets.Contains(ParentWidget))
+			{
+				ParentWidget = nullptr;
+			}
+		}
+
+		if (!ParentWidget)
+		{
+			PyErr_Format(PyExc_ValueError, "Parent widget '%s' not found in WidgetTree.", ParentNameOrPath);
 			return nullptr;
 		}
 
 		UPanelWidget* ParentPanel = Cast<UPanelWidget>(ParentWidget);
 		if (!ParentPanel)
 		{
-			PyErr_Format(PyExc_TypeError, "Parent widget '%s' is not a panel widget and cannot hold children.", ParentName);
+			PyErr_Format(PyExc_TypeError, "Parent widget '%s' is not a panel widget and cannot hold children.", ParentNameOrPath);
 			return nullptr;
 		}
 
@@ -162,13 +171,12 @@ namespace
 		// --- Validate slot capacity ---
 		if (!ParentPanel->CanHaveMultipleChildren() && ParentPanel->GetChildrenCount() > 0)
 		{
-			PyErr_Format(PyExc_ValueError, "Parent widget '%s' only supports a single child and already has one.", ParentName);
+			PyErr_Format(PyExc_ValueError, "Parent widget '%s' only supports a single child and already has one.", ParentNameOrPath);
 			return nullptr;
 		}
-
 		if (!ParentPanel->CanAddMoreChildren())
 		{
-			PyErr_Format(PyExc_ValueError, "Parent widget '%s' cannot accept more children.", ParentName);
+			PyErr_Format(PyExc_ValueError, "Parent widget '%s' cannot accept more children.", ParentNameOrPath);
 			return nullptr;
 		}
 
@@ -193,14 +201,14 @@ namespace
 		// --- Add to parent ---
 		ParentPanel->AddChild(ChildWidget);
 
-		return PyConversion::PythonizeObject(ChildWidget);
+		return PyUnicode_FromString(ChildName);
 	}
 
 	PyObject* PyRemoveChildWidget(PyObject* /*Self*/, PyObject* Args)
 	{
 		PyObject* PyUserWidget = nullptr;
-		PyObject* PyChild = nullptr;  // string (name) or UWidget
-		if (!PyArg_ParseTuple(Args, "OO:remove_child_widget", &PyUserWidget, &PyChild))
+		const char* NameOrPath = nullptr;  // widget name or object path name
+		if (!PyArg_ParseTuple(Args, "Os:remove_child_widget", &PyUserWidget, &NameOrPath))
 		{
 			return nullptr;
 		}
@@ -217,20 +225,28 @@ namespace
 			Py_RETURN_FALSE;
 		}
 
+		const FString NameOrPathStr(UTF8_TO_TCHAR(NameOrPath));
 		UWidget* ChildWidget = nullptr;
 
-		// Try string (name) first
-		if (PyUnicode_Check(PyChild))
+		// Try widget name first.
+		ChildWidget = UserWidget->WidgetTree->FindWidget(FName(*NameOrPathStr));
+		if (!ChildWidget)
 		{
-			const char* ChildName = PyUnicode_AsUTF8(PyChild);
-			ChildWidget = UserWidget->WidgetTree->FindWidget(FName(UTF8_TO_TCHAR(ChildName)));
+			// Try object path name.
+			UObject* Found = FindObject<UObject>(nullptr, *NameOrPathStr);
+			ChildWidget = Cast<UWidget>(Found);
 		}
-		else
+
+		// Verify the resolved widget actually lives in this UserWidget's tree.
+		if (ChildWidget)
 		{
-			UObject* ChildObject = nullptr;
-			if (PyConversion::NativizeObject(PyChild, ChildObject, UWidget::StaticClass()))
+			bool bFoundInTree = false;
+			TArray<UWidget*> AllWidgets;
+			UserWidget->WidgetTree->GetAllWidgets(AllWidgets);
+			bFoundInTree = AllWidgets.Contains(ChildWidget);
+			if (!bFoundInTree)
 			{
-				ChildWidget = Cast<UWidget>(ChildObject);
+				ChildWidget = nullptr;
 			}
 		}
 
