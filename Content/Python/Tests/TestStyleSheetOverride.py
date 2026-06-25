@@ -11,10 +11,10 @@ class TestStyleSheetOverride(TestComponent):
             self.check_not_none(uw, "user widget loaded")
 
             # The inherited TestStyleSheetFile defines StyledText (blue, size 20).
-            styled = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "InheritedStyled")
+            styled = self.find_widget("InheritedStyled")
             self.check_not_none(styled, "InheritedStyled found (style inherited from file)")
 
-            unstyled = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "UnstyledRef")
+            unstyled = self.find_widget("UnstyledRef")
             self.check_not_none(unstyled, "UnstyledRef found")
 
             self.report()

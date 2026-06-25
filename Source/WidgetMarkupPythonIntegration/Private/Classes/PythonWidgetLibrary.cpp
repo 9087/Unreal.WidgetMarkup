@@ -23,20 +23,16 @@ namespace
 
 	PyObject* PyFindWidgetInUserWidget(PyObject* /*Self*/, PyObject* Args)
 	{
-		PyObject* PyUserWidget = nullptr;
+		const char* UserWidgetNameOrPath = nullptr;
 		const char* WidgetName = nullptr;
-		if (!PyArg_ParseTuple(Args, "Os:find_widget_in_user_widget", &PyUserWidget, &WidgetName))
+		if (!PyArg_ParseTuple(Args, "ss:find_widget_in_user_widget", &UserWidgetNameOrPath, &WidgetName))
 		{
 			return nullptr;
 		}
 
-		UObject* UserWidgetObject = nullptr;
-		if (!PyConversion::NativizeObject(PyUserWidget, UserWidgetObject, UUserWidget::StaticClass()))
-		{
-			return nullptr;
-		}
-
-		UUserWidget* UserWidget = Cast<UUserWidget>(UserWidgetObject);
+		const FString UserWidgetStr(UTF8_TO_TCHAR(UserWidgetNameOrPath));
+		UObject* Found = FindObject<UObject>(nullptr, *UserWidgetStr);
+		UUserWidget* UserWidget = Cast<UUserWidget>(Found);
 		if (!UserWidget || !UserWidget->WidgetTree || !WidgetName)
 		{
 			Py_RETURN_NONE;
@@ -48,7 +44,7 @@ namespace
 			Py_RETURN_NONE;
 		}
 
-		return PyConversion::PythonizeObject(FoundWidget);
+		return PyUnicode_FromString(TCHAR_TO_UTF8(*FoundWidget->GetPathName()));
 	}
 
 	PyObject* PyGetPythonObjectFromListItem(PyObject* /*Self*/, PyObject* Args)

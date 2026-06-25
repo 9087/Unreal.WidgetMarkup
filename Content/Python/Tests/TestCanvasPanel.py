@@ -10,12 +10,12 @@ class TestCanvasPanel(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            canvas_panel = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "TestCanvas")
+            canvas_panel = self.find_widget("TestCanvas")
             self.check_not_none(canvas_panel, "TestCanvas found")
             if canvas_panel:
                 self.check_equal(canvas_panel.get_children_count(), 3, "CanvasPanel has 3 children")
 
-            canvas_child1 = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "CanvasChild1")
+            canvas_child1 = self.find_widget("CanvasChild1")
             self.check_not_none(canvas_child1, "CanvasChild1 found")
             if canvas_child1 and canvas_child1.slot:
                 slot1 = canvas_child1.slot
@@ -42,7 +42,7 @@ class TestCanvasPanel(TestComponent):
                         self.check_almost_equal(o1.left, 10.0, 0.001, "CanvasChild1.Offsets.left")
                         self.check_almost_equal(o1.top, 10.0, 0.001, "CanvasChild1.Offsets.top")
 
-            canvas_child2 = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "CanvasChild2")
+            canvas_child2 = self.find_widget("CanvasChild2")
             self.check_not_none(canvas_child2, "CanvasChild2 found")
             if canvas_child2 and canvas_child2.slot:
                 slot2 = canvas_child2.slot
@@ -68,7 +68,7 @@ class TestCanvasPanel(TestComponent):
                         self.check_almost_equal(o2.right, 10.0, 0.001, "CanvasChild2.Offsets.right")
                         self.check_almost_equal(o2.top, 10.0, 0.001, "CanvasChild2.Offsets.top")
 
-            canvas_child3 = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "CanvasChild3")
+            canvas_child3 = self.find_widget("CanvasChild3")
             self.check_not_none(canvas_child3, "CanvasChild3 found")
             if canvas_child3 and canvas_child3.slot:
                 self.check_equal(canvas_child3.slot.get_editor_property("bAutoSize"), True, "CanvasChild3.bAutoSize")

@@ -10,13 +10,13 @@ class TestOverlay(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            overlay_panel = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "TestOverlayPanel")
+            overlay_panel = self.find_widget("TestOverlayPanel")
             self.check_not_none(overlay_panel, "TestOverlayPanel found")
             if overlay_panel:
                 self.check_equal(overlay_panel.get_children_count(), 2, "Overlay has 2 children")
 
             # Child1: fill aligned
-            overlay_child1 = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "OverlayChild1")
+            overlay_child1 = self.find_widget("OverlayChild1")
             self.check_not_none(overlay_child1, "OverlayChild1 found")
             if overlay_child1 and overlay_child1.slot:
                 slot1 = overlay_child1.slot
@@ -29,7 +29,7 @@ class TestOverlay(TestComponent):
                     self.check_almost_equal(pad1.top, 2.0, 0.001, "OverlayChild1.Padding.Top")
 
             # Child2: bottom-right aligned
-            overlay_child2 = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "OverlayChild2")
+            overlay_child2 = self.find_widget("OverlayChild2")
             self.check_not_none(overlay_child2, "OverlayChild2 found")
             if overlay_child2 and overlay_child2.slot:
                 slot2 = overlay_child2.slot

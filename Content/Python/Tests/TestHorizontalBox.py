@@ -10,13 +10,13 @@ class TestHorizontalBox(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            horizontal_box = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "TestHorizontal")
+            horizontal_box = self.find_widget("TestHorizontal")
             self.check_not_none(horizontal_box, "TestHorizontal found")
             if horizontal_box:
                 self.check_equal(horizontal_box.get_children_count(), 2, "HorizontalBox has 2 children")
 
             # Child1: Fill slot
-            horizontal_child1 = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "HorizontalChild1")
+            horizontal_child1 = self.find_widget("HorizontalChild1")
             self.check_not_none(horizontal_child1, "HorizontalChild1 found")
             if horizontal_child1 and horizontal_child1.slot:
                 slot1 = horizontal_child1.slot
@@ -29,7 +29,7 @@ class TestHorizontalBox(TestComponent):
                     self.check_almost_equal(pad1.top, 2.0, 0.001, "HorizontalChild1.Padding.Top")
 
             # Child2: Automatic slot
-            horizontal_child2 = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "HorizontalChild2")
+            horizontal_child2 = self.find_widget("HorizontalChild2")
             self.check_not_none(horizontal_child2, "HorizontalChild2 found")
             if horizontal_child2 and horizontal_child2.slot:
                 slot2 = horizontal_child2.slot

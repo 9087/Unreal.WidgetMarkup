@@ -10,7 +10,7 @@ class TestImage(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            image = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "StyledImage")
+            image = self.find_widget("StyledImage")
             self.check_not_none(image, "StyledImage found")
             if image:
                 co = image.get_editor_property("ColorAndOpacity")

@@ -11,7 +11,7 @@ class TestStaticChild(TestComponent):
             self.check_not_none(uw, "user widget loaded")
 
             # Static XML child: TestChild embedded as WidgetMarkup widget.
-            child_widget = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "StaticChild")
+            child_widget = self.find_widget("StaticChild")
             self.check_not_none(child_widget, "StaticChild found in WidgetTree")
 
             # get_child should return the component since TestChild has a Script.
@@ -21,7 +21,7 @@ class TestStaticChild(TestComponent):
             # remove_child on the static child.
             result = self.remove_child("StaticChild")
             self.check_true(result, "remove_child(StaticChild) returned True")
-            gone = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "StaticChild")
+            gone = self.find_widget("StaticChild")
             self.check_true(gone is None, "StaticChild gone after remove_child")
 
             self.report()

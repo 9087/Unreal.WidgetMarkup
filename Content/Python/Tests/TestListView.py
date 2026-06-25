@@ -14,7 +14,7 @@ class TestListView(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            list_view = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "TestListView")
+            list_view = self.find_widget("TestListView")
             self.check_not_none(list_view, "ListView found")
 
             entry_class = list_view.get_editor_property("EntryWidgetClass")

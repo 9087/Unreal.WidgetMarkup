@@ -319,7 +319,7 @@ class WidgetMarkupComponent:
         delegate_name = str(binding.delegate_property_name)
 
         # Use C++ helper to bypass protected WidgetTree access in Python.
-        target_widget = widget_markup.WidgetLibrary.find_widget_in_user_widget(user_widget, target_name)
+        target_widget = self.find_widget(target_name)
         if target_widget is None:
             unreal.log_warning(f"WidgetMarkup: widget '{target_name}' not found in WidgetTree")
             return
@@ -404,6 +404,20 @@ class WidgetMarkupComponent:
     # Child component management
     # ------------------------------------------------------------------
 
+    def find_widget(self, name: str) -> Any:
+        """Find a widget by name in the owning UserWidget's WidgetTree.
+
+        Returns the UWidget instance, or None if not found.
+        """
+        user_widget = getattr(self, _USER_WIDGET_ATTR, None)
+        if user_widget is None:
+            return None
+        path = widget_markup.WidgetLibrary.find_widget_in_user_widget(
+            str(user_widget.get_path_name()), name)
+        if path is None:
+            return None
+        return unreal.find_object(None, path)
+
     def add_child(self, name: str, cls: Any, parent: Any) -> Any:
         """Add a child widget component to a parent panel widget.
 
@@ -434,7 +448,7 @@ class WidgetMarkupComponent:
         if child_name is None:
             return None
 
-        child_widget = widget_markup.WidgetLibrary.find_widget_in_user_widget(user_widget, child_name)
+        child_widget = self.find_widget(child_name)
         if child_widget is None:
             return None
         return widget_markup.Core.get_component_by_widget(child_widget)
@@ -476,7 +490,7 @@ class WidgetMarkupComponent:
         user_widget = getattr(self, _USER_WIDGET_ATTR, None)
         if user_widget is None:
             return None
-        widget = widget_markup.WidgetLibrary.find_widget_in_user_widget(user_widget, name)
+        widget = self.find_widget(name)
         if widget is None:
             return None
         return widget_markup.Core.get_component_by_widget(widget)

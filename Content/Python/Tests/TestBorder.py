@@ -10,7 +10,7 @@ class TestBorder(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            border = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "StyledBorder")
+            border = self.find_widget("StyledBorder")
             self.check_not_none(border, "StyledBorder found")
             if border:
                 # BrushColor = (0.1, 0.1, 0.3, 1.0)
@@ -90,7 +90,7 @@ class TestBorder(TestComponent):
                 # Slot on CanvasPanel
                 self.check_not_none(border.slot, "CanvasPanelSlot exists")
 
-            child = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "BorderChild")
+            child = self.find_widget("BorderChild")
             self.check_not_none(child, "BorderChild found")
             if child:
                 self.check_equal(child.get_editor_property("Text"), "inside border", "BorderChild.Text")

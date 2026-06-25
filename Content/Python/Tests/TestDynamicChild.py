@@ -11,7 +11,7 @@ class TestDynamicChild(TestComponent):
             self.check_not_none(uw, "user widget loaded")
 
             # Static XML child: TestChild embedded as WidgetMarkup widget.
-            existing_child = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "ExistingChild")
+            existing_child = self.find_widget("ExistingChild")
             self.check_not_none(existing_child, "ExistingChild found (static TestChild)")
 
             # get_child on static child (TestChild has a Python component).
@@ -24,14 +24,14 @@ class TestDynamicChild(TestComponent):
             self.check_not_none(child_name, "add_child_widget returns child name")
             self.check_true(isinstance(child_name, str), "returned value is string")
 
-            child_widget = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, child_name)
+            child_widget = self.find_widget(child_name)
             self.check_not_none(child_widget, "found DynTextBlock in WidgetTree")
             self.check_true(isinstance(child_widget, unreal.TextBlock), "DynTextBlock is TextBlock")
 
             # Dynamic remove_child
             result = self.remove_child("DynTextBlock")
             self.check_true(result, "remove_child(DynTextBlock) returned True")
-            gone = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "DynTextBlock")
+            gone = self.find_widget("DynTextBlock")
             self.check_true(gone is None, "DynTextBlock gone after remove_child")
 
             # Python add_child with string path.

@@ -10,7 +10,7 @@ class TestStyleSheetInline(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            inline = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "InlineStyled")
+            inline = self.find_widget("InlineStyled")
             self.check_not_none(inline, "InlineStyled TextBlock found")
             if inline:
                 self.check_equal(inline.get_editor_property("Text"), "inline styled text", "InlineStyled.Text")

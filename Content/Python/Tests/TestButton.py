@@ -10,7 +10,7 @@ class TestButton(TestComponent):
             uw = getattr(self, "_widget_markup_user_widget", None)
             self.check_not_none(uw, "user widget loaded")
 
-            button = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "StyledButton")
+            button = self.find_widget("StyledButton")
             self.check_not_none(button, "StyledButton found")
             if button:
                 # ColorAndOpacity = (1.0, 1.0, 1.0, 1.0)
@@ -61,7 +61,7 @@ class TestButton(TestComponent):
                 # Slot on CanvasPanel
                 self.check_not_none(button.slot, "CanvasPanelSlot exists")
 
-            button_label = widget_markup.WidgetLibrary.find_widget_in_user_widget(uw, "ButtonLabel")
+            button_label = self.find_widget("ButtonLabel")
             self.check_not_none(button_label, "ButtonLabel child found")
             if button_label:
                 self.check_equal(button_label.get_editor_property("Text"), "Click Me", "ButtonLabel.Text")
