@@ -8,7 +8,6 @@
 #include "Components/PanelWidget.h"
 #include "Components/Widget.h"
 #include "Misc/PackageName.h"
-#include "PyConversion.h"
 #include "PythonUtilities.h"
 #include "PythonWidgetMarkupListItem.h"
 #include "WidgetMarkupModule.h"
@@ -202,20 +201,14 @@ namespace
 
 	PyObject* PyRemoveChildWidget(PyObject* /*Self*/, PyObject* Args)
 	{
-		PyObject* PyUserWidget = nullptr;
+		const char* UserWidgetNameOrPath = nullptr;
 		const char* NameOrPath = nullptr;  // widget name or object path name
-		if (!PyArg_ParseTuple(Args, "Os:remove_child_widget", &PyUserWidget, &NameOrPath))
+		if (!PyArg_ParseTuple(Args, "ss:remove_child_widget", &UserWidgetNameOrPath, &NameOrPath))
 		{
 			return nullptr;
 		}
 
-		UObject* UserWidgetObject = nullptr;
-		if (!PyConversion::NativizeObject(PyUserWidget, UserWidgetObject, UUserWidget::StaticClass()))
-		{
-			PyErr_SetString(PyExc_TypeError, "First argument must be a UserWidget.");
-			return nullptr;
-		}
-		UUserWidget* UserWidget = Cast<UUserWidget>(UserWidgetObject);
+		UUserWidget* UserWidget = FindObject<UUserWidget>(nullptr, UTF8_TO_TCHAR(UserWidgetNameOrPath));
 		if (!UserWidget || !UserWidget->WidgetTree)
 		{
 			Py_RETURN_FALSE;

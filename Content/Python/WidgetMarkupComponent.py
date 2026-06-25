@@ -468,16 +468,17 @@ class WidgetMarkupComponent:
         if user_widget is None:
             return False
 
+        user_widget_path = str(user_widget.get_path_name())
         if isinstance(child, str):
-            return widget_markup.WidgetLibrary.remove_child_widget(user_widget, child)
+            return widget_markup.WidgetLibrary.remove_child_widget(user_widget_path, child)
 
         # Try to extract the UserWidget from a component.
         child_widget = getattr(child, _USER_WIDGET_ATTR, None)
         if child_widget is not None:
-            return widget_markup.WidgetLibrary.remove_child_widget(user_widget, str(child_widget.get_path_name()))
+            return widget_markup.WidgetLibrary.remove_child_widget(user_widget_path, str(child_widget.get_path_name()))
 
         # Assume child is already a UWidget.
-        return widget_markup.WidgetLibrary.remove_child_widget(user_widget, str(child.get_path_name()))
+        return widget_markup.WidgetLibrary.remove_child_widget(user_widget_path, str(child.get_path_name()))
 
     def get_child(self, name: str) -> Any:
         """Get a child WidgetMarkupComponent by name.
