@@ -4,7 +4,6 @@
 
 #include "Blueprint/UserWidget.h"
 #include "IPythonScriptPlugin.h"
-#include "PyConversion.h"
 #include "PythonUtilities.h"
 #include "PythonWidgetMarkupListItem.h"
 #include "WidgetMarkupPythonIntegration.h"
@@ -81,14 +80,7 @@ TSharedPtr<FPythonWidgetMarkupComponent> FPythonWidgetMarkupComponent::Create(UU
 
 	TSharedPtr<FPythonWidgetMarkupComponent> PythonWidgetMarkupComponent = MakeShareable(new FPythonWidgetMarkupComponent());
 
-	FPythonAutoRelease PyUserWidget(PyConversion::Pythonize(InUserWidget));
-	if (!PyUserWidget)
-	{
-		const FString ErrorMessage = FPythonUtilities::ConsumePythonErrorMessage();
-		UE_LOG(LogWidgetMarkupPythonIntegration, Warning, TEXT("Failed to convert UserWidget to python object for Script '%s': %s"), *Script, *ErrorMessage);
-		return nullptr;
-	}
-
+	FPythonAutoRelease PyUserWidget(PyUnicode_FromString(TCHAR_TO_UTF8(*InUserWidget->GetPathName())));
 	FPythonAutoRelease PyArgs(PyTuple_New(2));
 	if (!PyArgs)
 	{

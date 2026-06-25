@@ -266,6 +266,8 @@ class WidgetMarkupComponent:
         component_type = getattr(module, class_name)
         instance = component_type.__new__(component_type)
         if user_widget is not None:
+            if isinstance(user_widget, str):
+                user_widget = unreal.find_object(None, user_widget)
             setattr(instance, _USER_WIDGET_ATTR, user_widget)
         component_type.__init__(instance)
         return instance
